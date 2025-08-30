@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login - Sistema Escolar{% endblock %}
 
 {% block content %}
 <div class="login-background-container"></div>
 <div class="auth-card-container">
-    <div class="auth-card"> {# Removida a classe auth-card-login, não necessária #}
+    <div class="auth-card">
         <div class="card-logo-container">
-            <img src="{{ url_for('static', filename='brasao.png') }}" alt="Logo EsFAS">
+            <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Brasão da Escola">
         </div>
         <h2>Login</h2>
         <form method="POST" action="{{ url_for('auth.login') }}">
             <div class="form-group">
-                <label for="username">Usuário:</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username">Matrícula:</label>
+                <input type="text" id="username" name="username" placeholder="Digite sua matrícula" required>
             </div>
             <div class="form-group">
                 <label for="password">Senha:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
             </div>
             <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
-        <div class="mt-3 text-center">
+        <div class="auth-link">
             <a href="{{ url_for('auth.register') }}">Não tem uma conta? Crie uma aqui.</a>
         </div>
     </div>

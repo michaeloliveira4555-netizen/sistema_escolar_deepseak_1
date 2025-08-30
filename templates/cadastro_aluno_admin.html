@@ -3,59 +3,54 @@
 {% block title %}Cadastro de Aluno (Admin) - Sistema Escolar{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
+<div class="form-page-container">
+
+    <div class="cadastro-container">
         <h2>Cadastrar Novo Aluno</h2>
+        <hr style="margin-bottom: 25px;">
+
         <form method="POST" action="{{ url_for('aluno.cadastro_aluno_admin') }}">
-            {# Campos do Usuário #}
+            
+            {# --- Campos Essenciais da Conta --- #}
             <div class="form-group">
-                <label for="username">Usuário:</label>
-                <input type="text" id="username" name="username" value="{{ form_data.username if form_data else '' }}" required>
+                <label for="matricula">Matrícula (será usada para o login):</label>
+                <input type="text" id="matricula" name="matricula" class="form-control" value="{{ form_data.matricula if form_data else '' }}" required>
             </div>
+
             <div class="form-group">
                 <label for="email">E-mail:</label>
-                <input type="email" id="email" name="email" value="{{ form_data.email if form_data else '' }}" required>
+                <input type="email" id="email" name="email" class="form-control" value="{{ form_data.email if form_data else '' }}" required>
             </div>
+
             <div class="form-group">
                 <label for="password">Senha:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" class="form-control" required>
             </div>
+
             <div class="form-group">
                 <label for="password2">Confirmar Senha:</label>
-                <input type="password" id="password2" name="password2" required>
-            </div>
-            <div class="form-group">
-                <label for="role">Papel:</label>
-                <select id="role" name="role" required>
-                    <option value="aluno" {% if form_data.role == 'aluno' %}selected{% endif %}>Aluno</option>
-                    <option value="instrutor" {% if form_data.role == 'instrutor' %}selected{% endif %}>Instrutor</option>
-                </select>
+                <input type="password" id="password2" name="password2" class="form-control" required>
             </div>
 
-            <hr class="my-4"> {# Separador visual #}
-            <h3>Detalhes do Perfil do Aluno</h3>
-
-            {# Campos do Aluno #}
-            <div class="form-group">
-                <label for="matricula">Matrícula:</label>
-                <input type="text" id="matricula" name="matricula" value="{{ form_data.matricula if form_data else '' }}" required>
-            </div>
+            {# --- Detalhes do Perfil do Aluno --- #}
             <div class="form-group">
                 <label for="opm">OPM:</label>
-                <input type="text" id="opm" name="opm" value="{{ form_data.opm if form_data else '' }}" required>
+                <input type="text" id="opm" name="opm" class="form-control" value="{{ form_data.opm if form_data else '' }}" required>
             </div>
+
             <div class="form-group">
                 <label for="pelotao">Pelotão:</label>
-                <select id="pelotao" name="pelotao" required>
+                <select id="pelotao" name="pelotao" class="form-control" required>
                     <option value="">-- Selecione um pelotão --</option>
                     {% for i in range(1, 11) %}
                         <option value="{{ i }}° Pelotão" {% if form_data.pelotao == i ~ '° Pelotão' %}selected{% endif %}>{{ i }}º Pelotão</option>
                     {% endfor %}
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="funcao_atual">Função Atual:</label>
-                <select id="funcao_atual" name="funcao_atual">
+                <select id="funcao_atual" name="funcao_atual" class="form-control">
                     <option value="">-- Selecione uma função --</option>
                     {% set funcoes = ['P1', 'P2', 'P3', 'P4', 'P5', 'Aux Disc', 'Aux Cia', 'Aux Pel', 'C1', 'C2', 'C3', 'C4', 'C5', 'Formatura', 'Obras', 'Atletismo', 'Jubileu', 'Dia da Criança', 'Seminário', 'Chefe de Turma', 'Correio', 'Cmt 1° GPM', 'Cmt 2° GPM', 'Cmt 3° GPM', 'Socorrista 1', 'Socorrista 2', 'Motorista 1', 'Motorista 2', 'Telefonista 1', 'Telefonista 2'] %}
                     {% for funcao in funcoes %}
@@ -63,7 +58,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Cadastrar Aluno</button>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Cadastrar Aluno</button>
         </form>
     </div>
 </div>

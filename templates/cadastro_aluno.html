@@ -1,31 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}Cadastro de Aluno - Sistema Escolar{% endblock %}
+{% block title %}Completar Perfil de Aluno - Sistema Escolar{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
+
+<div class="form-page-container">
+
+    <div class="cadastro-container">
         <h2>Completar Perfil de Aluno</h2>
+        <hr style="margin-bottom: 25px;">
+
         <form method="POST" action="{{ url_for('aluno.cadastro_aluno') }}">
             <div class="form-group">
                 <label for="matricula">Matrícula:</label>
-                <input type="text" id="matricula" name="matricula" required>
+                <input type="text" id="matricula" name="matricula" class="form-control" required>
             </div>
+
             <div class="form-group">
                 <label for="opm">OPM:</label>
-                <input type="text" id="opm" name="opm" required>
+                <input type="text" id="opm" name="opm" class="form-control" required>
             </div>
+
             <div class="form-group">
                 <label for="pelotao">Pelotão:</label>
-                <select id="pelotao" name="pelotao" required>
+                <select id="pelotao" name="pelotao" class="form-control" required>
                     {% for i in range(1, 11) %}
                         <option value="{{ i }}° Pelotão">{{ i }}º Pelotão</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group"> {# Novo seletor de funções #}
+
+            <div class="form-group">
                 <label for="funcao_atual">Função Atual:</label>
-                <select id="funcao_atual" name="funcao_atual">
+                <select id="funcao_atual" name="funcao_atual" class="form-control">
                     <option value="">-- Selecione uma função --</option>
                     <option value="P1">P1</option>
                     <option value="P2">P2</option>
@@ -59,7 +66,8 @@
                     <option value="Telefonista 2">Telefonista 2</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Salvar Perfil</button>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Salvar Perfil</button>
         </form>
     </div>
 </div>

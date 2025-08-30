@@ -1,9 +1,8 @@
-/* Estilos globais */
+/* --- Estilos Globais --- */
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    /* overflow: hidden; Removido para permitir scroll se necessário em outras páginas */
 }
 
 * {
@@ -16,17 +15,10 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: #333;
-    background-color: #f0f2f5; /* Fundo padrão, será sobrescrito pelo login-background-container na página de login */
+    background-color: #f0f2f5;
 }
 
-/* Container principal para centralização e conteúdo */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-/* Estilos da barra de navegação */
+/* --- Barra de Navegação --- */
 .navbar {
     background: linear-gradient(135deg, #2c3e50, #34495e);
     color: white;
@@ -46,26 +38,25 @@ body {
     padding: 0 20px;
 }
 
-/* Ajustes para o brasão na navbar */
 .nav-brand {
     display: flex;
     align-items: center;
-    gap: 10px; /* Espaço entre o brasão e o texto */
-    text-decoration: none; /* Remove sublinhado */
-    color: white; /* Cor do texto */
+    gap: 10px;
+    text-decoration: none;
+    color: white;
 }
 
 .nav-brand img {
-    height: 40px; /* Aumentado para melhor visibilidade */
+    height: 40px;
     width: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
 
 .nav-brand span {
-    font-size: 1.2rem; /* Tamanho do texto */
+    font-size: 1.2rem;
     font-weight: bold;
-    white-space: nowrap; /* Impede que o texto quebre a linha */
+    white-space: nowrap;
 }
 
 .nav-menu {
@@ -86,93 +77,142 @@ body {
     background-color: rgba(255,255,255,0.1);
 }
 
-/* --- ESTILOS REFINADOS PARA O LOGIN COM EFEITO DE VIDRO --- */
+/* --- Página de Login (Versão Compacta Otimizada para Notebooks) --- */
+.login-background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-image: url('../img/fundo.jpg');
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+}
 
-/* Container que centraliza o card na tela inteira */
 .auth-card-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* Garante que o container ocupe a altura total da tela */
+    min-height: 100vh;
     padding: 20px;
 }
 
 .auth-card {
-    /* Efeito de vidro aprimorado */
-    background-color: rgba(30, 40, 50, 0.25); /* Fundo um pouco mais escuro para contraste */
+    background-color: rgba(30, 40, 50, 0.25);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    
-    border-radius: 15px; /* Bordas mais suaves */
-    padding: 40px;
+    border-radius: 15px;
+    padding: 25px 35px; 
     width: 100%;
-    max-width: 400px; /* AUMENTADO: Para um visual mais moderno e espaçoso */
+    max-width: 380px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    color: #fff; /* Cor do texto padrão dentro do card será branca */
+    color: #fff;
 }
 
-/* Logo dentro do card */
+.card-logo-container {
+    text-align: center;
+}
+
 .card-logo-container img {
-    width: 90px;
-    height: 90px;
+    width: 70px;
+    height: 70px;
+    margin-bottom: 15px;
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 25px;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Título do Card ("Login") */
 .auth-card h2 {
     text-align: center;
-    margin-bottom: 2rem;
-    color: #ffffff; /* ALTERADO: Texto branco */
-    font-size: 2.2rem;
+    margin-bottom: 1.2rem;
+    color: #ffffff;
+    font-size: 1.8rem;
     font-weight: 600;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Sombra para legibilidade */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Estilo dos campos de input dentro do card de login */
+.auth-card .form-group {
+    margin-bottom: 1rem;
+}
+
 .auth-card .form-group input {
-    background-color: rgba(255, 255, 255, 0.1); /* NOVO: Input com fundo translúcido */
+    background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #ffffff; /* NOVO: Cor do texto digitado */
+    color: #ffffff;
     font-weight: 500;
-    padding: 14px; /* Mais preenchimento interno */
-    border-radius: 8px; /* Bordas mais arredondadas */
+    padding: 12px;
+    border-radius: 8px;
+    width: 100%; /* Garante que o input ocupe todo o espaço */
 }
 
-/* Cor do texto do placeholder (ex: "Nome de usuário") */
 .auth-card .form-group input::placeholder {
     color: rgba(255, 255, 255, 0.7);
 }
 
-/* Efeito ao focar no input */
 .auth-card .form-group input:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.7);
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Ajuste no botão para combinar com o estilo */
 .auth-card .btn-primary {
-    background: #ffffff; /* Fundo branco sólido para destaque */
-    color: #2c3e50; /* Texto escuro para contraste no botão */
+    background: #ffffff;
+    color: #2c3e50;
     font-weight: bold;
-    padding: 14px;
+    padding: 12px;
     border-radius: 8px;
+    margin-top: 10px;
+    width: 100%; /* Botão ocupa a largura total */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .auth-card .btn-primary:hover {
-    background: #f0f2f5; /* Um leve cinza ao passar o mouse */
+    background: #f0f2f5;
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
-/* --- FIM DOS ESTILOS DE LOGIN --- */
+
+/* NOVO: Estilo para o link "Não tem uma conta?" */
+.auth-link {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.auth-link a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    transition: opacity 0.3s;
+}
+
+.auth-link a:hover {
+    opacity: 0.8;
+}
 
 
-/* Estilos para formulários (geral) */
+/* --- Páginas de Formulário (Cadastro/Edição) --- */
+.form-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    width: 100%;
+}
+
+.cadastro-container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
+/* --- Estilos Gerais para Formulários --- */
 .form-group {
     margin-bottom: 1.5rem;
 }
@@ -202,7 +242,7 @@ body {
     border-color: #3498db;
 }
 
-/* Estilos para botões */
+/* --- Estilos Gerais para Botões --- */
 .btn {
     padding: 12px 24px;
     border: none;
@@ -218,7 +258,6 @@ body {
 .btn-primary {
     background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
-    width: 100%;
 }
 
 .btn-primary:hover {
@@ -226,30 +265,13 @@ body {
     box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
 }
 
-.btn-secondary {
-    background: #95a5a6;
-    color: white;
-}
 
-.btn-secondary:hover {
-    background: #7f8c8d;
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #28a745, #218838);
-    color: white;
-}
-
-.btn-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-}
-
-/* Estilos para mensagens de flash */
+/* --- Mensagens Flash --- */
 .flash-messages {
-    margin-bottom: 20px;
-    padding: 10px 20px;
-    position: relative; /* Mantém a posição relativa para não ser coberto pelo fundo */
+    max-width: 1200px;
+    margin: 0 auto 20px auto;
+    padding: 0 20px;
+    position: relative;
     z-index: 50;
 }
 
@@ -272,17 +294,12 @@ body {
     border-color: #f5c6cb;
 }
 
-.flash.info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border-color: #bee5eb;
-}
 
-/* Estilos para a seção de dashboard */
+/* --- Dashboard --- */
 .dashboard-grid-container {
-    padding-top: 40px;
-    position: relative;
-    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
 }
 
 .dashboard-cards-grid {
@@ -290,8 +307,6 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     margin-top: 3rem;
-    justify-content: center;
-    align-items: start;
 }
 
 .dashboard-card {
@@ -315,55 +330,7 @@ body {
     box-shadow: 0 12px 35px rgba(0,0,0,0.15);
 }
 
-.card-icon {
-    margin-bottom: 1.5rem;
-    width: 120px;
-    height: 120px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.card-icon img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.dashboard-card h3 {
-    color: #2c3e50;
-    margin-bottom: 0.8rem;
-    font-size: 1.8rem;
-}
-
-.dashboard-card p {
-    color: #7f8c8d;
-    font-size: 1rem;
-    line-height: 1.5;
-}
-
-/* Estilos dos cards genéricos (para resumo administrativo) */
-.admin-summary .card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    text-align: center;
-}
-
-.admin-summary .card h4 {
-    color: #34495e;
-    margin-bottom: 0.5rem;
-    font-size: 1.2rem;
-}
-
-.admin-summary .card p {
-    color: #2c3e50;
-    font-size: 1.8rem;
-    font-weight: bold;
-}
-
-/* Estilos para tabelas */
+/* --- Tabelas --- */
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -388,75 +355,9 @@ body {
     font-weight: 600;
 }
 
-.table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-/* Estilos para foto do aluno na lista e no histórico */
-.aluno-foto-sm {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid #ddd;
-    vertical-align: middle;
-}
-
-.aluno-foto-md {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #3498db;
-}
-
-/* Media Queries para responsividade */
+/* --- Responsividade --- */
 @media (max-width: 768px) {
-    .dashboard-cards-grid {
-        grid-template-columns: 1fr;
-    }
-    .auth-card {
-        padding: 1.5rem;
-    }
-    .cadastro-container {
-        padding: 20px;
-        margin: 20px auto;
-    }
-    .pelotao-buttons .btn {
-        padding: 6px 10px;
-        font-size: 0.8rem;
-    }
-    /* Diminui o texto da navbar em telas menores */
     .nav-brand span {
         font-size: 1rem;
     }
-}
-
-/* Ajuste para os botões de pelotão em telas maiores para caberem em uma linha */
-.pelotao-buttons {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    gap: 8px;
-}
-
-.pelotao-buttons .btn {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    min-width: 80px;
-    text-align: center;
-}
-
-/* NOVO ESTILO: Para a barra de ações globais */
-.global-action-bar {
-    max-width: 1200px;
-    margin: 10px auto;
-    padding: 0 20px;
-    text-align: right;
-}
-
-.global-action-bar .btn {
-    padding: 10px 20px;
-    font-size: 1rem;
 }
