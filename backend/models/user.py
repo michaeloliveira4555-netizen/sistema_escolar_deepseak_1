@@ -1,38 +1,35 @@
-from __future__ import annotations
-import typing as t
-from .database import db
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-if t.TYPE_CHECKING:
-    from .aluno import Aluno
-    from .instrutor import Instrutor
-
+from werkzeug.security import generate_password_hash, check_password_hash
+from ..app import db
 
 class User(UserMixin, db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'users' # É uma boa prática definir o nome da tabela explicitamente
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(db.String(80), unique=True)
-    email: Mapped[str] = mapped_column(db.String(120), unique=True)
-    password_hash: Mapped[str] = mapped_column(db.String(256))
-    role: Mapped[str] = mapped_column(db.String(20), default='aluno')
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Matrícula agora é a chave principal de identificação
+    matricula = db.Column(db.String(20), unique=True, nullable=False)
+    
+    # Campos que podem ser nulos até a ativação da conta
+    username = db.Column(db.String(80), unique=True, nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    password_hash = db.Column(db.String(256), nullable=True)
+    
+    # Controle de acesso e status
+    role = db.Column(db.String(20), nullable=False, default='aluno')
+    is_active = db.Column(db.Boolean, default=False, nullable=False)
 
-    aluno_profile: Mapped[t.Optional["Aluno"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    instrutor_profile: Mapped[t.Optional["Instrutor"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
-    def __init__(self, username: str, email: str, role: str, **kw: t.Any) -> None:
-        super().__init__(**kw)
-        self.username = username
-        self.email = email
-        self.role = role
+    # Relacionamentos (ajustados para o estilo padrão)
+    aluno_profile = db.relationship('Aluno', back_populates='user', uselist=False, cascade="all, delete-orphan")
+    instrutor_profile = db.relationship('Instrutor', back_populates='user', uselist=False, cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        if not self.password_hash:
+            return False
         return check_password_hash(self.password_hash, password)
-    
+
     def __repr__(self):
-        return f"<User id={self.id} username='{self.username}' role='{self.role}'>"
+        return f'<User {self.username or self.matricula}>'

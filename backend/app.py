@@ -70,10 +70,12 @@ def create_admin():
 
         print("Criando o usuário administrador 'admin'...")
         new_admin = User(
+            matricula='ADMIN',      # ADICIONADO: Matrícula obrigatória para o admin
             username='admin',
             email='admin@escola.com.br',
-            role='admin'
-        )
+            role='admin',
+            is_active=True          # ADICIONADO: Ativa a conta do admin imediatamente
+)
         # Usa o método correto para definir a senha
         new_admin.set_password('@Nk*BC6GAJi8RrT')
 

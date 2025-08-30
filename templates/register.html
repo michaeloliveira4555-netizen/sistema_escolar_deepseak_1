@@ -1,39 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}Registro - Sistema Escolar{% endblock %}
+{% block title %}Ativar Conta - Sistema Escolar{% endblock %}
 
 {% block content %}
-<div class="auth-container">
+<div class="login-background-container"></div>
+<div class="auth-card-container">
     <div class="auth-card">
-        <h2>Criar Conta</h2>
+        <div class="card-logo-container">
+            <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Brasão da Escola">
+        </div>
+        <h2>Ativar sua Conta</h2>
+        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: -15px; margin-bottom: 20px;">Selecione sua função e use sua matrícula/identificador para começar.</p>
+        
         <form method="POST" action="{{ url_for('auth.register') }}">
+            
             <div class="form-group">
-                <label for="username">Usuário:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="email">E-mail:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Senha:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <div class="form-group">
-                <label for="password2">Confirmar Senha:</label>
-                <input type="password" id="password2" name="password2" required>
-            </div>
-            <div class="form-group"> {# Adicionado de volta o seletor de papel #}
-                <label for="role">Eu sou um:</label>
-                <select id="role" name="role" required>
+                <label for="role">Eu sou:</label>
+                <select id="role" name="role" class="form-control" required>
                     <option value="aluno">Aluno</option>
                     <option value="instrutor">Instrutor</option>
-                    {# A opção 'admin' não deve ser selecionável no registro público #}
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Registrar</button>
+
+            <div class="form-group">
+                <label for="matricula">Sua Matrícula / Identificador:</label>
+                <input type="text" id="matricula" name="matricula" placeholder="Digite o identificador fornecido" value="{{ matricula if matricula else '' }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Seu E-mail:</label>
+                <input type="email" id="email" name="email" placeholder="Digite seu melhor e-mail" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Crie uma Senha:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password2">Confirme a Senha:</label>
+                <input type="password" id="password2" name="password2" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Ativar Conta</button>
         </form>
-        <p>Já tem uma conta? <a href="{{ url_for('auth.login') }}">Faça login aqui</a></p>
+         <div class="auth-link">
+            <a href="{{ url_for('auth.login') }}">Já tem uma conta ativa? Faça o login.</a>
+        </div>
     </div>
 </div>
 {% endblock %}
