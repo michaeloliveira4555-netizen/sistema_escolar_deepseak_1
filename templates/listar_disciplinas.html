@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Disciplinas{% endblock %}
+
+{% block global_actions %} {# Renderiza o botão aqui, abaixo da navbar #}
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    <div class="global-action-bar">
+        <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="btn btn-success">Cadastrar Nova Disciplina</a>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Lista de Disciplinas</h1>
+
+    {% if disciplinas %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Matéria</th>
+                    <th>Carga Horária</th>
+                    <th>Instrutor</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for disciplina in disciplinas %}
+                <tr>
+                    <td>{{ disciplina.materia }}</td>
+                    <td>{{ disciplina.carga_horaria_prevista }}h</td>
+                    <td>{{ disciplina.instrutor.user.username if disciplina.instrutor else 'N/A' }}</td>
+                    <td>
+                        {# Botão para editar a disciplina #}
+                        <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="text-center">Nenhuma disciplina cadastrada.</p>
+    {% endif %}
+</div>
+{% endblock %}

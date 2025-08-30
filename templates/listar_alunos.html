@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Alunos{% endblock %}
+
+{% block global_actions %} {# Renderiza o botão aqui #}
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    <div class="global-action-bar">
+        <a href="{{ url_for('aluno.cadastro_aluno_admin') }}" class="btn btn-success">Cadastrar Novo Aluno</a>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Lista de Alunos</h1>
+
+    <div class="pelotao-buttons mb-4 text-center">
+        {% for i in range(1, 11) %}
+        <a href="{{ url_for('aluno.listar_alunos', pelotao=i ~ '° Pelotão') }}" 
+           class="btn {% if pelotao_filtrado and pelotao_filtrado == i ~ '° Pelotão' %}btn-primary{% else %}btn-secondary{% endif %}">
+            {{ i }}º Pelotão
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if pelotao_filtrado %}
+        <h3 class="mb-3">Alunos do {{ pelotao_filtrado }}</h3>
+
+        {% if alunos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>Nome</th>
+                        <th>Pelotão</th>
+                        <th>Email</th>
+                        <th>Função Atual</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno in alunos %}
+                    <tr>
+                        <td>{{ aluno.matricula }}</td>
+                        <td>{{ aluno.user.username }}</td>
+                        <td>{{ aluno.pelotao }}</td>
+                        <td>{{ aluno.user.email }}</td>
+                        <td>{{ aluno.funcao_atual if aluno.funcao_atual else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('historico.historico_aluno', aluno_id=aluno.id) }}" class="btn btn-sm btn-info">Ver Histórico</a>
+                            <a href="{{ url_for('aluno.editar_aluno', aluno_id=aluno.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="text-center">Nenhum aluno encontrado para este pelotão.</p>
+        {% endif %}
+    {% else %}
+        <p class="text-center">Selecione um pelotão para visualizar os alunos.</p>
+    {% endif %}
+</div>
+{% endblock %}

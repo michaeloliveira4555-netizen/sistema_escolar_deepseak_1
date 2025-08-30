@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Instrutores{% endblock %}
+
+{% block global_actions %}
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    <div class="global-action-bar">
+        <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-success">Cadastrar Novo Instrutor</a>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Lista de Instrutores</h1>
+
+    {% if instrutores %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nome de Usuário</th>
+                    <th>CPF</th>
+                    <th>Especialização</th>
+                    <th>Formação</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for instrutor in instrutores %}
+                <tr>
+                    <td>{{ instrutor.user.username }}</td>
+                    <td>{{ instrutor.cpf }}</td>
+                    <td>{{ instrutor.especializacao }}</td>
+                    <td>{{ instrutor.formacao }}</td>
+                    <td>{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
+                    <td>{{ instrutor.user.email }}</td>
+                    <td>
+                        <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="text-center">Nenhum instrutor cadastrado.</p>
+    {% endif %}
+</div>
+{% endblock %}

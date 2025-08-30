@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico do Aluno - {{ aluno.user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Histórico do Aluno: {{ aluno.user.username }}</h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Detalhes do Aluno</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Matrícula:</strong> {{ aluno.matricula }}</p>
+            <p><strong>OPM:</strong> {{ aluno.opm }}</p>
+            <p><strong>Pelotão:</strong> {{ aluno.pelotao }}</p>
+            <p><strong>Função Atual:</strong> {{ aluno.funcao_atual if aluno.funcao_atual else 'N/A' }}</p>
+            {# Adicione mais detalhes do aluno conforme necessário #}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Disciplinas Cursadas</h3>
+        </div>
+        <div class="card-body">
+            {% if historico_disciplinas %} {# Usando a nova variável #}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Disciplina</th>
+                        <th>Nota</th>
+                        <th>Status</th>
+                        <th>Data Conclusão</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in historico_disciplinas %}
+                    <tr>
+                        <td>{{ registro.disciplina.materia }}</td>
+                        <td>{{ registro.nota if registro.nota is not none else 'N/A' }}</td>
+                        <td>{{ registro.status }}</td>
+                        <td>{{ registro.data_conclusao.strftime('%d/%m/%Y') if registro.data_conclusao else 'N/A' }}</td>
+                        <td>
+                            {# Formulário para avaliar/atualizar nota #}
+                            <form action="{{ url_for('historico.avaliar_aluno_disciplina', historico_id=registro.id) }}" method="POST" class="d-inline">
+                                <input type="number" name="nota" placeholder="Nota" step="0.1" min="0" max="10" value="{{ registro.nota if registro.nota is not none else '' }}" class="form-control-sm">
+                                <button type="submit" class="btn btn-sm btn-primary">Avaliar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Nenhuma disciplina cursada ainda.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# NOVA SEÇÃO AQUI: Para o histórico de atividades #}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Histórico de Atividades</h3>
+        </div>
+        <div class="card-body">
+            {% if historico_atividades %} {# Usando a nova variável #}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Data e Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for atividade in historico_atividades %}
+                    <tr>
+                        <td>{{ atividade.tipo }}</td>
+                        <td>{{ atividade.descricao }}</td>
+                        <td>{{ atividade.data_inicio.strftime('%d/%m/%Y %H:%M:%S') }}</td> {# Exibe data e hora completa #}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Nenhum registro de atividade encontrado.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Disciplinas Disponíveis para Matrícula</h3>
+        </div>
+        <div class="card-body">
+            {% if disciplinas_nao_cursadas %}
+            <form action="{{ url_for('historico.matricular_aluno_em_disciplina', aluno_id=aluno.id) }}" method="POST">
+                <div class="form-group">
+                    <label for="disciplina_id">Selecionar Disciplina:</label>
+                    <select id="disciplina_id" name="disciplina_id" class="form-control" required>
+                        <option value="">-- Selecione uma disciplina --</option>
+                        {% for disciplina in disciplinas_nao_cursadas %}
+                            <option value="{{ disciplina.id }}">{{ disciplina.materia }} (Carga Horária: {{ disciplina.carga_horaria_prevista }}h)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Matricular Aluno</button>
+            </form>
+            {% else %}
+            <p>Todas as disciplinas já foram cursadas ou não há disciplinas disponíveis.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn btn-secondary">Voltar para Lista de Alunos</a>
+</div>
+{% endblock %}

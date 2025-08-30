@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema Escolar{% endblock %}
+
+{% block content %}
+<div class="container dashboard-grid-container">
+    <h1 class="text-center mb-5">Bem-vindo ao Dashboard, {{ current_user.username }}!</h1>
+
+    <div class="dashboard-cards-grid">
+        {# Card para Alunos #}
+        <a href="{{ url_for('aluno.listar_alunos') }}" class="dashboard-card">
+            <div class="card-icon">
+                {#  #}
+                <img src="{{ url_for('static', filename='icons/alunos_icon.png') }}" alt="Ícone Alunos">
+            </div>
+            <h3>Alunos</h3>
+            <p>Gerenciar perfis e históricos de alunos.</p>
+        </a>
+
+        {# Card para Instrutores #}
+        <a href="{{ url_for('instrutor.listar_instrutores') }}" class="dashboard-card">
+            <div class="card-icon">
+                {#  #}
+                <img src="{{ url_for('static', filename='icons/instrutores_icon.png') }}" alt="Ícone Instrutores">
+            </div>
+            <h3>Instrutores</h3>
+            <p>Visualizar e administrar instrutores.</p>
+        </a>
+
+        {# Card para Disciplinas #}
+        <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="dashboard-card">
+            <div class="card-icon">
+                {#  #}
+                <img src="{{ url_for('static', filename='icons/disciplinas_icon.png') }}" alt="Ícone Disciplinas">
+            </div>
+            <h3>Disciplinas</h3>
+            <p>Cadastrar e gerenciar disciplinas.</p>
+        </a>
+
+        {# Card para Histórico de Alunos #}
+        <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id if current_user.aluno_profile else 0) }}" class="dashboard-card">
+            <div class="card-icon">
+                {#  #}
+                <img src="{{ url_for('static', filename='icons/historico_alunos_icon.png') }}" alt="Ícone Histórico Alunos">
+            </div>
+            <h3>Meu Histórico</h3>
+            <p>Acompanhar meu desempenho acadêmico.</p>
+        </a>
+
+        {# Card para Histórico de Disciplinas (geral ou admin) #}
+        {# Este link pode precisar de ajuste dependendo de como você quer que o histórico geral funcione #}
+        <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="dashboard-card"> {# Exemplo: link para listar disciplinas #}
+            <div class="card-icon">
+                {#  #}
+                <img src="{{ url_for('static', filename='icons/historico_disciplinas_icon.png') }}" alt="Ícone Histórico Disciplinas">
+            </div>
+            <h3>Histórico Geral</h3>
+            <p>Verificar registros de todas as disciplinas.</p>
+        </a>
+    </div>
+
+    {# Exemplo de como exibir dados do dashboard_data se for admin #}
+    {% if current_user.role == 'admin' and dashboard_data %}
+    <div class="admin-summary mt-5">
+        <h3 class="text-center mb-4">Resumo Administrativo</h3>
+        <div class="dashboard-cards-grid">
+            <div class="card">
+                <h4>Total de Usuários</h4>
+                <p>{{ dashboard_data.total_users }}</p>
+            </div>
+            <div class="card">
+                <h4>Total de Alunos</h4>
+                <p>{{ dashboard_data.total_alunos }}</p>
+            </div>
+            <div class="card">
+                <h4>Total de Instrutores</h4>
+                <p>{{ dashboard_data.total_instrutores }}</p>
+            </div>
+            <div class="card">
+                <h4>Total de Disciplinas</h4>
+                <p>{{ dashboard_data.total_disciplinas }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

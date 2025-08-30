@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Instrutor - {{ instrutor.user.username }}{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Editar Perfil do Instrutor: {{ instrutor.user.username }}</h2>
+        <form method="POST" action="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}">
+            <div class="form-group">
+                <label for="matricula">Matrícula:</label>
+                <input type="text" id="matricula" name="matricula" value="{{ instrutor.matricula if instrutor else (form_data.matricula if form_data else '') }}" placeholder="Apenas números" required>
+            </div>
+            <div class="form-group">
+                <label for="especializacao">Especialização:</label>
+                <input type="text" id="especializacao" name="especializacao" value="{{ instrutor.especializacao if instrutor else (form_data.especializacao if form_data else '') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="formacao">Formação:</label>
+                <input type="text" id="formacao" name="formacao" value="{{ instrutor.formacao if instrutor else (form_data.formacao if form_data else '') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="telefone">Telefone:</label>
+                <input type="text" id="telefone" name="telefone" value="{{ instrutor.telefone if instrutor else (form_data.telefone if form_data else '') }}" placeholder="(XX) XXXXX-XXXX">
+            </div>
+            
+            {# Seletor de Disciplina na Edição #}
+            <div class="form-group">
+                <label for="disciplina_id">Disciplina Principal:</label>
+                <select id="disciplina_id" name="disciplina_id" class="form-control">
+                    <option value="">-- Nenhuma disciplina --</option>
+                    {% for disciplina in disciplinas %}
+                        <option value="{{ disciplina.id }}" 
+                                {% if (instrutor and instrutor.disciplinas and instrutor.disciplinas[0].id == disciplina.id) or (form_data.get('disciplina_id')|int == disciplina.id) %}selected{% endif %}>
+                            {{ disciplina.materia }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Atualizar Perfil</button>
+            <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn btn-secondary mt-3">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // REMOVIDO: Formatação de CPF
+        const telefoneInput = document.getElementById('telefone');
+
+        if (telefoneInput) {
+            telefoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+
+                if (value.length > 10) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{4}).*/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                } else if (value.length > 0) {
+                    value = value.replace(/^(\d{0,2})/, '($1');
+                }
+                e.target.value = value;
+            });
+        }
+    });
+</script>
+{% endblock %}
