@@ -1,3 +1,5 @@
+# backend/app.py
+
 import os
 from flask import Flask
 from flask_login import LoginManager
@@ -7,13 +9,7 @@ from backend.config import Config
 from backend.models.database import db
 from backend.models.user import User
 
-# Importa todos os seus Blueprints (rotas)
-from backend.controllers.auth_controller import auth_bp
-from backend.controllers.aluno_controller import aluno_bp
-from backend.controllers.instrutor_controller import instrutor_bp
-from backend.controllers.disciplina_controller import disciplina_bp
-from backend.controllers.historico_controller import historico_bp
-from backend.controllers.main_controller import main_bp
+# Nota: As importações dos controllers foram removidas daqui.
 
 def create_app(config_class=Config):
     # Obtém o caminho absoluto para o diretório raiz do projeto
@@ -36,13 +32,23 @@ def create_app(config_class=Config):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
-    # Registra os Blueprints
+    # --- CORREÇÃO APLICADA AQUI ---
+    # Importa e registra os Blueprints DENTRO da função factory
+    from backend.controllers.auth_controller import auth_bp
+    from backend.controllers.aluno_controller import aluno_bp
+    from backend.controllers.instrutor_controller import instrutor_bp
+    from backend.controllers.disciplina_controller import disciplina_bp
+    from backend.controllers.historico_controller import historico_bp
+    from backend.controllers.main_controller import main_bp
+    from backend.controllers.admin_controller import admin_bp  # <-- Novo controller
+
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(aluno_bp, url_prefix='/aluno')
     app.register_blueprint(instrutor_bp, url_prefix='/instrutor')
     app.register_blueprint(disciplina_bp, url_prefix='/disciplina')
     app.register_blueprint(historico_bp, url_prefix='/historico')
     app.register_blueprint(main_bp) 
+    app.register_blueprint(admin_bp, url_prefix='/admin') # <-- Novo controller registrado
 
     @app.after_request
     def add_header(response):

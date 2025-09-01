@@ -2,6 +2,8 @@
 
 {% block title %}Login - Sistema Escolar{% endblock %}
 
+{# Não definimos um block page_header aqui, pois não há cabeçalho na página de login #}
+
 {% block content %}
 <div class="login-background-container"></div>
 <div class="auth-card-container">
@@ -12,8 +14,8 @@
         <h2>Login</h2>
         <form method="POST" action="{{ url_for('auth.login') }}">
             <div class="form-group">
-                <label for="username">Matrícula:</label>
-                <input type="text" id="username" name="username" placeholder="Digite sua matrícula" required>
+                <label for="username">Matrícula / Usuário:</label>
+                <input type="text" id="username" name="username" placeholder="Digite sua matrícula ou usuário" required>
             </div>
             <div class="form-group">
                 <label for="password">Senha:</label>
@@ -22,7 +24,7 @@
             <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
         <div class="auth-link">
-            <a href="{{ url_for('auth.register') }}">Não tem uma conta? Crie uma aqui.</a>
+            <a href="{{ url_for('auth.register') }}">Não tem uma conta ativa? Ative aqui.</a>
         </div>
     </div>
 </div>
