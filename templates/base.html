@@ -39,3 +39,78 @@
     {% block content %}{% endblock %}
 </body>
 </html>
+// ...existing code...
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page-container">
+        {% if current_user.is_authenticated %}
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('main.dashboard') }}" class="nav-brand">
+                    <img src="{{ url_for('static', filename='brasao.png') }}" alt="Logo EsFAS">
+                    <span>EsFAS</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='icons/dashboard_icon.png') }}" alt="" class="nav-icon"> Dashboard
+                </a>
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                        <img src="{{ url_for('static', filename='icons/alunos_icon.png') }}" alt="" class="nav-icon"> Alunos
+                    </a>
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                        <img src="{{ url_for('static', filename='icons/instrutores_icon.png') }}" alt="" class="nav-icon"> Instrutores
+                    </a>
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                        <img src="{{ url_for('static', filename='icons/disciplinas_icon.png') }}" alt="" class="nav-icon"> Disciplinas
+                    </a>
+                {% endif %}
+                {% if current_user.aluno_profile %}
+                    <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
+                        <img src="{{ url_for('static', filename='icons/historico_alunos_icon.png') }}" alt="" class="nav-icon"> Meu Histórico
+                    </a>
+                {% endif %}
+            </nav>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
+                    <img src="{{ url_for('static', filename='icons/logout_icon.png') }}" alt="" class="nav-icon"> Sair
+                </a>
+            </div>
+        </aside>
+        {% endif %}
+
+        <main class="main-content">
+            <nav class="navbar">
+                <div class="nav-container">
+                    <div class="page-title">
+                        {% block title %}{% endblock %}
+                    </div>
+                    <div class="nav-menu">
+                        {% if current_user.is_authenticated %}
+                            <span class="username-display">Olá, {{ current_user.username }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </nav>
+
+            {% block global_actions %}{% endblock %}
+
+            <div class="content-wrapper">
+                <div class="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>
