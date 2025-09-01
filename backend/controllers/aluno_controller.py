@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 
 # Mantemos as importações necessárias
-from ..app import db
+from ..models.database import db
 from ..services.aluno_service import AlunoService
 from ..models.user import User
 from utils.decorators import admin_required
@@ -10,8 +10,21 @@ from utils.validators import validate_email, validate_password_strength
 
 aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 
-# --- NENHUMA ALTERAÇÃO NECESSÁRIA NESTA ROTA ---
-# Esta rota é para o aluno completar o próprio perfil.
+# Decorator atualizado para aceitar programador
+def admin_or_programmer_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Por favor, faça login para acessar esta página.', 'warning')
+            return redirect(url_for('auth.login'))
+        user_role = getattr(current_user, 'role', None)
+        if user_role not in ['admin', 'programador']:
+            flash('Você não tem permissão para acessar esta página.', 'danger')
+            return redirect(url_for('main.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @aluno_bp.route('/cadastro', methods=['GET', 'POST'])
 @login_required
 def cadastro_aluno():
@@ -28,28 +41,21 @@ def cadastro_aluno():
 
     return render_template('cadastro_aluno.html', form_data={})
 
-# --- ESTA ROTA FOI COMPLETAMENTE ATUALIZADA ---
-# Rota para o admin cadastrar um novo aluno.
 @aluno_bp.route('/cadastro_admin', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@admin_or_programmer_required
 def cadastro_aluno_admin():
     if request.method == 'POST':
-        # --- Coleta de Dados do Formulário ---
-        # REMOVIDO: Não pegamos mais o 'username' do formulário.
         email = request.form.get('email')
         password = request.form.get('password')
         password2 = request.form.get('password2')
-        # ALTERADO: O 'role' agora é fixo como 'aluno' para esta rota.
         role = 'aluno' 
         
-        # O campo 'matricula' agora é a chave principal para o login.
         matricula = request.form.get('matricula')
         opm = request.form.get('opm')
         pelotao = request.form.get('pelotao')
         funcao_atual = request.form.get('funcao_atual')
 
-        # --- Validações ---
         if not all([email, password, password2, matricula, opm, pelotao]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             return render_template('cadastro_aluno_admin.html', form_data=request.form)
@@ -67,7 +73,6 @@ def cadastro_aluno_admin():
             flash(password_message, 'danger')
             return render_template('cadastro_aluno_admin.html', form_data=request.form)
 
-        # NOVA VALIDAÇÃO: Verificar se a matrícula já existe no sistema.
         user_exists_matricula = db.session.execute(db.select(User).filter_by(matricula=matricula)).scalar_one_or_none()
         if user_exists_matricula:
             flash('Esta matrícula já está em uso.', 'danger')
@@ -78,47 +83,40 @@ def cadastro_aluno_admin():
             flash('Este e-mail já está cadastrado.', 'danger')
             return render_template('cadastro_aluno_admin.html', form_data=request.form)
 
-        # --- Criação do Usuário ---
-        # ALTERADO: Usamos a matrícula como username.
         new_user = User(
+            matricula=matricula,
             username=matricula, 
             email=email, 
-            role=role
+            role=role,
+            is_active=True
         )
         new_user.set_password(password)
         db.session.add(new_user)
-        # Commit inicial para gerar o ID do new_user
         db.session.commit()
 
-        # Salva as informações específicas do aluno
         success, message = AlunoService.save_aluno(new_user.id, request.form.to_dict())
 
         if success:
             flash('Aluno cadastrado com sucesso!', 'success')
             return redirect(url_for('aluno.listar_alunos'))
         else:
-            # Se o save_aluno falhar, desfazemos a criação do usuário
             db.session.rollback()
             flash(f"Erro ao cadastrar perfil do aluno: {message}", 'error')
             return render_template('cadastro_aluno_admin.html', form_data=request.form)
 
     return render_template('cadastro_aluno_admin.html', form_data={})
 
-
-# --- NENHUMA ALTERAÇÃO NECESSÁRIA NESTA ROTA ---
 @aluno_bp.route('/listar')
 @login_required
-@admin_required
+@admin_or_programmer_required
 def listar_alunos():
     pelotao_filtrado = request.args.get('pelotao', None)
     alunos = AlunoService.get_all_alunos(pelotao_filtrado)
     return render_template('listar_alunos.html', alunos=alunos, pelotao_filtrado=pelotao_filtrado)
 
-
-# --- NENHUMA ALTERAÇÃO NECESSÁRIA NESTA ROTA ---
 @aluno_bp.route('/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@admin_or_programmer_required
 def editar_aluno(aluno_id):
     aluno = AlunoService.get_aluno_by_id(aluno_id)
     if not aluno:

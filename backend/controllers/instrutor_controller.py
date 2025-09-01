@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 
-from ..app import db
+from ..models.database import db
 from ..models.user import User
 from ..services.instrutor_service import InstrutorService
 from ..services.disciplina_service import DisciplinaService
@@ -10,6 +10,21 @@ from utils.decorators import admin_required
 from utils.validators import validate_username, validate_email, validate_password_strength, validate_cpf, validate_telefone
 
 instrutor_bp = Blueprint('instrutor', __name__, url_prefix='/instrutor')
+
+# Decorator atualizado para aceitar programador
+def admin_or_programmer_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Por favor, faça login para acessar esta página.', 'warning')
+            return redirect(url_for('auth.login'))
+        user_role = getattr(current_user, 'role', None)
+        if user_role not in ['admin', 'programador']:
+            flash('Você não tem permissão para acessar esta página.', 'danger')
+            return redirect(url_for('main.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @instrutor_bp.route('/cadastro', methods=['GET', 'POST'])
 @login_required
@@ -20,7 +35,6 @@ def cadastro_instrutor():
     if request.method == 'POST':
         form_data = request.form.to_dict()
         
-        # ALTERADO: Removemos a validação de CPF e Telefone, que agora estão no serviço.
         success, message = InstrutorService.save_instrutor(current_user.id, form_data)
 
         if success:
@@ -34,7 +48,7 @@ def cadastro_instrutor():
 
 @instrutor_bp.route('/cadastro_admin', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@admin_or_programmer_required
 def cadastro_instrutor_admin():
     disciplinas = DisciplinaService.get_all_disciplinas()
 
@@ -45,15 +59,12 @@ def cadastro_instrutor_admin():
         password2 = request.form.get('password2')
         role = 'instrutor'
 
-        # ALTERADO: Pega a 'matricula' em vez do 'cpf'
         matricula = request.form.get('matricula')
         especializacao = request.form.get('especializacao')
         formacao = request.form.get('formacao')
         telefone = request.form.get('telefone')
         disciplina_id = request.form.get('disciplina_id')
 
-        # --- Validações ---
-        # ALTERADO: A validação de campos obrigatórios foi ajustada.
         if not all([username, email, password, password2, matricula, especializacao, formacao]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
@@ -74,8 +85,6 @@ def cadastro_instrutor_admin():
             flash(password_message, 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
         
-        # ALTERADO: Remover validações de CPF e Telefone duplicadas
-        
         user_exists_username = db.session.execute(db.select(User).filter_by(username=username)).scalar_one_or_none()
         if user_exists_username:
             flash('Este nome de usuário já existe.', 'danger')
@@ -86,7 +95,13 @@ def cadastro_instrutor_admin():
             flash('Este e-mail já está cadastrado.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
 
-        new_user = User(username=username, email=email, role=role)
+        new_user = User(
+            matricula=matricula,
+            username=username, 
+            email=email, 
+            role=role,
+            is_active=True
+        )
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
@@ -105,17 +120,16 @@ def cadastro_instrutor_admin():
 
     return render_template('cadastro_instrutor.html', form_data={}, disciplinas=disciplinas, is_admin_flow=True)
 
-
 @instrutor_bp.route('/listar')
 @login_required
-@admin_required
+@admin_or_programmer_required
 def listar_instrutores():
     instrutores = InstrutorService.get_all_instrutores()
     return render_template('listar_instrutores.html', instrutores=instrutores)
 
 @instrutor_bp.route('/editar/<int:instrutor_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@admin_or_programmer_required
 def editar_instrutor(instrutor_id):
     instrutor = InstrutorService.get_instrutor_by_id(instrutor_id)
     if not instrutor:
@@ -128,7 +142,6 @@ def editar_instrutor(instrutor_id):
         form_data = request.form.to_dict()
         disciplina_id = request.form.get('disciplina_id')
         
-        # ALTERADO: Removemos a validação de CPF e Telefone, que agora estão no serviço.
         success, message = InstrutorService.update_instrutor(instrutor_id, form_data)
         if success:
             if disciplina_id and disciplina_id.isdigit():

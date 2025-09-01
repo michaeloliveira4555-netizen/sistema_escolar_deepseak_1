@@ -5,6 +5,12 @@ from ..services.dashboard_service import DashboardService
 
 main_bp = Blueprint('main', __name__)
 
+@main_bp.route('/')
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+    return render_template('index.html')
+
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -22,9 +28,3 @@ def dashboard():
         return redirect(url_for('instrutor.cadastro_instrutor'))
 
     return render_template('dashboard.html', user=current_user, dashboard_data=dashboard_data)
-
-@main_bp.route('/')
-def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
-    return redirect(url_for('auth.login'))

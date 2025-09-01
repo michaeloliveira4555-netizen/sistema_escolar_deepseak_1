@@ -3,9 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}EsFAS - Sistema Acadêmico{% endblock %}</title>
+    <title>{% block title %}Sistema Escolar{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Configurações dinâmicas do site */
+        :root {
+            --primary-color: {{ site_config.primary_color or '#3b82f6' }};
+            --secondary-color: {{ site_config.secondary_color or '#1a232c' }};
+        }
+
+        /* Ícones dinâmicos dos cards */
+        .card-icon.alunos::before { content: '{{ site_config.dashboard_card_alunos_icon or "👥" }}'; }
+        .card-icon.instrutores::before { content: '{{ site_config.dashboard_card_instrutores_icon or "🎓" }}'; }
+        .card-icon.disciplinas::before { content: '{{ site_config.dashboard_card_disciplinas_icon or "📚" }}'; }
+        .card-icon.historico::before { content: '{{ site_config.dashboard_card_historico_icon or "📊" }}'; }
+        .card-icon.assets::before { content: '{{ site_config.dashboard_card_assets_icon or "🎨" }}'; }
+        .card-icon.historico-geral::before { content: '📋'; }
+
+        /* Cores dinâmicas */
+        .btn-primary,
+        .login-btn,
+        .nav-link:hover,
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8) !important;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--secondary-color), #2d3748) !important;
+        }
+
+        /* Background personalizado aplicado via JavaScript */
+        {% if site_config.site_background %}
+        body.custom-bg-loaded::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('{{ site_config.site_background }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            opacity: 0.15;
+            z-index: -1;
+            pointer-events: none;
+        }
+        {% endif %}
+    </style>
 </head>
 <body>
     <div class="page-container">
@@ -13,52 +59,72 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="{{ url_for('main.dashboard') }}" class="nav-brand">
-                    <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Logo EsFAS">
+                    {% if site_config.sidebar_logo %}
+                        <img src="{{ site_config.sidebar_logo }}" alt="Logo" style="width: 32px; height: 32px; border-radius: 50%;">
+                    {% else %}
+                        <div class="logo-icon">⚡</div>
+                    {% endif %}
                     <span>EsFAS</span>
                 </a>
             </div>
             <nav class="sidebar-nav">
                 <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
-                    <i class="fas fa-tachometer-alt nav-icon"></i> Dashboard
+                    <div class="nav-icon">🏠</div> Dashboard
                 </a>
-                {% if current_user.role == 'admin' %}
-                    <a href="#" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-user-graduate nav-icon"></i> Alunos
+                {% if current_user.role in ['admin', 'programador'] %}
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">👥</div> Alunos
                     </a>
-                    <a href="#" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-chalkboard-teacher nav-icon"></i> Instrutores
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">🎓</div> Instrutores
                     </a>
-                    <a href="#" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-book nav-icon"></i> Disciplinas
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📚</div> Disciplinas
+                    </a>
+                {% endif %}
+                {% if current_user.role == 'programador' %}
+                    <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if 'assets.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📁</div> Assets
+                    </a>
+                    <a href="{{ url_for('customizer.index') }}" class="nav-link {% if 'customizer.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">🎨</div> Customizar
                     </a>
                 {% endif %}
                 {% if current_user.aluno_profile %}
-                    <a href="#" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-history nav-icon"></i> Meu Histórico
+                    <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📊</div> Meu Histórico
                     </a>
                 {% endif %}
             </nav>
             <div class="sidebar-footer">
                 <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
-                    <i class="fas fa-sign-out-alt nav-icon"></i> Sair
+                    <div class="nav-icon">🚪</div> Sair
                 </a>
             </div>
         </aside>
         {% endif %}
 
         <main class="main-content">
-            {% if current_user.is_authenticated %}
             <nav class="navbar">
                 <div class="nav-container">
                     <div class="page-title">
-                        <h1>{% block page_header %}{% endblock %}</h1>
+                        {% block page_title %}Dashboard{% endblock %}
                     </div>
                     <div class="nav-menu">
-                        <span class="username-display">Olá, {{ current_user.username or current_user.matricula }}</span>
+                        {% if current_user.is_authenticated %}
+                            <span class="username-display">Olá, {{ current_user.username }} 
+                                {% if current_user.role == 'programador' %}
+                                    <span class="role-badge programmer">👨‍💻 DEV</span>
+                                {% elif current_user.role == 'admin' %}
+                                    <span class="role-badge admin">👑 ADMIN</span>
+                                {% endif %}
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
             </nav>
-            {% endif %}
+
+            {% block global_actions %}{% endblock %}
 
             <div class="content-wrapper">
                 <div class="flash-messages">
@@ -75,5 +141,38 @@
             </div>
         </main>
     </div>
+
+    <script>
+        // Aplicar background customizado com maior visibilidade
+        document.addEventListener('DOMContentLoaded', function() {
+            const siteBackground = '{{ site_config.site_background or "" }}';
+            
+            if (siteBackground) {
+                document.body.classList.add('custom-bg-loaded');
+                
+                // Força a aplicação do background via JavaScript também
+                const bgStyle = document.createElement('style');
+                bgStyle.innerHTML = `
+                    body::after {
+                        content: '';
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-image: url('${siteBackground}');
+                        background-size: cover;
+                        background-position: center;
+                        background-repeat: no-repeat;
+                        background-attachment: fixed;
+                        opacity: 0.15;
+                        z-index: -1;
+                        pointer-events: none;
+                    }
+                `;
+                document.head.appendChild(bgStyle);
+            }
+        });
+    </script>
 </body>
 </html>
