@@ -5,7 +5,6 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1>Bem-vindo, {{ current_user.username }}!</h1>
@@ -26,7 +25,6 @@
 
     <div class="modules-grid">
         {% if current_user.role in ['admin', 'programador'] %}
-        <!-- Card Alunos -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_alunos_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay"></div>
@@ -40,7 +38,6 @@
             </div>
         </div>
 
-        <!-- Card Instrutores -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_instrutores_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay"></div>
@@ -54,7 +51,6 @@
             </div>
         </div>
 
-        <!-- Card Disciplinas -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_disciplinas_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay"></div>
@@ -68,7 +64,6 @@
             </div>
         </div>
 
-        <!-- Card Histórico Geral -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_historico_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay"></div>
@@ -84,7 +79,6 @@
         {% endif %}
 
         {% if current_user.role == 'programador' %}
-        <!-- Card Assets -->
         <div class="module-card highlight">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_assets_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay dev"></div>
@@ -98,7 +92,6 @@
             </div>
         </div>
 
-        <!-- Card Customizar -->
         <div class="module-card highlight">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_customizer_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay dev"></div>
@@ -114,7 +107,6 @@
         {% endif %}
 
         {% if current_user.aluno_profile %}
-        <!-- Card Meu Histórico -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_historico_bg or url_for('static', filename='img/default-card-bg.jpg') }}');"></div>
             <div class="card-overlay"></div>
@@ -157,54 +149,6 @@
         </div>
     </div>
     {% endif %}
-=======
-<div class="container dashboard-grid-container">
-    <h1 class="text-center mb-5">Bem-vindo ao Dashboard, {{ current_user.username }}!</h1>
-
-    <div class="dashboard-cards-grid">
-        
-        {# Card de Pré-Cadastro - VISÍVEL APENAS PARA ADMINS #}
-        {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('main.pre_cadastro') }}" class="dashboard-card">
-            <div class="card-icon">
-                <img src="{{ url_for('static', filename='img/icon-register.png') }}" alt="Ícone de Pré-Cadastro">
-            </div>
-            <h3>Pré-Cadastro</h3>
-            <p>Cadastrar matrículas de novos alunos e instrutores no sistema.</p>
-        </a>
-        {% endif %}
-
-        {# Card para Alunos #}
-        <a href="{{ url_for('aluno.listar_alunos') }}" class="dashboard-card">
-            <div class="card-icon">
-                <img src="{{ url_for('static', filename='img/icon-students.png') }}" alt="Ícone Alunos">
-            </div>
-            <h3>Alunos</h3>
-            <p>Gerenciar perfis e históricos de alunos.</p>
-        </a>
-
-        {# Card para Instrutores #}
-        <a href="#" class="dashboard-card"> {# O link para instrutores ainda será criado #}
-            <div class="card-icon">
-                <img src="{{ url_for('static', filename='img/icon-instructors.png') }}" alt="Ícone Instrutores">
-            </div>
-            <h3>Instrutores</h3>
-            <p>Visualizar e administrar instrutores.</p>
-        </a>
-
-        {# Card para Disciplinas #}
-        <a href="#" class="dashboard-card"> {# O link para disciplinas ainda será criado #}
-            <div class="card-icon">
-                <img src="{{ url_for('static', filename='img/icon-disciplines.png') }}" alt="Ícone Disciplinas">
-            </div>
-            <h3>Disciplinas</h3>
-            <p>Cadastrar e gerenciar disciplinas.</p>
-        </a>
-        
-        {# (Outros cards podem ser adicionados aqui...) #}
-
-    </div>
->>>>>>> c2eded0bd52d979ed708ec2c90dd8e757191286a
 </div>
 
 <style>
@@ -367,20 +311,21 @@
 .card-header .card-icon {
     font-size: 2.5rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
 }
 
 .card-header h2 {
     font-size: 1.5rem;
     font-weight: 800;
     margin: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .card-content p {
     font-size: 1rem;
     line-height: 1.5;
     opacity: 0.9;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
     margin-bottom: 1.5rem;
 }
 
