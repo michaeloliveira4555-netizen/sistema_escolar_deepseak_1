@@ -782,4 +782,391 @@ textarea:focus {
     opacity: 0.9;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
     margin-bottom: 1.5rem;
+/* ==========================================================================
+   MELHORIAS DASHBOARD E SIDEBAR - Adicionar ao FINAL do static/style.css
+   ========================================================================== */
+
+/* Background extenso para toda a tela */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 20%, #f1f5f9 40%, #f8fafc 60%, #e2e8f0 80%, #f8fafc 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    z-index: -2;
+    pointer-events: none;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Sidebar semi-transparente melhorada */
+.sidebar {
+    background: rgba(26, 35, 44, 0.85) !important;
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Nav links melhorados */
+.nav-link {
+    border-left: 3px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link:hover,
+.nav-link.active {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)) !important;
+    border-left-color: #3b82f6 !important;
+    transform: translateX(2px);
+}
+
+/* Cards e elementos com transparência */
+.card,
+.auth-card,
+.cadastro-container {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Navbar melhorada */
+.navbar {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 1px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Tables transparentes */
+.table-responsive {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Botões com efeito shimmer */
+.btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.btn:hover::before {
+    transform: translateX(100%);
+}
+
+/* Forms melhorados */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(209, 213, 219, 0.6) !important;
+    border-radius: 10px !important;
+}
+
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    background: rgba(255, 255, 255, 0.95) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Animações de entrada */
+.module-card,
+.card,
+.flash {
+    animation: slideInUp 0.6s ease forwards;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efeito ripple para botões */
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Melhor acessibilidade */
+.keyboard-navigation .nav-link:focus,
+.keyboard-navigation .btn:focus,
+.keyboard-navigation input:focus,
+.keyboard-navigation select:focus {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px;
+/* ==========================================================================
+   SIDEBAR MELHORADA - Adicionar/Substituir no static/style.css
+   ========================================================================== */
+
+/* Sidebar semi-transparente melhorada */
+.sidebar {
+    width: 280px !important; /* Aumenta a largura para acomodar o texto */
+    background: rgba(26, 35, 44, 0.75) !important;
+    backdrop-filter: blur(25px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ajuste do main-content para nova largura */
+.main-content {
+    margin-left: 280px !important;
+}
+
+/* Header da sidebar melhorado */
+.sidebar-header {
+    padding: 2.5rem 2rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    text-align: center;
+}
+
+/* Logo/Brand melhorado */
+.nav-brand {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    color: white !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.nav-brand:hover {
+    transform: translateY(-2px) !important;
+    color: #60a5fa !important;
+    text-decoration: none !important;
+}
+
+/* Ícone maior e fixo */
+.nav-brand img,
+.logo-icon {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-weight: 900 !important;
+    font-size: 2rem !important;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4) !important;
+    transition: all 0.3s ease !important;
+    flex-shrink: 0 !important; /* Impede redimensionamento */
+}
+
+.nav-brand:hover .logo-icon,
+.nav-brand:hover img {
+    transform: scale(1.08) !important;
+    box-shadow: 0 12px 35px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Container do texto da sidebar */
+.sidebar-brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Nome EsFAS maior */
+.sidebar-brand-title {
+    font-size: 1.75rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+    color: white !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+
+/* Descrição adicional */
+.sidebar-brand-subtitle {
+    font-size: 0.75rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-align: center !important;
+    line-height: 1.3 !important;
+    font-weight: 500 !important;
+    max-width: 220px !important;
+    margin: 0 !important;
+}
+
+/* Navegação da sidebar */
+.sidebar-nav {
+    flex: 1 !important;
+    padding: 1.5rem 0 !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
+}
+
+/* Links da navegação melhorados */
+.nav-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 1rem 2rem !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    border-left: 3px solid transparent !important;
+    margin: 0.125rem 0 !important;
+}
+
+.nav-link::before {
+    content: '' !important;
+    position: absolute !important;
+    right: 2rem !important;
+    width: 0 !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa) !important;
+    transition: width 0.3s ease !important;
+    border-radius: 1px !important;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: white !important;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05)) !important;
+    border-left-color: #3b82f6 !important;
+    transform: translateX(4px) !important;
+    text-decoration: none !important;
+}
+
+.nav-link:hover::before,
+.nav-link.active::before {
+    width: 25px !important;
+}
+
+/* Ícones da navegação */
+.nav-icon {
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    opacity: 0.8 !important;
+    transition: all 0.3s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.nav-link:hover .nav-icon,
+.nav-link.active .nav-icon {
+    opacity: 1 !important;
+    transform: scale(1.15) !important;
+}
+
+/* Footer da sidebar */
+.sidebar-footer {
+    padding: 1.5rem 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-top: auto !important;
+}
+
+/* Link de logout */
+.logout-link {
+    color: rgba(248, 113, 113, 0.9) !important;
+}
+
+.logout-link:hover {
+    background: linear-gradient(90deg, rgba(248, 113, 113, 0.15), rgba(248, 113, 113, 0.05)) !important;
+    border-left-color: #ef4444 !important;
+    color: #ef4444 !important;
+}
+
+.logout-link::before {
+    background: linear-gradient(90deg, #ef4444, #f87171) !important;
+}
+
+/* Separadores visuais */
+.nav-separator {
+    height: 1px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    margin: 1rem 2rem !important;
+}
+
+/* Responsivo para sidebar maior */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 280px !important;
+        transform: translateX(-100%) !important;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0) !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+
+/* Header do dashboard com opção de imagem */
+.dashboard-header {
+    position: relative !important;
+}
+
+.header-background-image {
+    position: absolute !important;
+    inset: 0 !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    opacity: 0.15 !important;
+    border-radius: 20px !important;
+    z-index: 1 !important;
+}
+
+/* Garantir que o conteúdo fique acima da imagem */
+.welcome-section,
+.quick-stats-bar {
+    position: relative !important;
+    z-index: 2 !important;
 }
