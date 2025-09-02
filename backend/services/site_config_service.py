@@ -63,6 +63,7 @@ class SiteConfigService:
             ('site_logo', '', 'image', 'Logo principal do site', 'general'),
             ('primary_color', '#3b82f6', 'color', 'Cor primária do site', 'general'),
             ('secondary_color', '#1a232c', 'color', 'Cor secundária do site', 'general'),
+            ('navbar_background_image', '', 'image', 'Imagem de fundo da barra de navegação', 'general'),
             
             # Ícones do dashboard
             ('dashboard_card_alunos_icon', '👥', 'text', 'Ícone do card Alunos', 'dashboard'),
@@ -71,13 +72,14 @@ class SiteConfigService:
             ('dashboard_card_historico_icon', '📊', 'text', 'Ícone do card Histórico', 'dashboard'),
             ('dashboard_card_assets_icon', '🎨', 'text', 'Ícone do card Assets', 'dashboard'),
             
-            # NOVO: Imagens de fundo dos cards
+            # Imagens de fundo dos cards
             ('dashboard_card_alunos_bg', '', 'image', 'Imagem de fundo do card Alunos', 'dashboard'),
             ('dashboard_card_instrutores_bg', '', 'image', 'Imagem de fundo do card Instrutores', 'dashboard'),
             ('dashboard_card_disciplinas_bg', '', 'image', 'Imagem de fundo do card Disciplinas', 'dashboard'),
             ('dashboard_card_historico_bg', '', 'image', 'Imagem de fundo do card Histórico', 'dashboard'),
             ('dashboard_card_assets_bg', '', 'image', 'Imagem de fundo do card Assets', 'dashboard'),
             ('dashboard_card_customizer_bg', '', 'image', 'Imagem de fundo do card Customizar', 'dashboard'),
+            ('dashboard_header_bg', '', 'image', 'Imagem de fundo do cabeçalho do dashboard', 'dashboard'),
             
             # Sidebar
             ('sidebar_logo', '', 'image', 'Logo da sidebar', 'sidebar'),

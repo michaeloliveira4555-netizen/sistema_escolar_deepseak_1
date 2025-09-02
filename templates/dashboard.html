@@ -6,7 +6,6 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <!-- Header com imagem de fundo -->
     <div class="dashboard-header">
         <div class="header-background-image" {% if site_config.dashboard_header_bg %}style="background-image: url('{{ site_config.dashboard_header_bg }}');"{% endif %}></div>
         <div class="welcome-section">
@@ -27,7 +26,6 @@
             </div>
         </div>
         
-        <!-- Stats compactas -->
         {% if current_user.role in ['admin', 'programador'] and dashboard_data %}
         <div class="quick-stats-bar">
             <div class="stat-compact">
@@ -62,10 +60,8 @@
         {% endif %}
     </div>
 
-    <!-- Grid de Cards - 4 por linha em formato vertical -->
     <div class="modules-grid">
         {% if current_user.role in ['admin', 'programador'] %}
-        <!-- Card Alunos -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_alunos_bg or '/static/img/default-students.jpg' }}');"></div>
             <div class="card-content">
@@ -76,12 +72,10 @@
                 <p class="card-description">Controle de alunos por pelotões</p>
                 <div class="card-actions">
                     <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">Acessar</a>
-                    <a href="{{ url_for('aluno.cadastro_aluno_admin') }}" class="btn-card secondary">Novo</a>
                 </div>
             </div>
         </div>
 
-        <!-- Card Instrutores -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_instrutores_bg or '/static/img/default-instructors.jpg' }}');"></div>
             <div class="card-content">
@@ -92,12 +86,10 @@
                 <p class="card-description">Gerenciar corpo docente</p>
                 <div class="card-actions">
                     <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">Acessar</a>
-                    <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn-card secondary">Novo</a>
                 </div>
             </div>
         </div>
 
-        <!-- Card Disciplinas -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_disciplinas_bg or '/static/img/default-subjects.jpg' }}');"></div>
             <div class="card-content">
@@ -108,12 +100,10 @@
                 <p class="card-description">Controle acadêmico</p>
                 <div class="card-actions">
                     <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">Acessar</a>
-                    <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="btn-card secondary">Nova</a>
                 </div>
             </div>
         </div>
 
-        <!-- Card Relatórios -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_historico_bg or '/static/img/default-reports.jpg' }}');"></div>
             <div class="card-content">
@@ -124,14 +114,12 @@
                 <p class="card-description">Análises e estatísticas</p>
                 <div class="card-actions">
                     <a href="#" class="btn-card primary">Acessar</a>
-                    <a href="#" class="btn-card secondary">Gerar</a>
                 </div>
             </div>
         </div>
         {% endif %}
 
         {% if current_user.role == 'programador' %}
-        <!-- Card Assets (DEV) -->
         <div class="module-card dev-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_assets_bg or '/static/img/default-assets.jpg' }}');"></div>
             <div class="card-content">
@@ -142,12 +130,10 @@
                 <p class="card-description">Gerenciar recursos</p>
                 <div class="card-actions">
                     <a href="{{ url_for('assets.manage_assets') }}" class="btn-card dev-primary">Gerenciar</a>
-                    <a href="{{ url_for('assets.upload_asset') }}" class="btn-card dev-secondary">Upload</a>
                 </div>
             </div>
         </div>
 
-        <!-- Card Customizer (DEV) -->
         <div class="module-card dev-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_customizer_bg or '/static/img/default-customize.jpg' }}');"></div>
             <div class="card-content">
@@ -158,14 +144,12 @@
                 <p class="card-description">Customizar interface</p>
                 <div class="card-actions">
                     <a href="{{ url_for('customizer.index') }}" class="btn-card dev-primary">Editar</a>
-                    <a href="{{ url_for('customizer.preview') }}" class="btn-card dev-secondary" target="_blank">Preview</a>
                 </div>
             </div>
         </div>
         {% endif %}
 
         {% if current_user.aluno_profile %}
-        <!-- Card Histórico do Aluno -->
         <div class="module-card">
             <div class="card-background" style="background-image: url('{{ site_config.dashboard_card_historico_bg or '/static/img/default-history.jpg' }}');"></div>
             <div class="card-content">
@@ -182,7 +166,6 @@
         {% endif %}
     </div>
 </div>
-
 <style>
 /* Estilos corrigidos para o dashboard */
 .dashboard-container {
