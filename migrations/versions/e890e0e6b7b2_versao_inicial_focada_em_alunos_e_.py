@@ -1,8 +1,8 @@
-"""Criacao inicial do banco de dados com estrutura correta
+"""Versao inicial focada em Alunos e Instrutores
 
-Revision ID: d6189ba4a599
+Revision ID: e890e0e6b7b2
 Revises: 
-Create Date: 2025-08-30 13:35:24.965700
+Create Date: 2025-09-02 17:02:10.779810
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd6189ba4a599'
+revision = 'e890e0e6b7b2'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -51,15 +51,13 @@ def upgrade():
     )
     op.create_table('instrutores',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('matricula', sa.String(length=14), nullable=False),
-    sa.Column('especializacao', sa.String(length=100), nullable=False),
-    sa.Column('formacao', sa.String(length=100), nullable=False),
-    sa.Column('telefone', sa.String(length=15), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('nome_completo', sa.String(length=120), nullable=False),
+    sa.Column('especializacao', sa.String(length=100), nullable=True),
+    sa.Column('matricula_instrutor', sa.String(length=20), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('matricula'),
+    sa.UniqueConstraint('matricula_instrutor'),
     sa.UniqueConstraint('user_id')
     )
     op.create_table('disciplinas',

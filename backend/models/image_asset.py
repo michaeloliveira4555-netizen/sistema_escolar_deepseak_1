@@ -1,7 +1,7 @@
 from __future__ import annotations
 import typing as t
 from datetime import datetime
-from .database import db
+from ..extensions import db
 from sqlalchemy.orm import Mapped, mapped_column
 
 class ImageAsset(db.Model):

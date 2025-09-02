@@ -2,28 +2,21 @@
 
 {% block title %}Lista de Instrutores{% endblock %}
 
-{% block global_actions %}
-    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-    <div class="global-action-bar">
-        <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-success">Cadastrar Novo Instrutor</a>
-    </div>
-    {% endif %}
-{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-    <h1 class="text-center mb-4">Lista de Instrutores</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Lista de Instrutores</h2>
+        <a href="{{ url_for('instrutor.cadastrar_instrutor') }}" class="btn btn-success">Cadastrar Novo Instrutor</a>
+    </div>
 
     {% if instrutores %}
     <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark">
                 <tr>
-                    <th>Nome de Usuário</th>
-                    <th>CPF</th>
+                    <th>Nome Completo</th>
+                    <th>Matrícula</th>
                     <th>Especialização</th>
-                    <th>Formação</th>
-                    <th>Telefone</th>
                     <th>Email</th>
                     <th>Ações</th>
                 </tr>
@@ -31,14 +24,15 @@
             <tbody>
                 {% for instrutor in instrutores %}
                 <tr>
-                    <td>{{ instrutor.user.username }}</td>
-                    <td>{{ instrutor.cpf }}</td>
+                    <td>{{ instrutor.nome_completo }}</td>
+                    <td>{{ instrutor.matricula_instrutor }}</td>
                     <td>{{ instrutor.especializacao }}</td>
-                    <td>{{ instrutor.formacao }}</td>
-                    <td>{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
                     <td>{{ instrutor.user.email }}</td>
                     <td>
                         <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                        <form action="{{ url_for('instrutor.deletar_instrutor', instrutor_id=instrutor.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este instrutor?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
@@ -46,7 +40,9 @@
         </table>
     </div>
     {% else %}
-        <p class="text-center">Nenhum instrutor cadastrado.</p>
+    <div class="alert alert-info text-center" role="alert">
+        Nenhum instrutor cadastrado ainda.
+    </div>
     {% endif %}
 </div>
 {% endblock %}

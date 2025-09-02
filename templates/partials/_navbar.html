@@ -1,0 +1,14 @@
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-brand">
+            <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Logo">
+            <span>Sistema Escolar</span>
+        </a>
+        <div class="nav-menu">
+            <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('aluno.listar_alunos') }}">Alunos</a>
+            <a href="{{ url_for('instrutor.listar_instrutores') }}">Instrutores</a>
+            <a href="{{ url_for('auth.logout') }}">Sair</a>
+        </div>
+    </div>
+</nav>

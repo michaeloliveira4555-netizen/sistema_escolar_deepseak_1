@@ -241,6 +241,31 @@ body.has-custom-bg::before {
     z-index: 1;
 }
 
+/* Regras para uniformizar o tamanho dos ícones dentro dos cards */
+.dashboard-card .card-icon img {
+    width: 60px; /* Largura desejada para o ícone */
+    height: 60px; /* Altura desejada para o ícone */
+    object-fit: contain; /* Garante que a imagem se ajuste sem cortar ou distorcer */
+    display: block; /* Remove espaços extras se houver */
+    margin: 0 auto 10px auto; /* Centraliza a imagem e adiciona um pouco de margem abaixo */
+}
+
+/* Opcional: Se os seus cards tem um ícone que é um 'div' com um background, use isso. 
+   Mas pelo seu HTML, parece que você está usando <img> */
+/*
+.dashboard-card .card-icon {
+    width: 60px; 
+    height: 60px;
+    background-size: contain; 
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 10px auto;
+}
+*/
+
 .auth-card-container {
     width: 100%;
     max-width: 400px;
