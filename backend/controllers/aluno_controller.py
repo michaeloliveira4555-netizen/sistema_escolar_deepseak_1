@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 
 # Mantemos as importações necessárias
-from ..models.database import db
+from ..extensions import db
 from ..services.aluno_service import AlunoService
 from ..models.user import User
 from utils.decorators import admin_required
@@ -55,6 +55,8 @@ def cadastro_aluno_admin():
         opm = request.form.get('opm')
         pelotao = request.form.get('pelotao')
         funcao_atual = request.form.get('funcao_atual')
+        form_data = request.form.to_dict()
+        foto = request.files.get('foto_perfil')
 
         if not all([email, password, password2, matricula, opm, pelotao]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
@@ -94,7 +96,7 @@ def cadastro_aluno_admin():
         db.session.add(new_user)
         db.session.commit()
 
-        success, message = AlunoService.save_aluno(new_user.id, request.form.to_dict())
+        success, message = AlunoService.save_aluno(new_user.id, form_data, foto)
 
         if success:
             flash('Aluno cadastrado com sucesso!', 'success')
@@ -125,7 +127,8 @@ def editar_aluno(aluno_id):
 
     if request.method == 'POST':
         form_data = request.form.to_dict()
-        success, message = AlunoService.update_aluno(aluno_id, form_data)
+        foto = request.files.get('foto_perfil')
+        success, message = AlunoService.update_aluno(aluno_id, form_data, foto)
         if success:
             flash(message, 'success')
             return redirect(url_for('aluno.listar_alunos'))

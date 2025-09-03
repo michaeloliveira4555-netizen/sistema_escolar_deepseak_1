@@ -787,3 +787,60 @@ body::before {
         margin: 0 1rem 1rem 1rem;
     }
 }
+/* --- Estilo APRIMORADO para o campo de e-mail com domínio fixo --- */
+
+/* O container agora que se parece com o input */
+.email-domain-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 12px; /* Padding interno para os elementos */
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff; /* Fundo branco como um input normal */
+    transition: border-color 0.3s;
+}
+
+/* Efeito de foco no container, quando o input de dentro é focado */
+.email-domain-group:focus-within {
+    outline: none;
+    border-color: #3498db; /* Mesma cor de foco dos outros inputs */
+}
+
+/* O input real fica transparente, sem borda e sem fundo */
+.email-domain-group input {
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 12px 0; /* Apenas padding vertical para alinhar com o texto do domínio */
+    flex-grow: 1; /* Faz o input ocupar todo o espaço disponível */
+    font-size: 1rem;
+    color: #333; /* Cor do texto que o usuário digita */
+}
+
+/* O texto do domínio fica simples, sem fundo e sem borda */
+.email-domain-group .email-domain-label {
+    color: #888; /* Cor mais suave para o texto fixo */
+    white-space: nowrap;
+    padding-left: 5px; /* Pequeno espaço entre o input e o domínio */
+}
+/* --- Estilo para as regras de senha --- */
+.password-rules {
+    padding: 10px 15px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    margin-top: -10px; /* Puxa para mais perto do campo de senha */
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.password-rules small {
+    font-weight: 600;
+}
+
+.password-rules ul {
+    list-style-position: inside; /* Coloca os marcadores dentro da caixa */
+    padding-left: 5px;
+    margin-top: 5px;
+    margin-bottom: 0;
+}

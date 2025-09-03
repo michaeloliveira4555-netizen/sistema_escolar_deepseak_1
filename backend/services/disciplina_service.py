@@ -1,4 +1,4 @@
-from ..models.database import db
+from ..extensions import db
 from ..models.disciplina import Disciplina
 from ..models.user import User  # IMPORTAÇÃO ADICIONADA AQUI
 from sqlalchemy import select

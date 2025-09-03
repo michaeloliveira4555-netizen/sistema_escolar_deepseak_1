@@ -1,4 +1,4 @@
-from ..models.database import db
+from ..extensions import db
 from ..models.instrutor import Instrutor
 from ..models.user import User
 from sqlalchemy import select

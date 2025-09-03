@@ -14,6 +14,11 @@ class Aluno(db.Model):
     __tablename__ = 'alunos'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    
+    # --- CAMPO FALTANTE ADICIONADO AQUI ---
+    nome_completo: Mapped[str] = mapped_column(db.String(120))
+    
+    # O resto dos seus campos, mantidos como estão
     id_aluno: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=True)
     matricula: Mapped[str] = mapped_column(db.String(20), unique=True)
     opm: Mapped[str] = mapped_column(db.String(50))
@@ -30,15 +35,8 @@ class Aluno(db.Model):
     historico: Mapped[list["HistoricoAluno"]] = relationship(back_populates="aluno")
     historico_disciplinas: Mapped[list["HistoricoDisciplina"]] = relationship(back_populates="aluno")
 
-    def __init__(self, user_id: int, matricula: str, opm: str, pelotao: str, 
-                 id_aluno: t.Optional[str] = None, num_aluno: t.Optional[str] = None,
-                 funcao_atual: t.Optional[str] = None, foto_perfil: str = 'default.png',
-                 telefone: t.Optional[str] = None, data_nascimento: t.Optional[date] = None, 
-                 **kw: t.Any) -> None:
-        super().__init__(user_id=user_id, matricula=matricula, opm=opm, pelotao=pelotao,
-                         id_aluno=id_aluno, num_aluno=num_aluno,
-                         funcao_atual=funcao_atual, foto_perfil=foto_perfil,
-                         telefone=telefone, data_nascimento=data_nascimento, **kw)
-
+    # Removendo o __init__ para usar o padrão do SQLAlchemy que funciona melhor com Mapped
+    
     def __repr__(self):
+        # Corrigindo a referência para self.matricula
         return f"<Aluno id={self.id} matricula='{self.matricula}'>"

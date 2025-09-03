@@ -1,4 +1,4 @@
-from ..models.database import db
+from ..extensions import db
 from ..models.aluno import Aluno
 from ..models.disciplina import Disciplina
 from ..models.historico_disciplina import HistoricoDisciplina
