@@ -2,60 +2,57 @@
 
 {% block title %}Lista de Instrutores{% endblock %}
 
-{% block page_title %}Lista de Instrutores{% endblock %}
-
-{% block global_actions %}
-    {% if current_user.is_authenticated and current_user.role in ['admin', 'programador'] %}
-    <div class="global-action-bar">
-        <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-success">Cadastrar Novo Instrutor</a>
-    </div>
-    {% endif %}
-{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3>Instrutores Cadastrados</h3>
-        </div>
-        <div class="card-body">
-            {% if instrutores %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Nome Completo</th>
-                            <th>Matrícula</th>
-                            <th>Especialização</th>
-                            <th>Telefone</th>
-                            <th>Email</th>
-                            <th style="text-align: right;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for instrutor in instrutores %}
-                        <tr>
-                            <td>{{ instrutor.user.nome_completo or instrutor.user.username }}</td>
-                            <td>{{ instrutor.matricula }}</td>
-                            <td>{{ instrutor.especializacao }}</td>
-                            <td>{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
-                            <td>{{ instrutor.user.email }}</td>
-                            <td style="text-align: right;">
-                                <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div style="padding: 2rem; text-align: center;">
-                <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">🎓</h1>
+<div class="content-header">
+    <h1>Instrutores</h1>
+    <p>Gerenciamento do corpo docente da escola.</p>
+</div>
+
+<div class="table-container">
+    <div class="table-header">
+        <h3>Instrutores Cadastrados</h3>
+        {% if current_user.is_authenticated and current_user.role in ['admin', 'programador'] %}
+            <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-primary">
+                <span>+</span> Cadastrar Novo Instrutor
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+        {% if instrutores %}
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Nome Completo</th>
+                        <th>Matrícula</th>
+                        <th>Especialização</th>
+                        <th>Telefone</th>
+                        <th>Email</th>
+                        <th class="text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instrutor in instrutores %}
+                    <tr>
+                        <td data-label="Nome">{{ instrutor.user.nome_completo or instrutor.user.username }}</td>
+                        <td data-label="Matrícula">{{ instrutor.matricula }}</td>
+                        <td data-label="Especialização">{{ instrutor.especializacao }}</td>
+                        <td data-label="Telefone">{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
+                        <td data-label="Email">{{ instrutor.user.email }}</td>
+                        <td data-label="Ações" class="text-right">
+                            <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-warning btn-sm">Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🎓</div>
                 <h2>Nenhum Instrutor Cadastrado</h2>
-                <p style="color: var(--color-text-muted);">Clique no botão "Cadastrar Novo Instrutor" acima para começar.</p>
+                <p>Clique no botão "Cadastrar Novo Instrutor" para começar.</p>
             </div>
-            {% endif %}
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

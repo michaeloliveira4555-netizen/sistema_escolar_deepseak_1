@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Login - Sistema Escolar{% endblock %}
+{% block title %}Login - Sistema EsFAS{% endblock %}
 
-{# Não definimos um block page_header aqui, pois não há cabeçalho na página de login #}
+{# Removemos o conteúdo da navbar herdada para esta página específica #}
+{% block navbar_content %}{% endblock %}
 
 {% block content %}
-<div class="login-background-container"></div>
-<div class="auth-card-container">
+<div class="auth-page-container">
     <div class="auth-card">
         <div class="card-logo-container">
-            <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Brasão da Escola">
+            {# A imagem do brasão que você já tem no seu projeto #}
+            <img src="{{ url_for('static', filename='brasao.png') }}" alt="Brasão da Escola">
         </div>
-        <h2>Login</h2>
+        <h2>Login no Sistema</h2>
+
         <form method="POST" action="{{ url_for('auth.login') }}">
             <div class="form-group">
                 <label for="username">Matrícula / Usuário:</label>
@@ -23,6 +25,7 @@
             </div>
             <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
+        
         <div class="auth-link">
             <a href="{{ url_for('auth.register') }}">Não tem uma conta ativa? Ative aqui.</a>
         </div>

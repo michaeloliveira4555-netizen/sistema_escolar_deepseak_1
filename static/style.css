@@ -21,6 +21,7 @@
     --border-radius: 12px;
     --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
     --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.1);
+    --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     --sidebar-width: 280px;
 }
 
@@ -289,15 +290,6 @@ textarea:focus {
     border-bottom: 1px solid var(--color-border);
 }
 
-/* ### NOVO ESTILO PARA A BARRA DE AÇÕES GLOBAIS ### */
-.global-action-bar {
-    padding: 1rem 2rem;
-    background-color: var(--color-white);
-    border-bottom: 1px solid var(--color-border);
-    text-align: right;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
 /* ------------------- ESTILOS DO DASHBOARD ------------------- */
 .dashboard-header {
     background-color: var(--color-white);
@@ -428,244 +420,215 @@ textarea:focus {
 .btn-card.primary { background: var(--color-primary-light); color: var(--color-white); }
 .btn-card.dev-primary { background: #8b5cf6; color: white; }
 
-/* --- Estilo APRIMORADO para o campo de e-mail com domínio fixo --- */
-.email-domain-group {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 0 12px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    background-color: #fff;
-    transition: border-color 0.3s;
-}
-
-.email-domain-group:focus-within {
-    outline: none;
-    border-color: #3498db;
-}
-
-.email-domain-group input {
-    border: none;
-    background: transparent;
-    outline: none;
-    padding: 12px 0;
-    flex-grow: 1;
-    font-size: 1rem;
-    color: #333;
-}
-
-.email-domain-group .email-domain-label {
-    color: #888;
-    white-space: nowrap;
-    padding-left: 5px;
-}
-
-/* --- Estilo para as regras de senha --- */
-.password-rules {
-    padding: 10px 15px;
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
-    margin-top: -10px;
-    margin-bottom: 1rem;
-    font-size: 0.85rem;
-}
-
-.password-rules small {
-    font-weight: 600;
-}
-
-.password-rules ul {
-    list-style-position: inside;
-    padding-left: 5px;
-    margin-top: 5px;
-    margin-bottom: 0;
-}
 
 /* ==========================================================================
-   6. Módulo Quadro Horário - FINAL DE SEMANA
+   6. Layouts de Página Específicos
    ========================================================================== */
 
-.horario-header {
+/* Layout sem sidebar (usado nas páginas de login/registro) */
+.page-container.no-sidebar .main-content {
+    margin-left: 0;
+}
+
+.page-container.no-sidebar .navbar {
+    width: 100%;
+}
+
+/* ------------------- Página de Autenticação (Login/Registro) ------------------- */
+.auth-page-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    padding: 2rem;
+}
+
+.auth-page-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/img/fundo.jpg");
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px) brightness(0.6);
+    z-index: 1;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.98);
+    padding: 2.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-large);
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    border-top: 4px solid var(--color-primary-light);
+}
+
+.auth-card h2 {
+    margin-bottom: 2rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-secondary);
+}
+
+.auth-card .form-group {
+    text-align: left;
+    margin-bottom: 1.25rem;
+}
+
+.auth-card .btn {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.auth-link {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.card-logo-container {
+    margin-bottom: 1rem;
+}
+
+.card-logo-container img {
+    max-width: 90px;
+    height: auto;
+}
+
+/* --- Estilo para as regras de senha no card de autenticação --- */
+.auth-card .password-rules {
+    padding: 10px 15px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    margin-top: -10px;
+    margin-bottom: 1.25rem;
+    font-size: 0.8rem;
+    text-align: left;
+    line-height: 1.4;
+    color: var(--color-text-muted);
+}
+/* ==========================================================================
+   7. Estilos de Tabela e Páginas de Listagem
+   ========================================================================== */
+
+/* Cabeçalho da Página de Conteúdo */
+.content-header {
+    margin-bottom: 2rem;
+}
+
+.content-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--color-secondary);
+}
+
+.content-header p {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+}
+
+/* Container principal da Tabela */
+.table-container {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-medium);
+    border: 1px solid var(--color-border);
+    padding: 2rem;
+}
+
+.table-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
+    padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
 }
 
-.table-wrapper {
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    /* CORREÇÃO: Fundo da tabela principal com transparência */
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(5px); /* Efeito de vidro fosco opcional */
-    padding: 1rem;
-    box-shadow: var(--shadow-soft);
+.table-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.table-responsive {
     overflow-x: auto;
 }
 
-.horario-table-new {
+/* Tabela Estilizada */
+.table-styled {
     width: 100%;
-    min-width: 1020px;
     border-collapse: collapse;
-    table-layout: fixed;
 }
 
-.horario-table-new th,
-.horario-table-new td {
-    border: 1px solid var(--color-border);
-    padding: 0.4rem;
-    vertical-align: top;
-    font-size: 0.8rem;
-}
-
-.horario-table-new thead th {
+.table-styled thead {
     background-color: var(--color-secondary);
     color: var(--color-white);
-    font-weight: 600;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
-.header-tempo { width: 120px; }
-.header-dia { width: 180px; }
-
-.cell-tempo {
-    /* CORREÇÃO: Célula de horário com transparência */
-    background-color: rgba(248, 250, 252, 0.85);
-    font-weight: 600;
-    text-align: center;
-    vertical-align: middle;
-    position: sticky;
-    left: 0;
-    z-index: 5;
-    border-right: 2px solid #e2e8f0;
-}
-.cell-tempo strong { display: block; font-size: 1rem; }
-.cell-tempo span { font-size: 0.75rem; }
-
-.schedule-slot {
-    height: 40px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    vertical-align: middle;
-}
-.schedule-slot:hover { background-color: #eff6ff; }
-
-.slot-content {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-    padding: 0.25rem;
-    border-radius: 6px;
-    background-color: #dbeafe;
-    border: 1px solid #93c5fd;
-}
-.disciplina-title {
-    font-weight: 600;
-    color: var(--color-primary);
-    line-height: 1.1;
-    font-size: 0.75rem;
-}
-.instrutor-name {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    margin-top: 0.15rem;
-}
-
-/* --- ESTILOS DO PAINEL BASCULANTE --- */
-
-.weekend-toggle-btn {
-    position: fixed;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    z-index: 1010;
-    background-color: var(--color-danger);
-    color: var(--color-white);
-    border: none;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    padding: 1.5rem 0.5rem;
-    border-radius: var(--border-radius) 0 0 var(--border-radius);
-    cursor: pointer;
-    font-weight: 600;
-    transition: right 0.4s ease-in-out;
-}
-
-.weekend-toggle-btn:hover {
-    filter: brightness(1.1);
-}
-
-.weekend-panel {
-    position: fixed;
-    top: 0;
-    right: -520px;
-    width: 520px;
-    height: 100%;
-    /* CORREÇÃO: Fundo do painel com transparência */
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    transition: right 0.4s ease-in-out;
-    z-index: 1000;
-    overflow-y: auto;
-}
-
-.weekend-panel .table-wrapper {
+.table-styled th,
+.table-styled td {
     padding: 1rem;
-    border: none; /* Remove bordas duplicadas */
-    box-shadow: none;
-    background-color: transparent; /* O fundo já está no painel */
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--color-border);
 }
 
-.weekend-panel .horario-table-new {
-    min-width: auto;
-    width: 100%;
+.table-styled th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.weekend-panel .header-tempo,
-.weekend-panel .cell-tempo {
-    width: 90px;
-    min-width: 90px;
-    position: static;
+.table-styled tbody tr {
+    transition: background-color 0.2s ease;
 }
 
-.weekend-panel .header-dia {
-    width: 150px;
+.table-styled tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.05);
 }
 
-body.weekend-panel-open .weekend-toggle-btn {
-    right: 520px;
+.table-styled td .btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
 }
 
-body.weekend-panel-open .weekend-panel {
-    right: 0;
+.text-right {
+    text-align: right;
 }
 
-/* Estilos para o conteúdo do fim de semana */
-.header-dia.weekend {
-    background-color: #b91c1c;
+
+/* Estado Vazio para Tabelas */
+.empty-state {
+    padding: 3rem;
+    text-align: center;
 }
 
-.schedule-slot.weekend-slot {
-    background-color: rgba(254, 242, 242, 0.8);
-}
-.schedule-slot.weekend-slot:hover {
-    background-color: rgba(254, 226, 226, 0.9);
-}
-
-.slot-content.weekend {
-    background-color: #fecaca;
-    border-color: #f87171;
+.empty-state .empty-icon {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+    color: var(--color-primary-light);
 }
 
-.slot-content.weekend .disciplina-title {
-    color: #991b1b;
+.empty-state h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: var(--color-text-muted);
 }
