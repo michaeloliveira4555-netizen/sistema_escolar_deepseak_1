@@ -5,12 +5,12 @@
 {% block content %}
 <div class="login-background-container"></div>
 <div class="auth-card-container">
-    <div class="auth-card">
+    <div class="auth-card" style="max-width: 420px;">
         <div class="card-logo-container">
             <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Brasão da Escola">
         </div>
         <h2>Ativar sua Conta</h2>
-        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: -15px; margin-bottom: 20px;">Selecione sua função e use sua matrícula/identificador para começar.</p>
+        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: -15px; margin-bottom: 20px;">Complete seus dados para ativar seu acesso.</p>
         
         <form method="POST" action="{{ url_for('auth.register') }}">
             
@@ -23,18 +23,41 @@
             </div>
 
             <div class="form-group">
-                <label for="matricula">Sua Matrícula / Identificador:</label>
-                <input type="text" id="matricula" name="matricula" placeholder="Digite o identificador fornecido" value="{{ matricula if matricula else '' }}" required>
+                <label for="matricula">Sua Matrícula:</label>
+                <input type="number" id="matricula" name="matricula" placeholder="Digite sua matricula" value="{{ form_data.matricula if form_data else '' }}" required>
+            </div>
+
+            <div class="form-group" id="pelotao-group">
+                <label for="pelotao">Seu Pelotão:</label>
+                <select id="pelotao" name="pelotao" class="form-control"> {# Removido 'required' temporariamente via JS #}
+                    {% for i in range(1, 11) %}
+                        <option value="{{ i }}° Pelotão">{{ i }}º Pelotão</option>
+                    {% endfor %}
+                </select>
             </div>
             
             <div class="form-group">
                 <label for="email">Seu E-mail:</label>
-                <input type="email" id="email" name="email" placeholder="Digite seu melhor e-mail" required>
+                <div class="email-domain-group">
+                    <input type="text" id="email_local_part" name="email_local_part" placeholder="Seu email funcional" required onkeydown="if(event.key === '@') { event.preventDefault(); return false; }">
+                    <span class="email-domain-label">@bm.rs.gov.br</span>
+                </div>
             </div>
             
             <div class="form-group">
                 <label for="password">Crie uma Senha:</label>
                 <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="password-rules">
+                <small>A senha deve conter:</small>
+                <ul>
+                    <li>Pelo menos 8 caracteres</li>
+                    <li>Uma letra maiúscula (A-Z)</li>
+                    <li>Uma letra minúscula (a-z)</li>
+                    <li>Um número (0-9)</li>
+                    <li>Pelo menos um caractere especial (!@#$%)</li>
+                </ul>
             </div>
             
             <div class="form-group">
@@ -49,4 +72,32 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Espera o documento carregar completamente
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Pega os elementos do formulário que nos interessam
+        const roleSelector = document.getElementById('role');
+        const pelotaoGroup = document.getElementById('pelotao-group');
+        const pelotaoSelect = document.getElementById('pelotao');
+
+        // Função para mostrar ou esconder o campo de pelotão
+        function togglePelotaoVisibility() {
+            if (roleSelector.value === 'instrutor') {
+                pelotaoGroup.style.display = 'none'; // Esconde o grupo
+                pelotaoSelect.required = false; // O campo não é mais obrigatório
+            } else {
+                pelotaoGroup.style.display = 'block'; // Mostra o grupo
+                pelotaoSelect.required = true; // O campo volta a ser obrigatório
+            }
+        }
+
+        // Adiciona um "ouvinte" que chama a função sempre que a seleção de função mudar
+        roleSelector.addEventListener('change', togglePelotaoVisibility);
+
+        // Chama a função uma vez no início para garantir que o estado inicial esteja correto
+        togglePelotaoVisibility();
+    });
+</script>
 {% endblock %}

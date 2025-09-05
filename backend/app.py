@@ -26,7 +26,7 @@ def create_app(config_class=Config):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
-    # Importa os Blueprints após inicialização para evitar importação circular
+    # Importa os Blueprints
     from backend.controllers.auth_controller import auth_bp
     from backend.controllers.aluno_controller import aluno_bp
     from backend.controllers.instrutor_controller import instrutor_bp
@@ -35,6 +35,8 @@ def create_app(config_class=Config):
     from backend.controllers.main_controller import main_bp
     from backend.controllers.assets_controller import assets_bp
     from backend.controllers.customizer_controller import customizer_bp
+    # ### IMPORTAÇÃO DO NOVO CONTROLLER ###
+    from backend.controllers.horario_controller import horario_bp
 
     # Registra os Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -45,6 +47,8 @@ def create_app(config_class=Config):
     app.register_blueprint(assets_bp, url_prefix='/assets')
     app.register_blueprint(customizer_bp, url_prefix='/customizer')
     app.register_blueprint(main_bp) 
+    # ### REGISTRO DO NOVO BLUEPRINT ###
+    app.register_blueprint(horario_bp)
 
     # Context processor para configurações do site
     @app.context_processor

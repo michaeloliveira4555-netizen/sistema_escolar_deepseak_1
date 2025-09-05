@@ -58,7 +58,8 @@
                 </div>
                 <p class="card-description">Controle de alunos por pelotões</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">Acessar</a>
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card secondary">Listar</a>
+                    <a href="{{ url_for('aluno.cadastro_aluno_admin') }}" class="btn-card primary">Cadastrar</a>
                 </div>
             </div>
         </div>
@@ -71,7 +72,8 @@
                 </div>
                 <p class="card-description">Gerenciar corpo docente</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">Acessar</a>
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card secondary">Listar</a>
+                    <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn-card primary">Cadastrar</a>
                 </div>
             </div>
         </div>
@@ -84,7 +86,21 @@
                 </div>
                 <p class="card-description">Controle acadêmico</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">Acessar</a>
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card secondary">Listar</a>
+                    <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="btn-card primary">Cadastrar</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="card-content">
+                <div class="card-header">
+                    <span class="card-icon">📅</span>
+                    <h3 class="card-title">Quadro Horário</h3>
+                </div>
+                <p class="card-description">Visualize e gerencie os horários</p>
+                <div class="card-actions">
+                    <a href="{{ url_for('horario.index') }}" class="btn-card primary">Acessar</a>
                 </div>
             </div>
         </div>
@@ -130,6 +146,7 @@
             </div>
         </div>
         {% endif %}
+
     </div>
 </div>
 {% endblock %}
