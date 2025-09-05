@@ -69,15 +69,20 @@
                     <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">🎓</div> Instrutores
                     </a>
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📚</div> Disciplinas
+                    
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint and 'cadastro' not in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📚</div> Listar Disciplinas
                     </a>
+                    <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="nav-link {% if 'cadastro_disciplina' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">➕</div> Cadastrar Disciplina
+                    </a>
+
                     <div class="nav-separator"></div>
                     <a href="#" class="nav-link">
                         <div class="nav-icon">📊</div> Relatórios
                     </a>
-                    <a href="#" class="nav-link">
-                        <div class="nav-icon">📅</div> Disciplinas
+                    <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📅</div> Quadro Horário
                     </a>
                     <a href="#" class="nav-link">
                         <div class="nav-icon">🔔</div> Notificações
