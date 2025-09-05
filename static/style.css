@@ -80,7 +80,8 @@ a:hover {
 }
 
 .content-wrapper {
-    padding: 2rem;
+    /* Padding superior significativamente reduzido */
+    padding: 1rem 2rem;
 }
 
 
@@ -283,8 +284,8 @@ textarea:focus {
 .navbar {
     position: relative;
     background-color: var(--color-white);
-    min-height: 140px;
-    background-size: 100% auto;
+    min-height: 200px;
+    background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     border-bottom: 1px solid var(--color-border);
@@ -517,17 +518,20 @@ textarea:focus {
     line-height: 1.4;
     color: var(--color-text-muted);
 }
+
+
 /* ==========================================================================
    7. Estilos de Tabela e Páginas de Listagem
    ========================================================================== */
 
 /* Cabeçalho da Página de Conteúdo */
 .content-header {
-    margin-bottom: 2rem;
+    /* Margem inferior reduzida para diminuir o espaço */
+    margin-bottom: 0.2rem;
 }
 
 .content-header h1 {
-    font-size: 2.25rem;
+    font-size: 2rem;
     font-weight: 800;
     color: var(--color-secondary);
 }
@@ -535,6 +539,7 @@ textarea:focus {
 .content-header p {
     font-size: 1rem;
     color: var(--color-text-muted);
+    margin-top: 0.25rem;
 }
 
 /* Container principal da Tabela */
@@ -544,7 +549,7 @@ textarea:focus {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-medium);
     border: 1px solid var(--color-border);
-    padding: 2rem;
+    padding: 1rem;
 }
 
 .table-header {
@@ -582,7 +587,13 @@ textarea:focus {
     padding: 1rem;
     text-align: left;
     vertical-align: middle;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+}
+
+.table-styled th:last-child,
+.table-styled td:last-child {
+    border-right: none;
 }
 
 .table-styled th {
@@ -609,7 +620,6 @@ textarea:focus {
     text-align: right;
 }
 
-
 /* Estado Vazio para Tabelas */
 .empty-state {
     padding: 3rem;
@@ -631,4 +641,189 @@ textarea:focus {
 
 .empty-state p {
     color: var(--color-text-muted);
+}
+
+
+/* ==========================================================================
+   8. Módulo Quadro Horário
+   ========================================================================== */
+
+.horario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    /* Margem inferior reduzida para diminuir o espaço */
+    margin-bottom: 1rem;
+}
+
+.table-wrapper {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+    overflow-x: auto;
+}
+
+.horario-table-new {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+}
+
+.horario-table-new th,
+.horario-table-new td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem;
+    vertical-align: top;
+    font-size: 0.8rem;
+}
+
+.horario-table-new thead th {
+    background-color: var(--color-secondary);
+    color: var(--color-white);
+    font-weight: 600;
+    text-align: center;
+}
+
+.header-tempo { width: 100px; }
+.header-dia { width: 160px; }
+
+.cell-tempo {
+    background-color: #f8fafc;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+}
+.cell-tempo strong { display: block; font-size: 1rem; }
+.cell-tempo span { font-size: 0.75rem; }
+
+.schedule-slot {
+    height: 50px;
+    vertical-align: middle;
+    text-align: center;
+}
+.schedule-slot:hover { background-color: #eff6ff; }
+
+.slot-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 0.25rem;
+    border-radius: 6px;
+    background-color: #dbeafe;
+    border: 1px solid #93c5fd;
+    min-height: 40px;
+}
+
+.disciplina-title {
+    font-weight: 600;
+    color: var(--color-primary);
+    line-height: 1.2;
+    font-size: 0.8rem;
+}
+
+.instrutor-name {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+
+/* --- ESTILOS DO PAINEL BASCULANTE DE FIM DE SEMANA --- */
+
+.weekend-toggle-btn {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 1010;
+    background-color: var(--color-danger);
+    color: var(--color-white);
+    border: 2px solid rgba(255, 255, 255, 0.7); /* Adiciona uma borda branca sutil */
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 1.5rem 0.5rem;
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+    cursor: pointer;
+    font-weight: 700; /* Aumenta o peso da fonte para 700 (negrito mais forte) */
+    transition: right 0.4s ease-in-out, border-color 0.3s ease; /* Adiciona transição para a borda */
+}
+
+.weekend-toggle-btn:hover {
+    filter: brightness(1.1);
+}
+
+.weekend-panel {
+    position: fixed;
+    top: 0;
+    right: -520px;
+    width: 520px;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    transition: right 0.4s ease-in-out;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.weekend-panel .table-wrapper {
+    padding: 1rem;
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+.weekend-panel .horario-table-new {
+    min-width: auto;
+    width: 100%;
+}
+
+body.weekend-panel-open .weekend-toggle-btn {
+    right: 520px;
+}
+
+body.weekend-panel-open .weekend-panel {
+    right: 0;
+}
+
+/* Estilos para o conteúdo do fim de semana */
+.header-dia.weekend {
+    background-color: #b91c1c;
+}
+
+.schedule-slot.weekend-slot:hover {
+    background-color: rgba(254, 226, 226, 0.9);
+}
+
+.slot-content.weekend {
+    background-color: #fecaca;
+    border-color: #f87171;
+}
+
+.slot-content.weekend .disciplina-title {
+    color: #991b1b;
+}
+/* ==========================================================================
+   9. Layouts de Cabeçalho de Página
+   ========================================================================== */
+
+.page-title-with-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas pequenas */
+    gap: 1rem;
+}
+
+.title-group {
+    flex-grow: 1; /* Permite que o título ocupe o espaço disponível */
+}
+
+.controls-group .form-group {
+    margin-bottom: 0; /* Remove a margem padrão para melhor alinhamento */
 }

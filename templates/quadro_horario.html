@@ -2,80 +2,84 @@
 
 {% block title %}Quadro Horário{% endblock %}
 
-{% block page_title %}Quadro Horário{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="horario-header">
-        <div class="form-group">
-            <label for="turma_selector">Visualizando a Turma:</label>
-            <select id="turma_selector" name="turma_id" class="form-control" style="width: auto;">
-                <option value="1">Turma 1</option>
-                <option value="2">Turma 2</option>
-                <option value="3">Turma 3</option>
-                <option value="4">Turma 4</option>
-                <option value="5">Turma 5</option>
-                <option value="6">Turma 6</option>
-                <option value="7">Turma 7</option>
-                <option value="8">Turma 8</option>
-            </select>
+<div class="content-header">
+    <div class="page-title-with-controls">
+        <div class="title-group">
+            <h1>Quadro Horário</h1>
+            <p>Visualize a grade de horários das turmas.</p>
+        </div>
+        <div class="controls-group">
+            <div class="form-group">
+                <label for="turma_selector">Escolha a Turma:</label>
+                <select id="turma_selector" name="turma_id" class="form-control" style="width: auto;">
+                    <option value="1">Turma 1</option>
+                    <option value="2">Turma 2</option>
+                    <option value="3">Turma 3</option>
+                    <option value="4">Turma 4</option>
+                    <option value="5">Turma 5</option>
+                    <option value="6">Turma 6</option>
+                    <option value="7">Turma 7</option>
+                    <option value="8">Turma 8</option>
+                </select>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="schedule-container">
-        <div class="table-wrapper">
-            <table class="horario-table-new">
-                <thead>
-                    <tr>
-                        <th class="header-tempo">Horário</th>
-                        <th class="header-dia">Segunda-feira</th>
-                        <th class="header-dia">Terça-feira</th>
-                        <th class="header-dia">Quarta-feira</th>
-                        <th class="header-dia">Quinta-feira</th>
-                        <th class="header-dia">Sexta-feira</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set tempos = [
-                        ("1º", "07:30-08:15"), ("2º", "08:15-09:00"), ("3º", "09:00-09:45"),
-                        ("4º", "10:05-10:50"), ("5º", "10:50-11:35"), ("6º", "11:35-12:20"),
-                        ("7º", "13:30-14:15"), ("8º", "14:15-15:00"), ("9º", "15:00-15:45"),
-                        ("10º", "16:05-16:50"), ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
-                        ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
-                    ] %}
+<div class="table-wrapper">
+    <table class="horario-table-new">
+        <thead>
+            <tr>
+                <th class="header-tempo">Horário</th>
+                <th class="header-dia">Segunda-feira</th>
+                <th class="header-dia">Terça-feira</th>
+                <th class="header-dia">Quarta-feira</th>
+                <th class="header-dia">Quinta-feira</th>
+                <th class="header-dia">Sexta-feira</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set tempos = [
+                ("1º", "07:30-08:15"), ("2º", "08:15-09:00"), ("3º", "09:00-09:45"),
+                ("4º", "10:05-10:50"), ("5º", "10:50-11:35"), ("6º", "11:35-12:20"),
+                ("7º", "13:30-14:15"), ("8º", "14:15-15:00"), ("9º", "15:00-15:45"),
+                ("10º", "16:05-16:50"), ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
+                ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
+            ] %}
 
-                    {% for row_idx in range(15) %}
-                    <tr>
-                        <td class="cell-tempo">
-                            <strong>{{ tempos[row_idx][0] }}</strong>
-                            <span>{{ tempos[row_idx][1] }}</span>
-                        </td>
-                        
-                        {% for col_idx in range(5) %}
-                            {% set aula = horario_matrix[row_idx][col_idx] %}
-                            {% if aula != 'SKIP' %}
-                                <td class="schedule-slot" rowspan="{{ aula.duracao if aula else 1 }}">
-                                    {% if aula %}
-                                    <div class="slot-content">
-                                        <div class="disciplina-title">{{ aula.materia }}</div>
-                                        <div class="instrutor-name">{{ aula.instrutor }}</div>
-                                    </div>
-                                    {% endif %}
-                                </td>
+            {% for row_idx in range(15) %}
+            <tr>
+                <td class="cell-tempo">
+                    <strong>{{ tempos[row_idx][0] }}</strong>
+                    <span>{{ tempos[row_idx][1] }}</span>
+                </td>
+                
+                {% for col_idx in range(5) %}
+                    {% set aula = horario_matrix[row_idx][col_idx] %}
+                    {% if aula != 'SKIP' %}
+                        <td class="schedule-slot" rowspan="{{ aula.duracao if aula else 1 }}">
+                            {% if aula %}
+                            <div class="slot-content">
+                                <div class="disciplina-title">{{ aula.materia }}</div>
+                                <div class="instrutor-name">{{ aula.instrutor }}</div>
+                            </div>
                             {% endif %}
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-    <button class="weekend-toggle-btn" id="weekend-toggle">
-        <span>Fim de Semana</span>
-    </button>
+<button class="weekend-toggle-btn" id="weekend-toggle">
+    <span>Fim de Semana</span>
+</button>
 
-    <div class="weekend-panel" id="weekend-panel">
+<div class="weekend-panel" id="weekend-panel">
+    <div class="table-wrapper">
         <table class="horario-table-new weekend-table">
             <thead>
                 <tr>
