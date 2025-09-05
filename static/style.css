@@ -909,3 +909,109 @@ textarea:focus {
 
 .btn-card.primary { background: var(--color-primary-light); color: var(--color-white); }
 .btn-card.dev-primary { background: #8b5cf6; color: white; }
+
+/* ==========================================================================
+   6. Módulo Quadro Horário (Versão 2.1 - Layout de Grade Refinado)
+   ========================================================================== */
+
+.horario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Adiciona a rolagem horizontal e um espaçamento nas laterais */
+.table-wrapper {
+    overflow-x: auto;
+    padding: 2px; /* Pequeno padding para a sombra da borda aparecer */
+    margin: 0 -1rem 1rem -1rem; /* Compensa o padding do container pai para ir até as bordas */
+    padding: 0 1rem 1rem 1rem;
+}
+
+.horario-table-new {
+    width: 100%;
+    min-width: 1200px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.horario-table-new th,
+.horario-table-new td {
+    border: 1px solid var(--color-border);
+    padding: 0.75rem;
+    vertical-align: top;
+    font-size: 0.85rem;
+}
+
+/* --- Cabeçalho --- */
+.horario-table-new thead th {
+    background-color: var(--color-secondary);
+    color: var(--color-white);
+    font-weight: 600;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-tempo { width: 120px; }
+.header-dia { width: 220px; }
+
+/* --- Corpo da Tabela --- */
+.cell-tempo {
+    background-color: #f8fafc;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+.cell-tempo strong { display: block; font-size: 1.1rem; }
+.cell-tempo span { font-size: 0.8rem; color: var(--color-text-muted); }
+
+.schedule-slot {
+    height: 80px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.schedule-slot:hover { background-color: #eff6ff; }
+
+/* --- Conteúdo Dentro das Células --- */
+.slot-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding: 0.25rem;
+    border-radius: 6px;
+    background-color: #dbeafe;
+    border: 1px solid #93c5fd;
+}
+
+.disciplina-title {
+    font-weight: 600;
+    color: var(--color-primary);
+    line-height: 1.3;
+}
+
+.instrutor-name {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+
+/* --- Estilos Especiais (Fim de Semana) --- */
+
+/* Colunas do fim de semana (cabeçalho e células) */
+.header-dia.weekend,
+.schedule-slot.weekend {
+    background-color: #fff1f2;
+}
+
+.schedule-slot.weekend:hover { background-color: #ffe4e6; }

@@ -6,12 +6,78 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card">
-        <div class="card-body" style="padding: 4rem; text-align: center;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">📅</h1>
-            <h2>Quadro de Horários</h2>
-            <p style="color: var(--color-text-muted);">Esta funcionalidade está em desenvolvimento e estará disponível em breve.</p>
+    <div class="horario-header">
+        <div class="form-group">
+            <label for="turma_selector">Visualizando a Turma:</label>
+            <select id="turma_selector" name="turma_id" class="form-control" style="width: auto;">
+                <option value="1">Turma 1</option>
+                <option value="2">Turma 2</option>
+                <option value="3">Turma 3</option>
+                <option value="4">Turma 4</option>
+                <option value="5">Turma 5</option>
+                <option value="6">Turma 6</option>
+                <option value="7">Turma 7</option>
+                <option value="8">Turma 8</option>
+            </select>
         </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="horario-table-new">
+            <thead>
+                <tr>
+                    <th class="header-tempo">Horário</th>
+                    <th class="header-dia">Segunda-feira</th>
+                    <th class="header-dia">Terça-feira</th>
+                    <th class="header-dia">Quarta-feira</th>
+                    <th class="header-dia">Quinta-feira</th>
+                    <th class="header-dia">Sexta-feira</th>
+                    </tr>
+            </thead>
+            <tbody>
+                {% set tempos = [
+                    ("1º", "07:30-08:15"), ("2º", "08:15-09:00"), ("3º", "09:00-09:45"),
+                    ("4º", "10:05-10:50"), ("5º", "10:50-11:35"), ("6º", "11:35-12:20"),
+                    ("7º", "13:30-14:15"), ("8º", "14:15-15:00"), ("9º", "15:00-15:45"),
+                    ("10º", "16:05-16:50"),
+                    ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
+                    ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
+                ] %}
+
+                {% for num, hora in tempos %}
+                <tr>
+                    <td class="cell-tempo">
+                        <strong>{{ num }}</strong>
+                        <span>{{ hora }}</span>
+                    </td>
+                    
+                    <td class="schedule-slot">
+                        {% if loop.index == 1 %} <div class="slot-content">
+                            <div class="disciplina-title">Gestão e Supervisão pela Qualidade do Serviço</div>
+                            <div class="instrutor-name">1ºSgt PM Fão</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="schedule-slot">
+                        {% if loop.index == 2 %} <div class="slot-content">
+                            <div class="disciplina-title">Gestão e Supervisão pela Qualidade do Serviço</div>
+                            <div class="instrutor-name">1ºSgt PM Fão</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="schedule-slot">
+                         {% if loop.index == 3 %} <div class="slot-content">
+                            <div class="disciplina-title">Gestão e Supervisão pela Qualidade do Serviço</div>
+                            <div class="instrutor-name">1ºSgt PM Fão</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="schedule-slot"></td>
+                    <td class="schedule-slot"></td>
+                     </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
