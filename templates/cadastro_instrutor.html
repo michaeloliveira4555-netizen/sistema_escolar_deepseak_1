@@ -7,10 +7,15 @@
     <div class="auth-card">
         <h2>{% if is_admin_flow %}Cadastrar Novo Instrutor{% else %}Completar Perfil de Instrutor{% endif %}</h2>
         <form method="POST" action="{% if is_admin_flow %}{{ url_for('instrutor.cadastro_instrutor_admin') }}{% else %}{{ url_for('instrutor.cadastro_instrutor') }}{% endif %}">
+            
             {% if is_admin_flow %}
                 <div class="form-group">
-                    <label for="username">Usuário:</label>
-                    <input type="text" id="username" name="username" value="{{ form_data.username if form_data else '' }}" required>
+                    <label for="nome_completo">Nome Completo:</label>
+                    <input type="text" id="nome_completo" name="nome_completo" value="{{ form_data.nome_completo if form_data else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="matricula">Matrícula (será usada para o login):</label>
+                    <input type="text" id="matricula" name="matricula" value="{{ form_data.matricula if form_data else '' }}" required>
                 </div>
                 <div class="form-group">
                     <label for="email">E-mail:</label>
@@ -28,11 +33,6 @@
                 <h3>Detalhes do Perfil do Instrutor</h3>
             {% endif %}
 
-            <div class="form-group">
-                <label for="matricula">Matrícula:</label>
-                <!-- ALTERADO: Campo 'cpf' para 'matricula' -->
-                <input type="text" class="form-control" id="matricula" name="matricula" value="{{ instrutor.matricula if instrutor else (form_data.matricula if form_data else '') }}" placeholder="Apenas números" required>
-            </div>
             <div class="form-group">
                 <label for="especializacao">Especialização:</label>
                 <input type="text" class="form-control" id="especializacao" name="especializacao" value="{{ instrutor.especializacao if instrutor else (form_data.especializacao if form_data else '') }}" required>
@@ -66,7 +66,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // REMOVIDO: Formatação de CPF, pois o campo agora é 'matricula' (apenas números)
         const telefoneInput = document.getElementById('telefone');
 
         if (telefoneInput) {
@@ -88,3 +87,5 @@
         }
     });
 </script>
+
+{% endblock %}

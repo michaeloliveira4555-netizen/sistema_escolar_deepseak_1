@@ -15,7 +15,10 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=True)
     
-    # Controle de acesso e status - ADICIONADO 'programador'
+    # ### NOVO CAMPO ADICIONADO ###
+    nome_completo = db.Column(db.String(120), nullable=True)
+
+    # Controle de acesso e status
     role = db.Column(db.String(20), nullable=False, default='aluno')
     is_active = db.Column(db.Boolean, default=False, nullable=False)
 
