@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from functools import wraps
-from backend.models.database import db # <-- Importação correta para sua estrutura
+from ..extensions import db # <-- Importação correta para sua estrutura
 from backend.models.user import User
 
 # Blueprint para rotas de administração

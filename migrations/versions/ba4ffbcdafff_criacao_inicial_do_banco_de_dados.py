@@ -1,8 +1,8 @@
-"""Versao inicial focada em Alunos e Instrutores
+"""Criacao inicial do banco de dados
 
-Revision ID: e890e0e6b7b2
+Revision ID: ba4ffbcdafff
 Revises: 
-Create Date: 2025-09-02 17:02:10.779810
+Create Date: 2025-09-04 18:28:32.211109
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e890e0e6b7b2'
+revision = 'ba4ffbcdafff'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,6 +33,7 @@ def upgrade():
     )
     op.create_table('alunos',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('nome_completo', sa.String(length=120), nullable=False),
     sa.Column('id_aluno', sa.String(length=20), nullable=True),
     sa.Column('matricula', sa.String(length=20), nullable=False),
     sa.Column('opm', sa.String(length=50), nullable=False),

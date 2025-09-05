@@ -21,7 +21,7 @@
                     <option value="">-- Selecione um instrutor --</option>
                     {% for instrutor in instrutores %}
                         <option value="{{ instrutor.id }}" {% if disciplina.instrutor_id == instrutor.id %}selected{% endif %}>
-                            {{ instrutor.user.username }} (CPF: {{ instrutor.cpf }})
+                            {{ instrutor.user.username }} (Matrícula: {{ instrutor.matrícula }})
                         </option>
                     {% endfor %}
                 </select>

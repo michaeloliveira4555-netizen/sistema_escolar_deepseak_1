@@ -1,34 +1,409 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF--8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema Escolar{% endblock %}</title>
-    
+    <title>{% block title %}Sistema EsFAS{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    
-    <link rel="icon" href="{{ url_for('static', filename='img/brasao.png') }}" type="image/x-icon">
+    <style>
+        /* Configurações dinâmicas do site */
+        :root {
+            --primary-color: {{ site_config.primary_color or '#3b82f6' }};
+            --secondary-color: {{ site_config.secondary_color or '#1a232c' }};
+        }
+
+        /* Ícones dinâmicos dos cards */
+        .card-icon.alunos::before { content: '{{ site_config.dashboard_card_alunos_icon or "👥" }}'; }
+        .card-icon.instrutores::before { content: '{{ site_config.dashboard_card_instrutores_icon or "🎓" }}'; }
+        .card-icon.disciplinas::before { content: '{{ site_config.dashboard_card_disciplinas_icon or "📚" }}'; }
+        .card-icon.historico::before { content: '{{ site_config.dashboard_card_historico_icon or "📊" }}'; }
+        .card-icon.assets::before { content: '{{ site_config.dashboard_card_assets_icon or "🎨" }}'; }
+
+        /* Cores dinâmicas */
+        .btn-primary,
+        .login-btn {
+            background: var(--primary-color) !important;
+        }
+
+        /* Background personalizado do site */
+        {% if site_config.site_background %}
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('{{ site_config.site_background }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            opacity: 0.15;
+            z-index: -1;
+            pointer-events: none;
+        }
+        {% endif %}
+
+        /* Imagem de fundo da barra de navegação */
+        {% if site_config.navbar_background_image %}
+        .navbar {
+            background-image: url('{{ site_config.navbar_background_image }}') !important;
+            background-size: cover !important;
+            background-position: center !important;
+        }
+        .navbar::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); /* Overlay para garantir a legibilidade do texto */
+            z-index: 1;
+        }
+        .nav-container {
+            position: relative;
+            z-index: 2;
+        }
+        .page-title, .username-display {
+             color: white !important; /* Muda a cor do texto para branco se tiver imagem */
+             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        {% endif %}
+
+    </style>
 </head>
 <body>
+    <div class="page-container">
+        {% if current_user.is_authenticated %}
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('main.dashboard') }}" class="nav-brand">
+                    <div class="sidebar-logo-container">
+                        {% if site_config.sidebar_logo %}
+                            <img src="{{ site_config.sidebar_logo }}" alt="Logo EsFAS" class="sidebar-logo-img">
+                        {% else %}
+                            <div class="logo-icon-default">⚡</div>
+                        {% endif %}
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <div class="sidebar-brand-title">EsFAS</div> {# Apenas "EsFAS" #}
+                        <div class="sidebar-brand-subtitle">
+                            Sistema de Gerenciamento da Escola de Formação e Aperfeiçoamento de Sargentos
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                    <div class="nav-icon">🏠</div> Dashboard
+                </a>
+                
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">👥</div> Alunos
+                    </a>
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">🎓</div> Instrutores
+                    </a>
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📚</div> Disciplinas
+                    </a>
+                    
+                    <div class="nav-separator"></div>
+                    
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📊</div> Relatórios
+                    </a>
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📅</div> Cronograma
+                    </a>
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">🔔</div> Notificações
+                    </a>
+                    
+                    <div class="nav-separator"></div>
+                    
+                    <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if 'assets.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📁</div> Assets
+                    </a>
+                    <a href="{{ url_for('customizer.index') }}" class="nav-link {% if 'customizer.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">🎨</div> Personalizar
+                    </a>
+                {% endif %}
+                
+                {% if current_user.aluno_profile %}
+                    <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📊</div> Meu Histórico
+                    </a>
+                    
+                    <div class="nav-separator"></div>
+                    
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📅</div> Minha Agenda
+                    </a>
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📋</div> Atividades
+                    </a>
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📖</div> Material de Estudo
+                    </a>
+                {% endif %}
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">👤</div> Meu Perfil
+                </a>
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">⚙️</div> Configurações
+                </a>
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">❓</div> Ajuda
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
+                    <div class="nav-icon">🚪</div> Sair do Sistema
+                </a>
+            </div>
+        </aside>
+        {% endif %}
 
-    {% if current_user.is_authenticated %}
-        {% include 'partials/_navbar.html' %}
-    {% endif %}
-
-    <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
+        <main class="main-content">
+            <nav class="navbar">
+                <div class="nav-container">
+                    <div class="page-title">
+                        {% block page_title %}Dashboard{% endblock %}
+                    </div>
+                    <div class="nav-menu">
+                        {% if current_user.is_authenticated %}
+                            <span class="username-display">
+                                <span>👋</span>
+                                Olá, {{ current_user.username }} 
+                                {% if current_user.role == 'admin' %}
+                                    <span class="role-badge admin">👑 ADMIN</span>
+                                {% elif current_user.role == 'instrutor' %}
+                                    <span class="role-badge instrutor">🎓 INSTRUTOR</span>
+                                {% else %}
+                                    <span class="role-badge aluno">🎖️ ALUNO</span>
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
-        {% endwith %}
-        
-        {% block content %}
-        {% endblock %}
-    </main>
+            </nav>
 
-    </body>
+            {% block global_actions %}{% endblock %}
+
+            <div class="content-wrapper">
+                <div class="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}" data-flash-message>
+                                    <div class="flash-content">
+                                        <span class="flash-icon">
+                                            {% if category == 'success' %}✅{% elif category == 'error' or category == 'danger' %}❌{% elif category == 'info' %}ℹ️{% elif category == 'warning' %}⚠️{% else %}📢{% endif %}
+                                        </span>
+                                        <span class="flash-text">{{ message }}</span>
+                                    </div>
+                                    <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Efeito hover melhorado para links da sidebar
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(4px)';
+                });
+                
+                link.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('active')) {
+                        this.style.transform = 'translateX(0)';
+                    }
+                });
+            });
+
+            // Auto-hide flash messages melhoradas
+            setTimeout(() => {
+                document.querySelectorAll('[data-flash-message]').forEach(flash => {
+                    flash.style.opacity = '0';
+                    flash.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        flash.remove();
+                    }, 300);
+                });
+            }, 6000);
+
+            // Animação de entrada suave para elementos
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observar elementos importantes
+            document.querySelectorAll('.module-card, .card, .flash').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+
+            // Efeito ripple melhorado para botões
+            document.querySelectorAll('.btn, .btn-card').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.6);
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: ${size}px;
+                        height: ${size}px;
+                        pointer-events: none;
+                    `;
+                    
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+
+            // Melhorar acessibilidade
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+
+            document.addEventListener('mousedown', () => {
+                document.body.classList.remove('keyboard-navigation');
+            });
+
+            // Mobile menu toggle melhorado
+            const mobileToggle = document.querySelector('.mobile-menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (mobileToggle && sidebar) {
+                mobileToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                });
+            }
+        });
+
+        // CSS adicional via JavaScript
+        const additionalCSS = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+            
+            .keyboard-navigation .nav-link:focus,
+            .keyboard-navigation .btn:focus,
+            .keyboard-navigation input:focus,
+            .keyboard-navigation select:focus,
+            .keyboard-navigation textarea:focus {
+                outline: 2px solid var(--primary-color);
+                outline-offset: 2px;
+            }
+            
+            .flash {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                font-weight: 500;
+                border-left: 4px solid;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(15px);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                animation: slideInRight 0.5s ease;
+            }
+            
+            .flash-content {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            
+            .flash-icon {
+                font-size: 1.25rem;
+                flex-shrink: 0;
+            }
+            
+            .flash-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                opacity: 0.6;
+                transition: opacity 0.3s ease;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                color: inherit;
+            }
+            
+            .flash-close:hover {
+                opacity: 1;
+                background: rgba(0, 0, 0, 0.1);
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(100%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+        `;
+        
+        const style = document.createElement('style');
+        style.textContent = additionalCSS;
+        document.head.appendChild(style);
+    </script>
+</body>
 </html>
+

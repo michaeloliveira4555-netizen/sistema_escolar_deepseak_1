@@ -5,25 +5,10 @@ from flask_login import login_required, current_user
 from ..extensions import db
 from ..services.aluno_service import AlunoService
 from ..models.user import User
-from utils.decorators import admin_required
-from utils.validators import validate_email, validate_password_strength
+from ..utils.decorators import admin_required
+from ..utils.validators import validate_email, validate_password_strength
 
 aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
-
-# Decorator atualizado para aceitar programador
-def admin_or_programmer_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash('Por favor, faça login para acessar esta página.', 'warning')
-            return redirect(url_for('auth.login'))
-        user_role = getattr(current_user, 'role', None)
-        if user_role not in ['admin', 'programador']:
-            flash('Você não tem permissão para acessar esta página.', 'danger')
-            return redirect(url_for('main.dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @aluno_bp.route('/cadastro', methods=['GET', 'POST'])
 @login_required
@@ -43,7 +28,7 @@ def cadastro_aluno():
 
 @aluno_bp.route('/cadastro_admin', methods=['GET', 'POST'])
 @login_required
-@admin_or_programmer_required
+@admin_required
 def cadastro_aluno_admin():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -55,8 +40,6 @@ def cadastro_aluno_admin():
         opm = request.form.get('opm')
         pelotao = request.form.get('pelotao')
         funcao_atual = request.form.get('funcao_atual')
-        form_data = request.form.to_dict()
-        foto = request.files.get('foto_perfil')
 
         if not all([email, password, password2, matricula, opm, pelotao]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
@@ -96,7 +79,7 @@ def cadastro_aluno_admin():
         db.session.add(new_user)
         db.session.commit()
 
-        success, message = AlunoService.save_aluno(new_user.id, form_data, foto)
+        success, message = AlunoService.save_aluno(new_user.id, request.form.to_dict())
 
         if success:
             flash('Aluno cadastrado com sucesso!', 'success')
@@ -110,7 +93,7 @@ def cadastro_aluno_admin():
 
 @aluno_bp.route('/listar')
 @login_required
-@admin_or_programmer_required
+@admin_required
 def listar_alunos():
     pelotao_filtrado = request.args.get('pelotao', None)
     alunos = AlunoService.get_all_alunos(pelotao_filtrado)
@@ -118,7 +101,7 @@ def listar_alunos():
 
 @aluno_bp.route('/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
-@admin_or_programmer_required
+@admin_required
 def editar_aluno(aluno_id):
     aluno = AlunoService.get_aluno_by_id(aluno_id)
     if not aluno:
@@ -127,8 +110,7 @@ def editar_aluno(aluno_id):
 
     if request.method == 'POST':
         form_data = request.form.to_dict()
-        foto = request.files.get('foto_perfil')
-        success, message = AlunoService.update_aluno(aluno_id, form_data, foto)
+        success, message = AlunoService.update_aluno(aluno_id, form_data)
         if success:
             flash(message, 'success')
             return redirect(url_for('aluno.listar_alunos'))
@@ -137,3 +119,4 @@ def editar_aluno(aluno_id):
             return render_template('editar_aluno.html', aluno=aluno, form_data=request.form)
             
     return render_template('editar_aluno.html', aluno=aluno, form_data={})
+

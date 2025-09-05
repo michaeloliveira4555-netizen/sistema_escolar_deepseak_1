@@ -5,14 +5,14 @@ from werkzeug.utils import secure_filename
 
 from ..models.database import db
 from ..models.image_asset import ImageAsset
-from utils.decorators import programmer_required
-from utils.image_utils import allowed_file, generate_unique_filename, optimize_image, get_file_hash
+from ..utils.decorators import admin_required
+from ..utils.image_utils import allowed_file, generate_unique_filename, optimize_image, get_file_hash
 
 assets_bp = Blueprint('assets', __name__, url_prefix='/assets')
 
 @assets_bp.route('/manage')
 @login_required
-@programmer_required
+@admin_required
 def manage_assets():
     """Página principal de gerenciamento de assets"""
     assets = db.session.query(ImageAsset).order_by(ImageAsset.created_at.desc()).all()
@@ -20,7 +20,7 @@ def manage_assets():
 
 @assets_bp.route('/upload', methods=['GET', 'POST'])
 @login_required
-@programmer_required
+@admin_required
 def upload_asset():
     """Upload de nova imagem/asset"""
     if request.method == 'POST':
@@ -83,7 +83,7 @@ def upload_asset():
 
 @assets_bp.route('/delete/<int:asset_id>', methods=['POST'])
 @login_required
-@programmer_required
+@admin_required
 def delete_asset(asset_id):
     """Deletar asset"""
     asset = db.session.get(ImageAsset, asset_id)
@@ -110,7 +110,7 @@ def delete_asset(asset_id):
 
 @assets_bp.route('/toggle/<int:asset_id>', methods=['POST'])
 @login_required
-@programmer_required
+@admin_required
 def toggle_asset(asset_id):
     """Ativar/desativar asset"""
     asset = db.session.get(ImageAsset, asset_id)
@@ -129,7 +129,7 @@ def toggle_asset(asset_id):
 
 @assets_bp.route('/api/list/<asset_type>')
 @login_required
-@programmer_required
+@admin_required
 def api_list_assets(asset_type):
     """API para listar assets por tipo (para uso em dropdowns)"""
     assets = db.session.query(ImageAsset).filter_by(
@@ -143,3 +143,4 @@ def api_list_assets(asset_type):
         'original_filename': asset.original_filename,
         'url': url_for('static', filename=f'uploads/{asset.filename}')
     } for asset in assets])
+
