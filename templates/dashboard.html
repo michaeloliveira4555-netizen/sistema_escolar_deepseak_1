@@ -2,8 +2,6 @@
 
 {% block title %}Dashboard - Sistema EsFAS{% endblock %}
 
-{% block page_title %}Dashboard{% endblock %}
-
 {% block content %}
 <div class="dashboard-container">
     <div class="dashboard-header">
@@ -58,8 +56,7 @@
                 </div>
                 <p class="card-description">Controle de alunos por pelotões</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card secondary">Listar</a>
-                    <a href="{{ url_for('aluno.cadastro_aluno_admin') }}" class="btn-card primary">Cadastrar</a>
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">Gerenciar Alunos</a>
                 </div>
             </div>
         </div>
@@ -72,8 +69,7 @@
                 </div>
                 <p class="card-description">Gerenciar corpo docente</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card secondary">Listar</a>
-                    <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn-card primary">Cadastrar</a>
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">Gerenciar Instrutores</a>
                 </div>
             </div>
         </div>
@@ -86,8 +82,7 @@
                 </div>
                 <p class="card-description">Controle acadêmico</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card secondary">Listar</a>
-                    <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="btn-card primary">Cadastrar</a>
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">Gerenciar Disciplinas</a>
                 </div>
             </div>
         </div>

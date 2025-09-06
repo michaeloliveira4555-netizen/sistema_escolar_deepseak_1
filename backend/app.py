@@ -124,3 +124,48 @@ def create_programmer():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+    # Adicione esta função e o comando ao final do arquivo backend/app.py
+
+@app.cli.command("seed-disciplinas")
+def seed_disciplinas():
+    """Adiciona a lista de disciplinas padrão ao banco de dados."""
+    from backend.models.disciplina import Disciplina
+    from backend.models.database import db
+
+    lista_disciplinas = [
+        "Educação Física",
+        "Sistemas de Correição: Atribuição do Escrivão PJM",
+        "A Transversalidade do D. Penal e Processual Penal no Atnd. De Oc.",
+        "Legislação Especial Aplicada a Função Policial Militar",
+        "Policiamento de Trânsito Aplicado a Função",
+        "Gestão e Supervisão pela Qualidade do Serviço",
+        "Sistemas Informatizados da BM e SSPO",
+        "Saúde Mental do Policial Militar e Psicologia da Ativ. Pol.",
+        "Direito Administrativo Aplicado a função Policial Militar",
+        "Gerenciamento de Crise e Desastres",
+        "Ordem Unida",
+        # Adicione aqui as 3 disciplinas especiais que faltaram na lista
+        "AMT I",
+        "AMT II",
+        "Atendimento Pré-Hospitalar Tático"
+    ]
+
+    print("Verificando e adicionando disciplinas...")
+    count = 0
+    for nome_materia in lista_disciplinas:
+        # Verifica se a disciplina já existe antes de adicionar
+        disciplina_existe = db.session.execute(
+            db.select(Disciplina).filter_by(materia=nome_materia)
+        ).scalar_one_or_none()
+
+        if not disciplina_existe:
+            nova_disciplina = Disciplina(materia=nome_materia, carga_horaria_prevista=0)
+            db.session.add(nova_disciplina)
+            count += 1
+    
+    if count > 0:
+        db.session.commit()
+        print(f"{count} nova(s) disciplina(s) adicionada(s) com sucesso!")
+    else:
+        print("Todas as disciplinas padrão já existem no banco de dados.")

@@ -59,33 +59,60 @@
             
             <nav class="sidebar-nav">
                 <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
-                    <div class="nav-icon">🏠</div> Dashboard
+                    <div class="nav-icon">🏠</div> Início
                 </a>
                 
                 {% if current_user.role in ['admin', 'programador'] %}
-                    <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">👥</div> Alunos
-                    </a>
-                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🎓</div> Instrutores
-                    </a>
+                    <div class="nav-item-with-submenu">
+                        <a href="#" class="nav-link submenu-toggle {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                            <div class="nav-icon">👥</div> Alunos <span class="submenu-arrow"></span>
+                        </a>
+                        <div class="submenu">
+                            <a href="{{ url_for('aluno.listar_alunos') }}" class="submenu-link">Listar Alunos</a>
+                            <a href="{{ url_for('aluno.cadastro_aluno_admin') }}" class="submenu-link">Cadastrar Aluno</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-item-with-submenu">
+                        <a href="#" class="nav-link submenu-toggle {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                            <div class="nav-icon">🎓</div> Instrutores <span class="submenu-arrow"></span>
+                        </a>
+                        <div class="submenu">
+                            <a href="{{ url_for('instrutor.listar_instrutores') }}" class="submenu-link">Listar Instrutores</a>
+                            <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="submenu-link">Cadastrar Instrutor</a>
+                        </div>
+                    </div>
                     
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint and 'cadastro' not in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📚</div> Listar Disciplinas
-                    </a>
-                    <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="nav-link {% if 'cadastro_disciplina' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">➕</div> Cadastrar Disciplina
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📚</div> Disciplinas
                     </a>
 
+                    <div class="nav-item-with-submenu">
+                        <a href="#" class="nav-link submenu-toggle">
+                            <div class="nav-icon">🏫</div> Turmas <span class="submenu-arrow"></span>
+                        </a>
+                        <div class="submenu">
+                            <a href="#" class="submenu-link">Listar Turmas</a>
+                            <a href="#" class="submenu-link">Cadastrar Turma</a>
+                        </div>
+                    </div>
+
                     <div class="nav-separator"></div>
-                    <a href="#" class="nav-link">
-                        <div class="nav-icon">📊</div> Relatórios
-                    </a>
-                    <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📅</div> Quadro Horário
-                    </a>
+
+                    <div class="nav-item-with-submenu">
+                        <a href="#" class="nav-link submenu-toggle {% if 'horario.' in request.endpoint %}active{% endif %}">
+                            <div class="nav-icon">📅</div> Quadro Horário <span class="submenu-arrow"></span>
+                        </a>
+                        <div class="submenu">
+                            <a href="{{ url_for('horario.index') }}" class="submenu-link">Visualizar Horário</a>
+                            <a href="#" class="submenu-link">Alterar Horário</a>
+                        </div>
+                    </div>
                     <a href="#" class="nav-link">
                         <div class="nav-icon">🔔</div> Notificações
+                    </a>
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📊</div> Relatórios
                     </a>
                 {% endif %}
                 
@@ -104,8 +131,8 @@
                         <div class="nav-icon">📊</div> Meu Histórico
                     </a>
                     <div class="nav-separator"></div>
-                    <a href="#" class="nav-link">
-                        <div class="nav-icon">📅</div> Minha Agenda
+                    <a href="{{ url_for('horario.index') }}" class="nav-link">
+                        <div class="nav-icon">📅</div> Meu Horário
                     </a>
                     <a href="#" class="nav-link">
                         <div class="nav-icon">📋</div> Atividades
@@ -134,8 +161,10 @@
         {% endif %}
 
         <main class="main-content">
+            {% block navbar_content %}
             <nav class="navbar" {% if site_config.navbar_background_image %}style="background-image: url('{{ site_config.navbar_background_image }}');"{% endif %}>
-                </nav>
+            </nav>
+            {% endblock %}
 
             <div class="content-wrapper">
                 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -151,5 +180,25 @@
             </div>
         </main>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const submenuToggles = document.querySelectorAll('.submenu-toggle');
+
+        submenuToggles.forEach(toggle => {
+            toggle.addEventListener('click', function(event) {
+                event.preventDefault();
+                const parent = this.parentElement;
+                this.classList.toggle('active');
+                const submenu = parent.querySelector('.submenu');
+                
+                if (submenu.style.maxHeight) {
+                    submenu.style.maxHeight = null;
+                } else {
+                    submenu.style.maxHeight = submenu.scrollHeight + "px";
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>

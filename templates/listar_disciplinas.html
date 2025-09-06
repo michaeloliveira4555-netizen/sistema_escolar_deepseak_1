@@ -2,46 +2,76 @@
 
 {% block title %}Lista de Disciplinas{% endblock %}
 
-{% block global_actions %} {# Renderiza o botão aqui, abaixo da navbar #}
-    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-    <div class="global-action-bar">
-        <a href="{{ url_for('disciplina.cadastro_disciplina') }}" class="btn btn-success">Cadastrar Nova Disciplina</a>
-    </div>
-    {% endif %}
-{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <h1 class="text-center mb-4">Lista de Disciplinas</h1>
+<div class="content-header">
+    <h1>Disciplinas</h1>
+    <p>Gerencie as matérias e seus respectivos instrutores por pelotão.</p>
+</div>
 
-    {% if disciplinas %}
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Matéria</th>
-                    <th>Carga Horária</th>
-                    <th>Instrutor</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for disciplina in disciplinas %}
-                <tr>
-                    <td>{{ disciplina.materia }}</td>
-                    <td>{{ disciplina.carga_horaria_prevista }}h</td>
-                    <td>{{ disciplina.instrutor.user.username if disciplina.instrutor else 'N/A' }}</td>
-                    <td>
-                        {# Botão para editar a disciplina #}
-                        <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="table-container">
+    <div class="table-header">
+        <h3>
+            {% if pelotao_filtrado %}
+                Instrutores do {{ pelotao_filtrado }}
+            {% else %}
+                Selecione um pelotão para ver os instrutores
+            {% endif %}
+        </h3>
+        </div>
+
+    <div class="table-filters">
+        <strong>Visualizar Pelotão:</strong>
+        <div class="filter-buttons">
+            {% for i in range(1, 11) %}
+            <a href="{{ url_for('disciplina.listar_disciplinas', pelotao=i ~ '° Pelotão') }}" 
+               class="btn btn-sm {% if pelotao_filtrado and pelotao_filtrado == i ~ '° Pelotão' %}btn-primary{% else %}btn-secondary{% endif %}">
+                {{ i }}º Pelotão
+            </a>
+            {% endfor %}
+            {% if pelotao_filtrado %}
+            <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn btn-sm btn-danger">Limpar Filtro</a>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-        <p class="text-center">Nenhuma disciplina cadastrada.</p>
-    {% endif %}
+
+    <div class="table-responsive">
+        {% if disciplinas_com_instrutores %}
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Matéria</th>
+                        <th>Carga Horária</th>
+                        <th>Instrutor(es)</th>
+                        <th class="text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for disciplina, associacao in disciplinas_com_instrutores %}
+                    <tr>
+                        <td data-label="Matéria">{{ disciplina.materia }}</td>
+                        <td data-label="Carga Horária">{{ disciplina.carga_horaria_prevista if disciplina.carga_horaria_prevista > 0 else 'N/D' }}h</td>
+                        <td data-label="Instrutor(es)">
+                            {% if pelotao_filtrado %}
+                                {% if associacao and associacao.instrutor_1 %}
+                                    <div>{{ associacao.instrutor_1.user.nome_completo or associacao.instrutor_1.user.username }}</div>
+                                    {% if associacao.instrutor_2 %}
+                                        <div style="color: #6c757d;">{{ associacao.instrutor_2.user.nome_completo or associacao.instrutor_2.user.username }}</div>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #aaa;">Não atribuído</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #aaa;">Selecione um pelotão</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Ações" class="text-right">
+                            <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Gerenciar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

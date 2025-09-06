@@ -743,7 +743,7 @@ textarea:focus {
     z-index: 1010;
     background-color: var(--color-danger);
     color: var(--color-white);
-    border: 2px solid rgba(255, 255, 255, 0.7); /* Adiciona uma borda branca sutil */
+    border: 2px solid rgba(15, 0, 0, 0.7); /* Adiciona uma borda branca sutil */
     writing-mode: vertical-rl;
     text-orientation: mixed;
     padding: 1.5rem 0.5rem;
@@ -752,6 +752,7 @@ textarea:focus {
     font-weight: 700; /* Aumenta o peso da fonte para 700 (negrito mais forte) */
     transition: right 0.4s ease-in-out, border-color 0.3s ease; /* Adiciona transição para a borda */
 }
+
 
 .weekend-toggle-btn:hover {
     filter: brightness(1.1);
@@ -826,4 +827,110 @@ body.weekend-panel-open .weekend-panel {
 
 .controls-group .form-group {
     margin-bottom: 0; /* Remove a margem padrão para melhor alinhamento */
+}
+/* ==========================================================================
+   10. Estilos da Barra Lateral com Submenus
+   ========================================================================== */
+
+.nav-link {
+    /* Garante que o conteúdo do link se espalhe */
+    display: flex;
+    width: 100%;
+    align-items: center;
+}
+
+.submenu-arrow {
+    display: inline-block;
+    margin-left: auto; /* Empurra a seta para a direita */
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid white; /* Cria um triângulo (seta) */
+    transition: transform 0.3s ease;
+}
+
+/* Gira a seta quando o submenu está ativo */
+.nav-link.active .submenu-arrow {
+    transform: rotate(180deg);
+}
+
+.submenu {
+    /* Oculta o submenu por padrão */
+    max-height: 0;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.2);
+    transition: max-height 0.4s ease-out; /* Animação de deslizar */
+    padding-left: 2.5rem; /* Indentação para os links do submenu */
+}
+
+.submenu {
+    max-height: 0;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.2);
+    transition: max-height 0.4s ease-out;
+    /* Removemos o padding daqui para controlar no link */
+}
+
+.submenu-link {
+    display: block;
+    padding: 0.6rem 1.5rem 0.6rem 3rem; /* Aumenta o padding esquerdo para dar espaço ao ponto */
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    position: relative;
+}
+
+.submenu-link::before {
+    content: '';
+    position: absolute;
+    left: 1.75rem; /* Posição ajustada para a esquerda */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--color-primary-light);
+}
+/* ==========================================================================
+   11. Filtros de Tabela
+   ========================================================================== */
+
+.table-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background-color: var(--color-background);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.table-filters strong {
+    font-weight: 600;
+    color: var(--color-secondary);
+}
+
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+}
+/* ==========================================================================
+   12. Ações de Formulário
+   ========================================================================== */
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end; /* Alinha os botões à direita */
+    gap: 1rem; /* Espaçamento entre os botões */
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
 }

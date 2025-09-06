@@ -20,7 +20,6 @@ def cadastro_instrutor_admin():
     disciplinas = DisciplinaService.get_all_disciplinas()
 
     if request.method == 'POST':
-        # ### LÓGICA ATUALIZADA ###
         nome_completo = request.form.get('nome_completo')
         matricula = request.form.get('matricula')
         email = request.form.get('email')
@@ -33,7 +32,7 @@ def cadastro_instrutor_admin():
         telefone = request.form.get('telefone')
         disciplina_id = request.form.get('disciplina_id')
 
-        # Agora validamos o nome completo também
+        # Validação principal (não inclui disciplina_id, tornando-o opcional)
         if not all([nome_completo, matricula, email, password, password2, especializacao, formacao]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
@@ -63,37 +62,33 @@ def cadastro_instrutor_admin():
 
         new_user = User(
             matricula=matricula,
-            username=matricula,  # Matrícula também é o nome de usuário
-            nome_completo=nome_completo, # Novo campo
+            username=matricula,
+            nome_completo=nome_completo,
             email=email, 
             role=role,
             is_active=True
         )
         new_user.set_password(password)
         db.session.add(new_user)
-        # Commit aqui para garantir que o user.id seja gerado antes de salvar o instrutor
         db.session.commit()
 
-        # Passamos os dados do formulário para o serviço criar o perfil do instrutor
         success, message = InstrutorService.save_instrutor(new_user.id, request.form.to_dict())
 
         if success:
+            # Este bloco só executa se uma disciplina for selecionada no formulário
             if disciplina_id and disciplina_id.isdigit():
-                # Precisamos buscar o instrutor recém-criado para associar a disciplina
-                instrutor_profile = new_user.instrutor_profile
-                if instrutor_profile:
-                    DisciplinaService.update_disciplina_instrutor(int(disciplina_id), instrutor_profile.id)
+                # CORREÇÃO: Passando o ID do usuário (new_user.id) em vez do ID do perfil
+                DisciplinaService.update_disciplina_instrutor(int(disciplina_id), new_user.id)
+            
             flash('Instrutor cadastrado com sucesso!', 'success')
             return redirect(url_for('instrutor.listar_instrutores'))
         else:
-            # Se a criação do perfil do instrutor falhar, removemos o usuário criado
             db.session.delete(new_user)
             db.session.commit()
             flash(f"Erro ao cadastrar perfil do instrutor: {message}", 'error')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
 
     return render_template('cadastro_instrutor.html', form_data={}, disciplinas=disciplinas, is_admin_flow=True)
-
 # ... (o resto do controller que não foi alterado) ...
 
 @instrutor_bp.route('/listar')
