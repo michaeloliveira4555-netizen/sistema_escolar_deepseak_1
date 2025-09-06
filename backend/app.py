@@ -81,7 +81,8 @@ app = create_app()
 @app.cli.command("create-admin")
 def create_admin():
     with app.app_context():
-        admin_user = db.session.execute(db.select(User).filter_by(username='admin')).scalar_one_or_none()
+        # --- CORREÇÃO AQUI ---
+        admin_user = db.session.execute(db.select(User).filter_by(id_func='ADMIN')).scalar_one_or_none()
         
         if admin_user:
             print("O usuário 'admin' já existe.")
@@ -89,7 +90,7 @@ def create_admin():
 
         print("Criando o usuário administrador 'admin'...")
         new_admin = User(
-            matricula='ADMIN',
+            id_func='ADMIN', # Alterado de 'matricula' para 'id_func'
             username='admin',
             email='admin@escola.com.br',
             role='admin',
@@ -106,7 +107,8 @@ def create_admin():
 @app.cli.command("create-programmer")
 def create_programmer():
     with app.app_context():
-        prog_user = db.session.execute(db.select(User).filter_by(username='programador')).scalar_one_or_none()
+        # --- CORREÇÃO AQUI ---
+        prog_user = db.session.execute(db.select(User).filter_by(id_func='PROG001')).scalar_one_or_none()
         
         if prog_user:
             print("O usuário 'programador' já existe.")
@@ -114,7 +116,7 @@ def create_programmer():
 
         print("Criando o usuário programador...")
         new_programmer = User(
-            matricula='PROG001',
+            id_func='PROG001', # Alterado de 'matricula' para 'id_func'
             username='programador',
             email='dev@escola.com.br',
             role='programador',
@@ -135,35 +137,23 @@ def seed_disciplinas():
     from backend.models.disciplina import Disciplina
 
     lista_disciplinas = [
-        "Educação Física",
-        "Sistemas de Correição: Atribuição do Escrivão PJM",
+        "Educação Física", "Sistemas de Correição: Atribuição do Escrivão PJM",
         "A Transversalidade do D. Penal e Processual Penal no Atnd. De Oc.",
         "Legislação Especial Aplicada a Função Policial Militar",
-        "Policiamento de Trânsito Aplicado a Função",
-        "Gestão e Supervisão pela Qualidade do Serviço",
-        "Sistemas Informatizados da BM e SSPO",
-        "Saúde Mental do Policial Militar e Psicologia da Ativ. Pol.",
+        "Policiamento de Trânsito Aplicado a Função", "Gestão e Supervisão pela Qualidade do Serviço",
+        "Sistemas Informatizados da BM e SSPO", "Saúde Mental do Policial Militar e Psicologia da Ativ. Pol.",
         "Direito Administrativo Aplicado a função Policial Militar",
-        "Gerenciamento de Crise e Desastres",
-        "Ordem Unida",
-        "AMT I",
-        "AMT II",
-        "Atendimento Pré-Hospitalar Tático",
-        "A disposição do C Al /S Ens"
+        "Gerenciamento de Crise e Desastres", "Ordem Unida", "AMT I", "AMT II",
+        "Atendimento Pré-Hospitalar Tático", "A disposição do C Al /S Ens"
     ]
-
     print("Verificando e adicionando disciplinas...")
     count = 0
     for nome_materia in lista_disciplinas:
-        disciplina_existe = db.session.execute(
-            db.select(Disciplina).filter_by(materia=nome_materia)
-        ).scalar_one_or_none()
-
+        disciplina_existe = db.session.execute(db.select(Disciplina).filter_by(materia=nome_materia)).scalar_one_or_none()
         if not disciplina_existe:
             nova_disciplina = Disciplina(materia=nome_materia, carga_horaria_prevista=0)
             db.session.add(nova_disciplina)
             count += 1
-    
     if count > 0:
         db.session.commit()
         print(f"{count} nova(s) disciplina(s) adicionada(s) com sucesso!")

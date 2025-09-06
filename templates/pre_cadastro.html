@@ -1,32 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Pré-Cadastro de Usuários{% endblock %}
+{% block title %}Pré-Cadastro de Usuário{% endblock %}
 
 {% block content %}
-<div class="form-page-container">
+<div class="content-header">
+    <h1>Pré-Cadastro de Usuário</h1>
+    <p>Insira a Identidade Funcional (Id Func) para permitir que um novo usuário ative sua conta.</p>
+</div>
 
-    <div class="cadastro-container">
-        <h2>Pré-Cadastro de Matrículas</h2>
-        <p style="margin-top: -10px; margin-bottom: 25px; color: #555;">Insira uma ou mais matrículas/identificadores (um por linha) para permitir que os usuários ativem suas contas.</p>
-        <hr>
-
-        <form method="POST">
-            <div class="form-group">
-                <label for="role">Função dos Usuários a serem Cadastrados:</label>
-                <select id="role" name="role" class="form-control" required>
-                    <option value="">-- Selecione a função --</option>
-                    <option value="aluno">Aluno</option>
-                    <option value="instrutor">Instrutor</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="matriculas">Lista de Matrículas / Identificadores:</label>
-                <textarea id="matriculas" name="matriculas" class="form-control" rows="10" placeholder="Cole as matrículas aqui, uma por linha..." required></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Pré-Cadastrar Usuários</button>
-        </form>
+<div class="table-container" style="max-width: 600px; margin: 0 auto;">
+    <div class="table-header">
+        <h3>Novo Pré-Cadastro</h3>
     </div>
+    
+    <form method="POST" action="{{ url_for('main.pre_cadastro') }}" style="padding: 1rem 0;">
+        <div class="form-group">
+            <label for="role">Função do Usuário</label>
+            <select id="role" name="role" class="form-control" required>
+                <option value="aluno" selected>Aluno</option>
+                <option value="instrutor">Instrutor</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="id_func">Identidade Funcional (Id Func)</label>
+            <input type="text" id="id_func" name="id_func" class="form-control" 
+                   pattern="[0-9]*" inputmode="numeric" 
+                   placeholder="Digite apenas números" required>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('aluno.listar_alunos') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar Pré-Cadastro</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

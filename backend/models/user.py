@@ -7,15 +7,15 @@ class User(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     
-    # Matrícula agora é a chave principal de identificação
-    matricula = db.Column(db.String(20), unique=True, nullable=False)
+    # --- ALTERAÇÃO AQUI ---
+    # Renomeamos 'matricula' para 'id_func' para refletir a nova lógica
+    id_func = db.Column(db.String(20), unique=True, nullable=False)
     
     # Campos que podem ser nulos até a ativação da conta
     username = db.Column(db.String(80), unique=True, nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=True)
     
-    # ### NOVO CAMPO ADICIONADO ###
     nome_completo = db.Column(db.String(120), nullable=True)
 
     # Controle de acesso e status
@@ -35,4 +35,4 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
-        return f'<User {self.username or self.matricula}>'
+        return f'<User {self.username or self.id_func}>'

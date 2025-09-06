@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema EsFAS{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
@@ -59,85 +59,81 @@
             
             <nav class="sidebar-nav">
                 <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
-                    <div class="nav-icon">🏠</div><span class="nav-text">Início</span>
+                    <div class="nav-icon">🏠</div> Início
                 </a>
                 
                 {% if current_user.role in ['admin', 'programador'] %}
                     <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">👥</div><span class="nav-text">Alunos</span>
+                        <div class="nav-icon">👥</div> Alunos
                     </a>
                     <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🎓</div><span class="nav-text">Instrutores</span>
+                        <div class="nav-icon">🎓</div> Instrutores
                     </a>
                     <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📚</div><span class="nav-text">Disciplinas</span>
+                        <div class="nav-icon">📚</div> Disciplinas
                     </a>
                     <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if 'turma.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🏫</div><span class="nav-text">Turmas</span>
+                        <div class="nav-icon">🏫</div> Turmas
                     </a>
                     
                     <div class="nav-separator"></div>
 
                     <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint or 'semana.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📅</div><span class="nav-text">Quadro Horário</span>
+                        <div class="nav-icon">📅</div> Quadro Horário
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">🔔</div><span class="nav-text">Notificações</span>
+                        <div class="nav-icon">🔔</div> Notificações
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">📊</div><span class="nav-text">Relatórios</span>
+                        <div class="nav-icon">📊</div> Relatórios
                     </a>
                 {% endif %}
                 
                 {% if current_user.role == 'programador' %}
                     <div class="nav-separator"></div>
                     <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if 'assets.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📁</div><span class="nav-text">Assets</span>
+                        <div class="nav-icon">📁</div> Assets
                     </a>
                     <a href="{{ url_for('customizer.index') }}" class="nav-link {% if 'customizer.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🎨</div><span class="nav-text">Personalizar</span>
+                        <div class="nav-icon">🎨</div> Personalizar
                     </a>
                 {% endif %}
                 
                 {% if current_user.aluno_profile %}
                     <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📊</div><span class="nav-text">Meu Histórico</span>
+                        <div class="nav-icon">📊</div> Meu Histórico
                     </a>
                     <div class="nav-separator"></div>
                     <a href="{{ url_for('horario.index') }}" class="nav-link">
-                        <div class="nav-icon">📅</div><span class="nav-text">Meu Horário</span>
+                        <div class="nav-icon">📅</div> Meu Horário
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">📋</div><span class="nav-text">Atividades</span>
+                        <div class="nav-icon">📋</div> Atividades
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">📖</div><span class="nav-text">Material de Estudo</span>
+                        <div class="nav-icon">📖</div> Material de Estudo
                     </a>
                 {% endif %}
             </nav>
             
             <div class="sidebar-footer">
                 <a href="#" class="nav-link">
-                    <div class="nav-icon">👤</div><span class="nav-text">Meu Perfil</span>
+                    <div class="nav-icon">👤</div> Meu Perfil
                 </a>
                 <a href="#" class="nav-link">
-                    <div class="nav-icon">⚙️</div><span class="nav-text">Configurações</span>
+                    <div class="nav-icon">⚙️</div> Configurações
                 </a>
                 <a href="#" class="nav-link">
-                    <div class="nav-icon">❓</div><span class="nav-text">Ajuda</span>
+                    <div class="nav-icon">❓</div> Ajuda
                 </a>
                 <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
-                    <div class="nav-icon">🚪</div><span class="nav-text">Sair do Sistema</span>
+                    <div class="nav-icon">🚪</div> Sair do Sistema
                 </a>
             </div>
         </aside>
         {% endif %}
 
         <main class="main-content">
-            {% if current_user.is_authenticated %}
-            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
-            {% endif %}
-
             {% block navbar_content %}
             <nav class="navbar" {% if site_config.navbar_background_image %}style="background-image: url('{{ site_config.navbar_background_image }}');"{% endif %}>
             </nav>
@@ -161,17 +157,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         // O SCRIPT DO SUBMENU NÃO É MAIS NECESSÁRIO, MAS PODE SER DEIXADO AQUI
         // POIS NÃO ENCONTRARÁ ELEMENTOS E NÃO CAUSARÁ ERRO.
-        // PARA MANTER O CÓDIGO LIMPO, O IDEAL SERIA REMOVÊ-LO.
-
-        // --- SCRIPT DA BARRA LATERAL RETRÁTIL ---
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const pageContainer = document.querySelector('.page-container');
-
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', function() {
-                pageContainer.classList.toggle('sidebar-collapsed');
-            });
-        }
     });
     </script>
 </body>

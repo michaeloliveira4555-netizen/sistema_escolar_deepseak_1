@@ -2,6 +2,7 @@ from ..models.database import db
 from ..models.aluno import Aluno
 from ..models.user import User
 from ..models.historico import HistoricoAluno
+from ..models.turma import Turma # Importa o modelo Turma
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
@@ -18,18 +19,19 @@ class AlunoService:
 
         matricula = data.get('matricula')
         opm = data.get('opm')
-        pelotao = data.get('pelotao')
+        # O campo 'pelotao' foi substituído por 'turma_id'
+        turma_id = data.get('turma_id')
         funcao_atual = data.get('funcao_atual')
 
-        if not all([matricula, opm, pelotao]):
-            return False, "Todos os campos (Matrícula, OPM, Pelotão) são obrigatórios."
+        if not all([matricula, opm]):
+            return False, "Todos os campos (Matrícula, OPM) são obrigatórios."
 
         try:
             novo_aluno = Aluno(
                 user_id=user_id,
                 matricula=matricula,
                 opm=opm,
-                pelotao=pelotao,
+                turma_id=int(turma_id) if turma_id else None,
                 funcao_atual=funcao_atual
             )
             db.session.add(novo_aluno)
@@ -44,12 +46,14 @@ class AlunoService:
             return False, f"Erro ao cadastrar aluno: {str(e)}"
 
     @staticmethod
-    def get_all_alunos(pelotao_texto=None):
+    def get_all_alunos(nome_turma=None):
         stmt = select(Aluno).join(User)
         stmt = stmt.where(User.role != 'admin')
         
-        if pelotao_texto:
-            stmt = stmt.where(Aluno.pelotao == pelotao_texto) 
+        # --- LÓGICA DE FILTRO ATUALIZADA ---
+        if nome_turma:
+            # Junta a tabela Aluno com a tabela Turma e filtra pelo nome da turma
+            stmt = stmt.join(Turma).where(Turma.nome == nome_turma) 
             
         stmt = stmt.order_by(User.username)
         
@@ -67,11 +71,11 @@ class AlunoService:
 
         matricula = data.get('matricula')
         opm = data.get('opm')
-        pelotao = data.get('pelotao')
+        turma_id = data.get('turma_id')
         nova_funcao_atual = data.get('funcao_atual')
 
-        if not all([matricula, opm, pelotao]):
-            return False, "Todos os campos (Matrícula, OPM, Pelotão) são obrigatórios."
+        if not all([matricula, opm]):
+            return False, "Todos os campos (Matrícula, OPM) são obrigatórios."
 
         try:
             old_funcao = aluno.funcao_atual if aluno.funcao_atual else ''
@@ -89,7 +93,7 @@ class AlunoService:
 
             aluno.matricula = matricula
             aluno.opm = opm
-            aluno.pelotao = pelotao
+            aluno.turma_id = int(turma_id) if turma_id else None
             aluno.funcao_atual = nova_funcao_atual
 
             db.session.commit()

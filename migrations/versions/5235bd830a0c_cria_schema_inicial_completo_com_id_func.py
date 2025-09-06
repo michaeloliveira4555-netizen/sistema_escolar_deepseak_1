@@ -1,8 +1,8 @@
-"""Cria schema inicial completo
+"""Cria schema inicial completo com id_func
 
-Revision ID: 47d4d800f456
+Revision ID: 5235bd830a0c
 Revises: 
-Create Date: 2025-09-06 11:00:55.176947
+Create Date: 2025-09-06 15:25:42.651924
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '47d4d800f456'
+revision = '5235bd830a0c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -42,7 +42,7 @@ def upgrade():
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('matricula', sa.String(length=20), nullable=False),
+    sa.Column('id_func', sa.String(length=20), nullable=False),
     sa.Column('username', sa.String(length=80), nullable=True),
     sa.Column('email', sa.String(length=120), nullable=True),
     sa.Column('password_hash', sa.String(length=256), nullable=True),
@@ -51,7 +51,7 @@ def upgrade():
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('matricula'),
+    sa.UniqueConstraint('id_func'),
     sa.UniqueConstraint('username')
     )
     op.create_table('alunos',

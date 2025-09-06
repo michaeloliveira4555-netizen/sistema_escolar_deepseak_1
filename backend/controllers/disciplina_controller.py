@@ -6,7 +6,7 @@ from ..models.database import db
 from ..models.disciplina import Disciplina
 from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
-from ..services.disciplina_service import DisciplinaService # Importa o service
+from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
 disciplina_bp = Blueprint('disciplina', __name__, url_prefix='/disciplina')
@@ -16,7 +16,6 @@ disciplina_bp = Blueprint('disciplina', __name__, url_prefix='/disciplina')
 @admin_or_programmer_required
 def adicionar_disciplina():
     if request.method == 'POST':
-        # Usamos o mesmo service que já validava e salvava
         success, message = DisciplinaService.save_disciplina(request.form)
         if success:
             flash(message, 'success')
@@ -27,17 +26,13 @@ def adicionar_disciplina():
     
     return render_template('adicionar_disciplina.html')
 
-
 @disciplina_bp.route('/listar')
 @login_required
 @admin_or_programmer_required
 def listar_disciplinas():
     pelotao_filtrado = request.args.get('pelotao')
-    
     disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
-    
     disciplinas_com_instrutores = []
-
     if pelotao_filtrado:
         for disciplina in disciplinas:
             associacao = db.session.execute(
@@ -50,7 +45,6 @@ def listar_disciplinas():
     else:
         for disciplina in disciplinas:
             disciplinas_com_instrutores.append((disciplina, None))
-
     return render_template(
         'listar_disciplinas.html', 
         disciplinas_com_instrutores=disciplinas_com_instrutores, 
@@ -66,11 +60,7 @@ def editar_disciplina(disciplina_id):
         flash("Disciplina não encontrada.", 'danger')
         return redirect(url_for('disciplina.listar_disciplinas'))
     
-    disciplinas_com_dois_instrutores = [
-        "AMT I", 
-        "AMT II", 
-        "Atendimento Pré-Hospitalar Tático"
-    ]
+    disciplinas_com_dois_instrutores = ["AMT I", "AMT II", "Atendimento Pré-Hospitalar Tático"]
     
     if request.method == 'POST':
         carga_horaria_str = request.form.get('carga_horaria')
@@ -78,7 +68,6 @@ def editar_disciplina(disciplina_id):
             disciplina.carga_horaria_prevista = int(carga_horaria_str)
         
         db.session.query(DisciplinaTurma).filter_by(disciplina_id=disciplina.id).delete()
-
         for i in range(1, 11):
             pelotao_nome = f'{i}° Pelotão'
             instrutor_id_1_str = request.form.get(f'pelotao_{i}_instrutor_1')
