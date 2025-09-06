@@ -8,7 +8,7 @@ if t.TYPE_CHECKING:
     from .user import User
     from .historico import HistoricoAluno
     from .historico_disciplina import HistoricoDisciplina
-
+    from .turma import Turma
 
 class Aluno(db.Model):
     __tablename__ = 'alunos'
@@ -18,27 +18,33 @@ class Aluno(db.Model):
     matricula: Mapped[str] = mapped_column(db.String(20), unique=True)
     opm: Mapped[str] = mapped_column(db.String(50))
     num_aluno: Mapped[str] = mapped_column(db.String(20), nullable=True)
-    pelotao: Mapped[str] = mapped_column(db.String(20))
     funcao_atual: Mapped[t.Optional[str]] = mapped_column(db.String(50))
     foto_perfil: Mapped[str] = mapped_column(db.String(255), default='default.png')
+    
+    # --- CORREÇÃO NESTA LINHA ---
+    # Trocamos "Mapted" por "Mapped"
     telefone: Mapped[t.Optional[str]] = mapped_column(db.String(20))
+    
     data_nascimento: Mapped[t.Optional[date]] = mapped_column(db.Date)
     
+    turma_id: Mapped[t.Optional[int]] = mapped_column(db.ForeignKey('turmas.id'))
+    turma: Mapped[t.Optional["Turma"]] = relationship(back_populates="alunos")
+
     user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'), unique=True)
     user: Mapped["User"] = relationship(back_populates="aluno_profile")
 
     historico: Mapped[list["HistoricoAluno"]] = relationship(back_populates="aluno")
     historico_disciplinas: Mapped[list["HistoricoDisciplina"]] = relationship(back_populates="aluno")
 
-    def __init__(self, user_id: int, matricula: str, opm: str, pelotao: str, 
+    def __init__(self, user_id: int, matricula: str, opm: str, 
                  id_aluno: t.Optional[str] = None, num_aluno: t.Optional[str] = None,
                  funcao_atual: t.Optional[str] = None, foto_perfil: str = 'default.png',
                  telefone: t.Optional[str] = None, data_nascimento: t.Optional[date] = None, 
-                 **kw: t.Any) -> None:
-        super().__init__(user_id=user_id, matricula=matricula, opm=opm, pelotao=pelotao,
+                 turma_id: t.Optional[int] = None, **kw: t.Any) -> None:
+        super().__init__(user_id=user_id, matricula=matricula, opm=opm,
                          id_aluno=id_aluno, num_aluno=num_aluno,
                          funcao_atual=funcao_atual, foto_perfil=foto_perfil,
-                         telefone=telefone, data_nascimento=data_nascimento, **kw)
+                         telefone=telefone, data_nascimento=data_nascimento, turma_id=turma_id, **kw)
 
     def __repr__(self):
         return f"<Aluno id={self.id} matricula='{self.matricula}'>"

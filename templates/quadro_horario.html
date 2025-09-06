@@ -60,9 +60,11 @@
                     {% if aula != 'SKIP' %}
                         <td class="schedule-slot" rowspan="{{ aula.duracao if aula else 1 }}">
                             {% if aula %}
-                            <div class="slot-content">
+                            <div class="slot-content {% if aula.is_disposicao %}disposicao{% endif %}">
                                 <div class="disciplina-title">{{ aula.materia }}</div>
+                                {% if aula.instrutor %}
                                 <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                {% endif %}
                             </div>
                             {% endif %}
                         </td>
@@ -100,9 +102,11 @@
                         {% if aula != 'SKIP' %}
                             <td class="schedule-slot weekend-slot" rowspan="{{ aula.duracao if aula else 1 }}">
                                 {% if aula %}
-                                <div class="slot-content weekend">
+                                <div class="slot-content {% if aula.is_disposicao %}disposicao weekend{% else %}weekend{% endif %}">
                                     <div class="disciplina-title">{{ aula.materia }}</div>
+                                    {% if aula.instrutor %}
                                     <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                    {% endif %}
                                 </div>
                                 {% endif %}
                             </td>
@@ -115,13 +119,28 @@
     </div>
 </div>
 
+<style>
+    .slot-content.disposicao {
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        cursor: default;
+    }
+    .slot-content.disposicao .disciplina-title {
+        color: #94a3b8;
+        font-style: italic;
+        font-size: 0.75rem;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('weekend-toggle');
         
-        toggleBtn.addEventListener('click', function() {
-            document.body.classList.toggle('weekend-panel-open');
-        });
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                document.body.classList.toggle('weekend-panel-open');
+            });
+        }
     });
 </script>
 {% endblock %}

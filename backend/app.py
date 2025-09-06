@@ -6,6 +6,11 @@ from flask_migrate import Migrate
 from backend.config import Config
 from backend.models.database import db
 from backend.models.user import User
+# Importações dos novos modelos para que o Flask-Migrate os reconheça
+from backend.models.semana import Semana
+from backend.models.horario import Horario
+from backend.models.disciplina_turma import DisciplinaTurma
+from backend.models.turma import Turma
 
 def create_app(config_class=Config):
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -35,8 +40,9 @@ def create_app(config_class=Config):
     from backend.controllers.main_controller import main_bp
     from backend.controllers.assets_controller import assets_bp
     from backend.controllers.customizer_controller import customizer_bp
-    # ### IMPORTAÇÃO DO NOVO CONTROLLER ###
     from backend.controllers.horario_controller import horario_bp
+    from backend.controllers.semana_controller import semana_bp
+    from backend.controllers.turma_controller import turma_bp
 
     # Registra os Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -47,8 +53,9 @@ def create_app(config_class=Config):
     app.register_blueprint(assets_bp, url_prefix='/assets')
     app.register_blueprint(customizer_bp, url_prefix='/customizer')
     app.register_blueprint(main_bp) 
-    # ### REGISTRO DO NOVO BLUEPRINT ###
     app.register_blueprint(horario_bp)
+    app.register_blueprint(semana_bp, url_prefix='/semana')
+    app.register_blueprint(turma_bp, url_prefix='/turma')
 
     # Context processor para configurações do site
     @app.context_processor
@@ -95,7 +102,7 @@ def create_admin():
         
         print("Usuário administrador 'admin' criado com sucesso!")
 
-# NOVO COMANDO
+# Comando para criar programador
 @app.cli.command("create-programmer")
 def create_programmer():
     with app.app_context():
@@ -122,16 +129,10 @@ def create_programmer():
         print("Login: programador")
         print("Senha: DevPass@2025")
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
-    # Adicione esta função e o comando ao final do arquivo backend/app.py
-
 @app.cli.command("seed-disciplinas")
 def seed_disciplinas():
     """Adiciona a lista de disciplinas padrão ao banco de dados."""
     from backend.models.disciplina import Disciplina
-    from backend.models.database import db
 
     lista_disciplinas = [
         "Educação Física",
@@ -145,16 +146,15 @@ def seed_disciplinas():
         "Direito Administrativo Aplicado a função Policial Militar",
         "Gerenciamento de Crise e Desastres",
         "Ordem Unida",
-        # Adicione aqui as 3 disciplinas especiais que faltaram na lista
         "AMT I",
         "AMT II",
-        "Atendimento Pré-Hospitalar Tático"
+        "Atendimento Pré-Hospitalar Tático",
+        "A disposição do C Al /S Ens"
     ]
 
     print("Verificando e adicionando disciplinas...")
     count = 0
     for nome_materia in lista_disciplinas:
-        # Verifica se a disciplina já existe antes de adicionar
         disciplina_existe = db.session.execute(
             db.select(Disciplina).filter_by(materia=nome_materia)
         ).scalar_one_or_none()
@@ -169,3 +169,6 @@ def seed_disciplinas():
         print(f"{count} nova(s) disciplina(s) adicionada(s) com sucesso!")
     else:
         print("Todas as disciplinas padrão já existem no banco de dados.")
+
+if __name__ == '__main__':
+    app.run(debug=True)

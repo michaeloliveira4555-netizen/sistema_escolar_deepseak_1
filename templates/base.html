@@ -59,108 +59,85 @@
             
             <nav class="sidebar-nav">
                 <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
-                    <div class="nav-icon">🏠</div> Início
+                    <div class="nav-icon">🏠</div><span class="nav-text">Início</span>
                 </a>
                 
                 {% if current_user.role in ['admin', 'programador'] %}
-                    <div class="nav-item-with-submenu">
-                        <a href="#" class="nav-link submenu-toggle {% if 'aluno.' in request.endpoint %}active{% endif %}">
-                            <div class="nav-icon">👥</div> Alunos <span class="submenu-arrow"></span>
-                        </a>
-                        <div class="submenu">
-                            <a href="{{ url_for('aluno.listar_alunos') }}" class="submenu-link">Listar Alunos</a>
-                            <a href="{{ url_for('aluno.cadastro_aluno_admin') }}" class="submenu-link">Cadastrar Aluno</a>
-                        </div>
-                    </div>
-
-                    <div class="nav-item-with-submenu">
-                        <a href="#" class="nav-link submenu-toggle {% if 'instrutor.' in request.endpoint %}active{% endif %}">
-                            <div class="nav-icon">🎓</div> Instrutores <span class="submenu-arrow"></span>
-                        </a>
-                        <div class="submenu">
-                            <a href="{{ url_for('instrutor.listar_instrutores') }}" class="submenu-link">Listar Instrutores</a>
-                            <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="submenu-link">Cadastrar Instrutor</a>
-                        </div>
-                    </div>
-                    
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📚</div> Disciplinas
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">👥</div><span class="nav-text">Alunos</span>
                     </a>
-
-                    <div class="nav-item-with-submenu">
-                        <a href="#" class="nav-link submenu-toggle">
-                            <div class="nav-icon">🏫</div> Turmas <span class="submenu-arrow"></span>
-                        </a>
-                        <div class="submenu">
-                            <a href="#" class="submenu-link">Listar Turmas</a>
-                            <a href="#" class="submenu-link">Cadastrar Turma</a>
-                        </div>
-                    </div>
-
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">🎓</div><span class="nav-text">Instrutores</span>
+                    </a>
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📚</div><span class="nav-text">Disciplinas</span>
+                    </a>
+                    <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if 'turma.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">🏫</div><span class="nav-text">Turmas</span>
+                    </a>
+                    
                     <div class="nav-separator"></div>
 
-                    <div class="nav-item-with-submenu">
-                        <a href="#" class="nav-link submenu-toggle {% if 'horario.' in request.endpoint %}active{% endif %}">
-                            <div class="nav-icon">📅</div> Quadro Horário <span class="submenu-arrow"></span>
-                        </a>
-                        <div class="submenu">
-                            <a href="{{ url_for('horario.index') }}" class="submenu-link">Visualizar Horário</a>
-                            <a href="#" class="submenu-link">Alterar Horário</a>
-                        </div>
-                    </div>
-                    <a href="#" class="nav-link">
-                        <div class="nav-icon">🔔</div> Notificações
+                    <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint or 'semana.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">📅</div><span class="nav-text">Quadro Horário</span>
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">📊</div> Relatórios
+                        <div class="nav-icon">🔔</div><span class="nav-text">Notificações</span>
+                    </a>
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon">📊</div><span class="nav-text">Relatórios</span>
                     </a>
                 {% endif %}
                 
                 {% if current_user.role == 'programador' %}
                     <div class="nav-separator"></div>
                     <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if 'assets.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📁</div> Assets
+                        <div class="nav-icon">📁</div><span class="nav-text">Assets</span>
                     </a>
                     <a href="{{ url_for('customizer.index') }}" class="nav-link {% if 'customizer.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🎨</div> Personalizar
+                        <div class="nav-icon">🎨</div><span class="nav-text">Personalizar</span>
                     </a>
                 {% endif %}
                 
                 {% if current_user.aluno_profile %}
                     <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📊</div> Meu Histórico
+                        <div class="nav-icon">📊</div><span class="nav-text">Meu Histórico</span>
                     </a>
                     <div class="nav-separator"></div>
                     <a href="{{ url_for('horario.index') }}" class="nav-link">
-                        <div class="nav-icon">📅</div> Meu Horário
+                        <div class="nav-icon">📅</div><span class="nav-text">Meu Horário</span>
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">📋</div> Atividades
+                        <div class="nav-icon">📋</div><span class="nav-text">Atividades</span>
                     </a>
                     <a href="#" class="nav-link">
-                        <div class="nav-icon">📖</div> Material de Estudo
+                        <div class="nav-icon">📖</div><span class="nav-text">Material de Estudo</span>
                     </a>
                 {% endif %}
             </nav>
             
             <div class="sidebar-footer">
                 <a href="#" class="nav-link">
-                    <div class="nav-icon">👤</div> Meu Perfil
+                    <div class="nav-icon">👤</div><span class="nav-text">Meu Perfil</span>
                 </a>
                 <a href="#" class="nav-link">
-                    <div class="nav-icon">⚙️</div> Configurações
+                    <div class="nav-icon">⚙️</div><span class="nav-text">Configurações</span>
                 </a>
                 <a href="#" class="nav-link">
-                    <div class="nav-icon">❓</div> Ajuda
+                    <div class="nav-icon">❓</div><span class="nav-text">Ajuda</span>
                 </a>
                 <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
-                    <div class="nav-icon">🚪</div> Sair do Sistema
+                    <div class="nav-icon">🚪</div><span class="nav-text">Sair do Sistema</span>
                 </a>
             </div>
         </aside>
         {% endif %}
 
         <main class="main-content">
+            {% if current_user.is_authenticated %}
+            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            {% endif %}
+
             {% block navbar_content %}
             <nav class="navbar" {% if site_config.navbar_background_image %}style="background-image: url('{{ site_config.navbar_background_image }}');"{% endif %}>
             </nav>
@@ -182,22 +159,19 @@
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const submenuToggles = document.querySelectorAll('.submenu-toggle');
+        // O SCRIPT DO SUBMENU NÃO É MAIS NECESSÁRIO, MAS PODE SER DEIXADO AQUI
+        // POIS NÃO ENCONTRARÁ ELEMENTOS E NÃO CAUSARÁ ERRO.
+        // PARA MANTER O CÓDIGO LIMPO, O IDEAL SERIA REMOVÊ-LO.
 
-        submenuToggles.forEach(toggle => {
-            toggle.addEventListener('click', function(event) {
-                event.preventDefault();
-                const parent = this.parentElement;
-                this.classList.toggle('active');
-                const submenu = parent.querySelector('.submenu');
-                
-                if (submenu.style.maxHeight) {
-                    submenu.style.maxHeight = null;
-                } else {
-                    submenu.style.maxHeight = submenu.scrollHeight + "px";
-                }
+        // --- SCRIPT DA BARRA LATERAL RETRÁTIL ---
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const pageContainer = document.querySelector('.page-container');
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                pageContainer.classList.toggle('sidebar-collapsed');
             });
-        });
+        }
     });
     </script>
 </body>

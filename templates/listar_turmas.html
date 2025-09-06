@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Turmas{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Turmas</h1>
+    <p>Visualize e gerencie as turmas e seus alunos.</p>
+</div>
+
+<div class="table-container">
+    <div class="table-header">
+        <h3>Turmas Cadastradas</h3>
+        <a href="{{ url_for('turma.cadastrar_turma') }}" class="btn btn-primary">
+            <span>+</span> Cadastrar Nova Turma
+        </a>
+    </div>
+
+    <div class="turmas-grid">
+        {% for turma in turmas %}
+        <div class="turma-card">
+            <h4>{{ turma.nome }} ({{ turma.ano }})</h4>
+            <h5>Alunos:</h5>
+            <ul>
+                {% for aluno in turma.alunos %}
+                    <li>{{ aluno.user.nome_completo or aluno.user.username }}</li>
+                {% else %}
+                    <li style="color: #94a3b8; font-style: italic;">Nenhum aluno nesta turma.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🏫</div>
+            <h2>Nenhuma Turma Cadastrada</h2>
+            <p>Clique no botão acima para cadastrar a primeira turma.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.turmas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+.turma-card {
+    background-color: var(--color-background);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+.turma-card h4 {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+.turma-card h5 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-muted);
+}
+.turma-card ul {
+    list-style: none;
+    padding-left: 0;
+}
+.turma-card li {
+    padding: 0.25rem 0;
+    font-size: 0.95rem;
+}
+</style>
+{% endblock %}

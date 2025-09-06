@@ -14,10 +14,13 @@
             {% if pelotao_filtrado %}
                 Instrutores do {{ pelotao_filtrado }}
             {% else %}
-                Selecione um pelotão para ver os instrutores
+                Visão Geral das Disciplinas
             {% endif %}
         </h3>
-        </div>
+        <a href="{{ url_for('disciplina.adicionar_disciplina') }}" class="btn btn-primary">
+            <span>+</span> Adicionar Nova Disciplina
+        </a>
+    </div>
 
     <div class="table-filters">
         <strong>Visualizar Pelotão:</strong>
@@ -41,7 +44,7 @@
                     <tr>
                         <th>Matéria</th>
                         <th>Carga Horária</th>
-                        <th>Instrutor(es)</th>
+                        <th>Instrutor(es) ({% if pelotao_filtrado %}{{ pelotao_filtrado }}{% else %}Selecione um Pelotão{% endif %})</th>
                         <th class="text-right">Ações</th>
                     </tr>
                 </thead>
@@ -71,6 +74,12 @@
                     {% endfor %}
                 </tbody>
             </table>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📚</div>
+                <h2>Nenhuma Disciplina Cadastrada</h2>
+                <p>Use o comando 'flask seed-disciplinas' ou adicione uma nova disciplina manualmente.</p>
+            </div>
         {% endif %}
     </div>
 </div>

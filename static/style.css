@@ -22,7 +22,8 @@
     --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
     --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.1);
     --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    --sidebar-width: 280px;
+    /* LARGURA DA SIDEBAR CONVERTIDA PARA UNIDADE RELATIVA (REM) */
+    --sidebar-width: 17.5rem; /* 280px / 16px */
 }
 
 
@@ -38,6 +39,8 @@
 
 html {
     scroll-behavior: smooth;
+    /* Define o tamanho de fonte base para o cálculo do REM */
+    font-size: 16px; 
 }
 
 body {
@@ -80,7 +83,6 @@ a:hover {
 }
 
 .content-wrapper {
-    /* Padding superior significativamente reduzido */
     padding: 1rem 2rem;
 }
 
@@ -195,6 +197,7 @@ textarea:focus {
     left: 0;
     top: 0;
     z-index: 1000;
+    transition: width 0.3s ease;
 }
 
 .sidebar-header {
@@ -216,8 +219,8 @@ textarea:focus {
 
 .sidebar-logo-img, .logo-icon-default {
     display: block;
-    width: 60px;
-    height: 60px;
+    width: 3.75rem;
+    height: 3.75rem;
     border-radius: 12px;
 }
 
@@ -284,11 +287,20 @@ textarea:focus {
 .navbar {
     position: relative;
     background-color: var(--color-white);
-    min-height: 200px;
+    min-height: 10.9375rem;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     border-bottom: 1px solid var(--color-border);
+}
+
+/* ### NOVO ESTILO PARA A BARRA DE AÇÕES GLOBAIS ### */
+.global-action-bar {
+    padding: 1rem 2rem;
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    text-align: right;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* ------------------- ESTILOS DO DASHBOARD ------------------- */
@@ -421,6 +433,60 @@ textarea:focus {
 .btn-card.primary { background: var(--color-primary-light); color: var(--color-white); }
 .btn-card.dev-primary { background: #8b5cf6; color: white; }
 
+/* --- Estilo APRIMORADO para o campo de e-mail com domínio fixo --- */
+.email-domain-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: border-color 0.3s;
+}
+
+.email-domain-group:focus-within {
+    outline: none;
+    border-color: #3498db;
+}
+
+.email-domain-group input {
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 12px 0;
+    flex-grow: 1;
+    font-size: 1rem;
+    color: #333;
+}
+
+.email-domain-group .email-domain-label {
+    color: #888;
+    white-space: nowrap;
+    padding-left: 5px;
+}
+
+/* --- Estilo para as regras de senha --- */
+.password-rules {
+    padding: 10px 15px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    margin-top: -10px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.password-rules small {
+    font-weight: 600;
+}
+
+.password-rules ul {
+    list-style-position: inside;
+    padding-left: 5px;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
 
 /* ==========================================================================
    6. Layouts de Página Específicos
@@ -526,8 +592,7 @@ textarea:focus {
 
 /* Cabeçalho da Página de Conteúdo */
 .content-header {
-    /* Margem inferior reduzida para diminuir o espaço */
-    margin-bottom: 0.2rem;
+    margin-bottom: 1rem;
 }
 
 .content-header h1 {
@@ -549,7 +614,7 @@ textarea:focus {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-medium);
     border: 1px solid var(--color-border);
-    padding: 1rem;
+    padding: 2rem;
 }
 
 .table-header {
@@ -654,7 +719,6 @@ textarea:focus {
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
-    /* Margem inferior reduzida para diminuir o espaço */
     margin-bottom: 1rem;
 }
 
@@ -743,16 +807,15 @@ textarea:focus {
     z-index: 1010;
     background-color: var(--color-danger);
     color: var(--color-white);
-    border: 2px solid rgba(15, 0, 0, 0.7); /* Adiciona uma borda branca sutil */
+    border: 2px solid rgba(255, 255, 255, 0.7);
     writing-mode: vertical-rl;
     text-orientation: mixed;
     padding: 1.5rem 0.5rem;
     border-radius: var(--border-radius) 0 0 var(--border-radius);
     cursor: pointer;
-    font-weight: 700; /* Aumenta o peso da fonte para 700 (negrito mais forte) */
-    transition: right 0.4s ease-in-out, border-color 0.3s ease; /* Adiciona transição para a borda */
+    font-weight: 700;
+    transition: right 0.4s ease-in-out, border-color 0.3s ease;
 }
-
 
 .weekend-toggle-btn:hover {
     filter: brightness(1.1);
@@ -809,6 +872,8 @@ body.weekend-panel-open .weekend-panel {
 .slot-content.weekend .disciplina-title {
     color: #991b1b;
 }
+
+
 /* ==========================================================================
    9. Layouts de Cabeçalho de Página
    ========================================================================== */
@@ -817,23 +882,24 @@ body.weekend-panel-open .weekend-panel {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas pequenas */
+    flex-wrap: wrap;
     gap: 1rem;
 }
 
 .title-group {
-    flex-grow: 1; /* Permite que o título ocupe o espaço disponível */
+    flex-grow: 1;
 }
 
 .controls-group .form-group {
-    margin-bottom: 0; /* Remove a margem padrão para melhor alinhamento */
+    margin-bottom: 0;
 }
+
+
 /* ==========================================================================
    10. Estilos da Barra Lateral com Submenus
    ========================================================================== */
 
 .nav-link {
-    /* Garante que o conteúdo do link se espalhe */
     display: flex;
     width: 100%;
     align-items: center;
@@ -841,27 +907,17 @@ body.weekend-panel-open .weekend-panel {
 
 .submenu-arrow {
     display: inline-block;
-    margin-left: auto; /* Empurra a seta para a direita */
+    margin-left: auto;
     width: 0;
     height: 0;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid white; /* Cria um triângulo (seta) */
+    border-top: 5px solid white;
     transition: transform 0.3s ease;
 }
 
-/* Gira a seta quando o submenu está ativo */
 .nav-link.active .submenu-arrow {
     transform: rotate(180deg);
-}
-
-.submenu {
-    /* Oculta o submenu por padrão */
-    max-height: 0;
-    overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.2);
-    transition: max-height 0.4s ease-out; /* Animação de deslizar */
-    padding-left: 2.5rem; /* Indentação para os links do submenu */
 }
 
 .submenu {
@@ -869,21 +925,25 @@ body.weekend-panel-open .weekend-panel {
     overflow: hidden;
     background-color: rgba(0, 0, 0, 0.2);
     transition: max-height 0.4s ease-out;
-    /* Removemos o padding daqui para controlar no link */
 }
 
 .submenu-link {
     display: block;
-    padding: 0.6rem 1.5rem 0.6rem 3rem; /* Aumenta o padding esquerdo para dar espaço ao ponto */
+    padding: 0.6rem 1.5rem 0.6rem 3rem;
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;
     position: relative;
 }
 
+.submenu-link:hover {
+    color: white;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
 .submenu-link::before {
     content: '';
     position: absolute;
-    left: 1.75rem; /* Posição ajustada para a esquerda */
+    left: 1.75rem;
     top: 50%;
     transform: translateY(-50%);
     width: 5px;
@@ -891,6 +951,8 @@ body.weekend-panel-open .weekend-panel {
     border-radius: 50%;
     background-color: var(--color-primary-light);
 }
+
+
 /* ==========================================================================
    11. Filtros de Tabela
    ========================================================================== */
@@ -922,15 +984,164 @@ body.weekend-panel-open .weekend-panel {
     font-size: 0.8rem;
     padding: 0.4rem 0.8rem;
 }
+
+
 /* ==========================================================================
    12. Ações de Formulário
    ========================================================================== */
 
 .form-actions {
     display: flex;
-    justify-content: flex-end; /* Alinha os botões à direita */
-    gap: 1rem; /* Espaçamento entre os botões */
+    justify-content: flex-end;
+    gap: 1rem;
     margin-top: 2rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--color-border);
+}
+
+
+/* ==========================================================================
+   13. Layout Adaptativo (Media Queries)
+   ========================================================================== */
+
+/* Para telas de notebook e menores (até 1600px de largura) */
+@media (max-width: 1600px) {
+    html {
+        font-size: 87.5%; /* 14px */
+    }
+}
+
+/* Para telas de notebook ainda menores (até 1366px de largura) */
+@media (max-width: 1366px) {
+    html {
+        font-size: 80%; /* 12.8px, recriando o efeito de zoom */
+    }
+}
+
+/* Para telas muito pequenas (tablets em modo paisagem, etc.) */
+@media (max-width: 1200px) {
+    html {
+        font-size: 75%;
+    }
+}
+/* ==========================================================================
+   14. Edição do Quadro Horário
+   ========================================================================== */
+
+.horario-table-new.editable .schedule-slot {
+    padding: 0.25rem;
+}
+
+.slot-button.disponivel {
+    width: 100%;
+    height: 100%;
+    min-height: 50px;
+    border: 2px dashed #cbd5e1;
+    background-color: #f8fafc;
+    color: #94a3b8;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.slot-button.disponivel:hover {
+    background-color: #eff6ff;
+    border-color: var(--color-primary-light);
+    color: var(--color-primary-light);
+}
+
+.slot-content .status-icon {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1rem;
+    cursor: help;
+}
+
+.slot-content.pendente {
+    background-color: #fefce8;
+    border-color: #f59e0b;
+}
+
+.slot-content.pendente .disciplina-title {
+    color: #b45309;
+}
+
+
+/* --- Modal --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    width: 100%;
+    max-width: 500px;
+    box-shadow: var(--shadow-large);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.visible .modal-content {
+    transform: scale(1);
+}
+/* ==========================================================================
+   15. Estilos de Status da Semana
+   ========================================================================== */
+
+/* Semana Passada (Vermelho) */
+.selection-item.passada {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+}
+.selection-item.passada:hover {
+    border-color: #f87171;
+    background-color: #fee2e2;
+}
+.selection-item.passada input[type="radio"]:checked + .selection-content {
+    border-left-color: var(--color-danger);
+}
+
+/* Semana Atual (Amarelo) */
+.selection-item.atual {
+    background-color: #fefce8;
+    border-color: #fde68a;
+}
+.selection-item.atual:hover {
+    border-color: #facc15;
+    background-color: #fef9c3;
+}
+.selection-item.atual input[type="radio"]:checked + .selection-content {
+    border-left-color: var(--color-warning);
+}
+
+/* Semana Futura (Verde) */
+.selection-item.futura {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.selection-item.futura:hover {
+    border-color: #4ade80;
+    background-color: #dcfce7;
+}
+.selection-item.futura input[type="radio"]:checked + .selection-content {
+    border-left-color: var(--color-success);
 }

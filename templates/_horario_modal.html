@@ -1,0 +1,31 @@
+<div class="modal-overlay" id="horario-modal-overlay">
+    <div class="modal-content">
+        <h3 id="modal-title">Agendar Aula</h3>
+        <form id="modal-form">
+            <input type="hidden" id="modal-dia" name="dia">
+            <input type="hidden" id="modal-periodo" name="periodo">
+
+            <div class="form-group">
+                <label for="modal-disciplina">Disciplina</label>
+                <select id="modal-disciplina" name="disciplina_id" class="form-control" required>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label for="modal-instrutor">Instrutor</label>
+                <select id="modal-instrutor" name="instrutor_id" class="form-control" required>
+                    </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-duracao">Duração (períodos)</label>
+                <input type="number" id="modal-duracao" name="duracao" class="form-control" value="1" min="1" max="8">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="modal-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>

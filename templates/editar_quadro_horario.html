@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Quadro Horário - {{ pelotao_selecionado }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Editar Quadro Horário</h1>
+    <p>Você está editando o horário para: <strong>{{ pelotao_selecionado }}</strong> na semana <strong>{{ semana_selecionada.nome }}</strong></p>
+</div>
+
+<form id="horario-form">
+    <input type="hidden" name="pelotao" value="{{ pelotao_selecionado }}">
+    <input type="hidden" name="semana_id" value="{{ semana_selecionada.id }}">
+    
+    <div class="table-wrapper">
+        <table class="horario-table-new editable">
+            <thead>
+                <tr>
+                    <th class="header-tempo">Horário</th>
+                    <th class="header-dia">Segunda-feira</th>
+                    <th class="header-dia">Terça-feira</th>
+                    <th class="header-dia">Quarta-feira</th>
+                    <th class="header-dia">Quinta-feira</th>
+                    <th class="header-dia">Sexta-feira</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set tempos = [
+                    ("1º", "07:30-08:15"), ("2º", "08:15-09:00"), ("3º", "09:00-09:45"),
+                    ("4º", "10:05-10:50"), ("5º", "10:50-11:35"), ("6º", "11:35-12:20"),
+                    ("7º", "13:30-14:15"), ("8º", "14:15-15:00"), ("9º", "15:00-15:45"),
+                    ("10º", "16:05-16:50"), ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
+                    ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
+                ] %}
+                {% set dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta'] %}
+
+                {% for row_idx in range(15) %}
+                <tr>
+                    <td class="cell-tempo">
+                        <strong>{{ tempos[row_idx][0] }}</strong>
+                        <span>{{ tempos[row_idx][1] }}</span>
+                    </td>
+                    
+                    {% for col_idx in range(5) %}
+                        {% set aula = horario_matrix[row_idx][col_idx] %}
+                        {% if aula != 'SKIP' %}
+                            <td class="schedule-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
+                                {% if aula.is_disposicao %}
+                                    <button type="button" class="slot-button disponivel" 
+                                            data-dia="{{ dias[col_idx] }}" data-periodo="{{ row_idx + 1 }}">
+                                        Selecionar
+                                    </button>
+                                {% else %}
+                                    <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}">
+                                        <div class="disciplina-title">{{ aula.materia }}</div>
+                                        <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                        {% if aula.status == 'pendente' %}
+                                            <span class="status-icon" title="Aguardando confirmação">🕐</span>
+                                        {% elif aula.status == 'confirmado' %}
+                                            <span class="status-icon" title="Confirmado">✅</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-actions">
+        <a href="{{ url_for('horario.selecionar_turma_edicao') }}" class="btn btn-secondary">Voltar</a>
+        <button type="button" class="btn btn-primary" id="save-horario-btn">Salvar Alterações</button>
+    </div>
+</form>
+
+{% include '_horario_modal.html' %}
+
+<script>
+    const DISCIPLINAS_DISPONIVEIS = {{ disciplinas_disponiveis | tojson }};
+    const INSTRUTORES_DISPONIVEIS = {{ instrutores_disponiveis | tojson }};
+    const PELOTAO_SELECIONADO = "{{ pelotao_selecionado }}";
+    const SEMANA_ID = "{{ semana_selecionada.id }}";
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalOverlay = document.getElementById('horario-modal-overlay');
+    const modalForm = document.getElementById('modal-form');
+    const modalDisciplinaSelect = document.getElementById('modal-disciplina');
+    const modalInstrutorSelect = document.getElementById('modal-instrutor');
+    const modalDiaInput = document.getElementById('modal-dia');
+    const modalPeriodoInput = document.getElementById('modal-periodo');
+    const modalCancelBtn = document.getElementById('modal-cancel');
+    const saveHorarioBtn = document.getElementById('save-horario-btn');
+
+    let agendamentos = {};
+
+    function openModal(dia, periodo) {
+        modalDiaInput.value = dia;
+        modalPeriodoInput.value = periodo;
+
+        modalDisciplinaSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
+        DISCIPLINAS_DISPONIVEIS.forEach(d => {
+            modalDisciplinaSelect.innerHTML += `<option value="${d.id}">${d.nome}</option>`;
+        });
+
+        modalInstrutorSelect.innerHTML = '<option value="">Selecione o instrutor</option>';
+        INSTRUTORES_DISPONIVEIS.forEach(i => {
+            modalInstrutorSelect.innerHTML += `<option value="${i.id}">${i.nome}</option>`;
+        });
+
+        modalOverlay.classList.add('visible');
+    }
+
+    document.querySelectorAll('.slot-button.disponivel').forEach(button => {
+        button.addEventListener('click', () => {
+            openModal(button.dataset.dia, button.dataset.periodo);
+        });
+    });
+
+    modalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const dia = modalDiaInput.value;
+        const periodo = modalPeriodoInput.value;
+        const key = `${dia}-${periodo}`;
+
+        agendamentos[key] = {
+            dia: dia,
+            periodo: periodo,
+            disciplina_id: modalDisciplinaSelect.value,
+            instrutor_id: modalInstrutorSelect.value,
+            duracao: document.getElementById('modal-duracao').value
+        };
+
+        alert('Aula pré-agendada. Clique em "Salvar Alterações" para confirmar.');
+        modalOverlay.classList.remove('visible');
+    });
+
+    modalCancelBtn.addEventListener('click', () => modalOverlay.classList.remove('visible'));
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.classList.remove('visible');
+        }
+    });
+    
+    saveHorarioBtn.addEventListener('click', function() {
+        const payload = {
+            pelotao: PELOTAO_SELECIONADO,
+            semana_id: SEMANA_ID,
+            aulas: Object.values(agendamentos)
+        };
+
+        fetch("{{ url_for('horario.salvar_horario') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = `/horario/editar?pelotao=${PELOTAO_SELECIONADO}&semana_id=${SEMANA_ID}`;
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ocorreu um erro de comunicação com o servidor.');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -6,9 +6,27 @@ from ..models.database import db
 from ..models.disciplina import Disciplina
 from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
+from ..services.disciplina_service import DisciplinaService # Importa o service
 from utils.decorators import admin_or_programmer_required
 
 disciplina_bp = Blueprint('disciplina', __name__, url_prefix='/disciplina')
+
+@disciplina_bp.route('/adicionar', methods=['GET', 'POST'])
+@login_required
+@admin_or_programmer_required
+def adicionar_disciplina():
+    if request.method == 'POST':
+        # Usamos o mesmo service que já validava e salvava
+        success, message = DisciplinaService.save_disciplina(request.form)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('disciplina.listar_disciplinas'))
+        else:
+            flash(message, 'danger')
+            return render_template('adicionar_disciplina.html', form_data=request.form)
+    
+    return render_template('adicionar_disciplina.html')
+
 
 @disciplina_bp.route('/listar')
 @login_required
