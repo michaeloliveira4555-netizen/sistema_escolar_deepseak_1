@@ -1,11 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required
-from sqlalchemy import select
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required, current_user
+from sqlalchemy import select, delete
+from sqlalchemy.exc import IntegrityError
 
 from ..models.database import db
 from ..models.disciplina import Disciplina
 from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
+from ..models.historico_disciplina import HistoricoDisciplina
 from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
@@ -100,3 +102,72 @@ def editar_disciplina(disciplina_id):
         atribuicoes=atribuicoes,
         disciplinas_com_dois_instrutores=disciplinas_com_dois_instrutores
     )
+
+@disciplina_bp.route('/editar_nome/<int:disciplina_id>', methods=['GET', 'POST'])
+@login_required
+@admin_or_programmer_required
+def editar_nome_disciplina(disciplina_id):
+    """Edita apenas o nome e carga horária da disciplina"""
+    disciplina = db.session.get(Disciplina, disciplina_id)
+    if not disciplina:
+        flash("Disciplina não encontrada.", 'danger')
+        return redirect(url_for('disciplina.listar_disciplinas'))
+    
+    if request.method == 'POST':
+        novo_nome = request.form.get('materia')
+        nova_carga_horaria = request.form.get('carga_horaria_prevista')
+        
+        # Verificar se já existe outra disciplina com o mesmo nome
+        if novo_nome != disciplina.materia:
+            disciplina_existente = db.session.execute(
+                select(Disciplina).where(Disciplina.materia == novo_nome)
+            ).scalar_one_or_none()
+            
+            if disciplina_existente:
+                flash('Já existe uma disciplina com este nome!', 'error')
+                return render_template('editar_nome_disciplina.html', disciplina=disciplina)
+        
+        disciplina.materia = novo_nome
+        disciplina.carga_horaria_prevista = int(nova_carga_horaria) if nova_carga_horaria else 0
+        
+        try:
+            db.session.commit()
+            flash(f'Disciplina "{disciplina.materia}" atualizada com sucesso!', 'success')
+            return redirect(url_for('disciplina.listar_disciplinas'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Erro ao atualizar a disciplina. Verifique os dados.', 'error')
+    
+    return render_template('editar_nome_disciplina.html', disciplina=disciplina)
+
+@disciplina_bp.route('/excluir/<int:disciplina_id>', methods=['POST'])
+@login_required
+@admin_or_programmer_required
+def excluir_disciplina(disciplina_id):
+    """Exclui uma disciplina se não estiver vinculada a históricos"""
+    disciplina = db.session.get(Disciplina, disciplina_id)
+    
+    if not disciplina:
+        flash('Disciplina não encontrada!', 'error')
+        return redirect(url_for('disciplina.listar_disciplinas'))
+    
+    # Verificar se a disciplina está sendo usada em algum histórico
+    historico_count = db.session.execute(
+        select(HistoricoDisciplina).where(HistoricoDisciplina.disciplina_id == disciplina_id)
+    ).scalars().count()
+    
+    if historico_count > 0:
+        flash(f'Não é possível excluir "{disciplina.materia}" pois está vinculada a {historico_count} histórico(s)!', 'error')
+        return redirect(url_for('disciplina.listar_disciplinas'))
+    
+    # Remover atribuições de turma primeiro
+    db.session.execute(
+        delete(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina_id)
+    )
+    
+    # Agora pode excluir a disciplina
+    db.session.delete(disciplina)
+    db.session.commit()
+    
+    flash(f'Disciplina "{disciplina.materia}" excluída com sucesso!', 'success')
+    return redirect(url_for('disciplina.listar_disciplinas'))
