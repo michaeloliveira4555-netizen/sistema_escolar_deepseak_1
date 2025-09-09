@@ -213,3 +213,33 @@ def salvar_horario():
         db.session.rollback()
         current_app.logger.error(f"Erro ao salvar horário: {e}")
         return jsonify({'success': False, 'message': 'Ocorreu um erro ao salvar o horário.'}), 500
+
+@horario_bp.route('/aprovar', methods=['GET', 'POST'])
+@login_required
+@admin_or_programmer_required
+def aprovar_horarios():
+    if request.method == 'POST':
+        horario_id = request.form.get('horario_id')
+        action = request.form.get('action')
+        
+        horario = db.session.get(Horario, horario_id)
+        
+        if horario:
+            if action == 'aprovar':
+                horario.status = 'confirmado'
+                flash(f'Aula de {horario.disciplina.materia} aprovada com sucesso!', 'success')
+            elif action == 'negar':
+                db.session.delete(horario)
+                flash(f'Aula de {horario.disciplina.materia} negada e removida com sucesso!', 'warning')
+            
+            db.session.commit()
+        else:
+            flash('Horário não encontrado.', 'danger')
+            
+        return redirect(url_for('horario.aprovar_horarios'))
+        
+    aulas_pendentes = db.session.scalars(
+        select(Horario).where(Horario.status == 'pendente').order_by(Horario.id)
+    ).all()
+    
+    return render_template('aprovar_horarios.html', aulas_pendentes=aulas_pendentes)

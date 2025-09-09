@@ -50,9 +50,9 @@ def cadastro_instrutor_admin():
             flash(password_message, 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
         
-        user_exists_matricula = db.session.execute(db.select(User).filter_by(matricula=matricula)).scalar_one_or_none()
-        if user_exists_matricula:
-            flash('Esta matrícula já está em uso.', 'danger')
+        user_exists_id_func = db.session.execute(db.select(User).filter_by(id_func=matricula)).scalar_one_or_none()
+        if user_exists_id_func:
+            flash('Esta Id Funcional (matrícula) já está em uso.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
         
         user_exists_email = db.session.execute(db.select(User).filter_by(email=email)).scalar_one_or_none()
@@ -61,7 +61,7 @@ def cadastro_instrutor_admin():
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
 
         new_user = User(
-            matricula=matricula,
+            id_func=matricula,
             username=matricula,
             nome_completo=nome_completo,
             email=email, 
