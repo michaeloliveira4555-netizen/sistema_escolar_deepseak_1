@@ -28,27 +28,15 @@ class DisciplinaService:
             return False, "Uma disciplina com este nome já existe."
 
         try:
-            # 1. Cria a nova disciplina
+            # A função agora apenas cria a disciplina. A associação com as turmas
+            # é feita dinamicamente pela tela de detalhes da turma.
             nova_disciplina = Disciplina(
                 materia=nome_materia,
                 carga_horaria_prevista=carga_horaria_int
             )
             db.session.add(nova_disciplina)
             db.session.commit()
-
-            # 2. Busca todas as turmas existentes
-            turmas = db.session.scalars(select(Turma)).all()
-            
-            # 3. Cria a associação da nova disciplina para cada turma
-            for turma in turmas:
-                associacao = DisciplinaTurma(
-                    pelotao=turma.nome,
-                    disciplina_id=nova_disciplina.id
-                )
-                db.session.add(associacao)
-            
-            db.session.commit()
-            return True, "Disciplina cadastrada e associada a todas as turmas com sucesso!"
+            return True, "Disciplina cadastrada com sucesso!"
         except IntegrityError:
             db.session.rollback()
             return False, "Uma disciplina com este nome já existe."

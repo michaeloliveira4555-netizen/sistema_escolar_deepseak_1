@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema EsFAS{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
@@ -62,25 +62,23 @@
                     <div class="nav-icon">🏠</div> Início
                 </a>
                 
+                <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                    <div class="nav-icon">👥</div> Alunos
+                </a>
+                <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                    <div class="nav-icon">🎓</div> Instrutores
+                </a>
+                <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                    <div class="nav-icon">📚</div> Disciplinas
+                </a>
+                <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if 'turma.' in request.endpoint %}active{% endif %}">
+                    <div class="nav-icon">🏫</div> Turmas
+                </a>
+                <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint or 'semana.' in request.endpoint %}active{% endif %}">
+                    <div class="nav-icon">📅</div> Quadro Horário
+                </a>
+                
                 {% if current_user.role in ['admin', 'programador'] %}
-                    <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">👥</div> Alunos
-                    </a>
-                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🎓</div> Instrutores
-                    </a>
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📚</div> Disciplinas
-                    </a>
-                    <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if 'turma.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🏫</div> Turmas
-                    </a>
-                    
-                    <div class="nav-separator"></div>
-
-                    <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint or 'semana.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📅</div> Quadro Horário
-                    </a>
                     <a href="{{ url_for('horario.aprovar_horarios') }}" class="nav-link {% if request.endpoint == 'horario.aprovar_horarios' %}active{% endif %}">
                         <div class="nav-icon">👍</div> Aprovar Aulas
                     </a>
@@ -102,13 +100,10 @@
                     </a>
                 {% endif %}
                 
-                {% if current_user.aluno_profile %}
+                {% if current_user.role == 'aluno' %}
+                    <div class="nav-separator"></div>
                     <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">📊</div> Meu Histórico
-                    </a>
-                    <div class="nav-separator"></div>
-                    <a href="{{ url_for('horario.index') }}" class="nav-link">
-                        <div class="nav-icon">📅</div> Meu Horário
                     </a>
                     <a href="#" class="nav-link">
                         <div class="nav-icon">📋</div> Atividades
@@ -120,15 +115,15 @@
             </nav>
             
             <div class="sidebar-footer">
-                <a href="#" class="nav-link">
-                    <div class="nav-icon">👤</div> Meu Perfil
-                </a>
-                <a href="#" class="nav-link">
-                    <div class="nav-icon">⚙️</div> Configurações
-                </a>
-                <a href="#" class="nav-link">
-                    <div class="nav-icon">❓</div> Ajuda
-                </a>
+                {% if current_user.role == 'aluno' %}
+                    <a href="{{ url_for('aluno.editar_meu_perfil') }}" class="nav-link">
+                        <div class="nav-icon">👤</div> Meu Perfil
+                    </a>
+                {% else %}
+                     <a href="#" class="nav-link">
+                        <div class="nav-icon">👤</div> Meu Perfil
+                    </a>
+                {% endif %}
                 <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
                     <div class="nav-icon">🚪</div> Sair do Sistema
                 </a>

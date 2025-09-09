@@ -17,15 +17,17 @@
                 Visão Geral das Disciplinas
             {% endif %}
         </h3>
+        {% if current_user.role in ['admin', 'programador'] %}
         <a href="{{ url_for('disciplina.adicionar_disciplina') }}" class="btn btn-primary">
             <span>+</span> Adicionar Nova Disciplina
         </a>
+        {% endif %}
     </div>
 
     <div class="table-filters">
         <strong>Visualizar Pelotão:</strong>
         <div class="filter-buttons">
-            {% for i in range(1, 11) %}
+            {% for i in range(1, 9) %}
             <a href="{{ url_for('disciplina.listar_disciplinas', pelotao=i ~ '° Pelotão') }}" 
                class="btn btn-sm {% if pelotao_filtrado and pelotao_filtrado == i ~ '° Pelotão' %}btn-primary{% else %}btn-secondary{% endif %}">
                 {{ i }}º Pelotão
@@ -44,8 +46,12 @@
                     <tr>
                         <th>Matéria</th>
                         <th>Carga Horária</th>
-                        <th>Instrutor(es) ({% if pelotao_filtrado %}{{ pelotao_filtrado }}{% else %}Selecione um Pelotão{% endif %})</th>
+                        {% if pelotao_filtrado %}
+                        <th>Instrutor(es) ({{ pelotao_filtrado }})</th>
+                        {% endif %}
+                        {% if current_user.role in ['admin', 'programador'] %}
                         <th class="text-right">Ações</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -53,42 +59,23 @@
                     <tr>
                         <td data-label="Matéria">{{ disciplina.materia }}</td>
                         <td data-label="Carga Horária">{{ disciplina.carga_horaria_prevista if disciplina.carga_horaria_prevista > 0 else 'N/D' }}h</td>
+                        {% if pelotao_filtrado %}
                         <td data-label="Instrutor(es)">
-                            {% if pelotao_filtrado %}
-                                {% if associacao and associacao.instrutor_1 %}
-                                    <div>{{ associacao.instrutor_1.user.nome_completo or associacao.instrutor_1.user.username }}</div>
-                                    {% if associacao.instrutor_2 %}
-                                        <div style="color: #6c757d;">{{ associacao.instrutor_2.user.nome_completo or associacao.instrutor_2.user.username }}</div>
-                                    {% endif %}
-                                {% else %}
-                                    <span style="color: #aaa;">Não atribuído</span>
+                            {% if associacao and associacao.instrutor_1 %}
+                                <div>{{ associacao.instrutor_1.user.nome_completo or associacao.instrutor_1.user.username }}</div>
+                                {% if associacao.instrutor_2 %}
+                                    <div style="color: #6c757d;">{{ associacao.instrutor_2.user.nome_completo or associacao.instrutor_2.user.username }}</div>
                                 {% endif %}
                             {% else %}
-                                <span style="color: #aaa;">Selecione um pelotão</span>
+                                <span style="color: #aaa;">Não atribuído</span>
                             {% endif %}
                         </td>
+                        {% endif %}
+                        {% if current_user.role in ['admin', 'programador'] %}
                         <td data-label="Ações" class="text-right">
-                            <div class="btn-group">
-                                <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" 
-                                   class="btn btn-sm btn-primary">
-                                    <span class="btn-icon-mobile">⚙️</span>
-                                    <span class="btn-text-mobile">Gerenciar</span>
-                                </a>
-                                <a href="{{ url_for('disciplina.editar_nome_disciplina', disciplina_id=disciplina.id) }}" 
-                                   class="btn btn-sm btn-warning">
-                                    <span class="btn-icon-mobile">✏️</span>
-                                    <span class="btn-text-mobile">Editar Nome</span>
-                                </a>
-                                <form action="{{ url_for('disciplina.excluir_disciplina', disciplina_id=disciplina.id) }}" 
-                                      method="POST" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                            onclick="return confirmDelete('{{ disciplina.materia }}')">
-                                        <span class="btn-icon-mobile">🗑️</span>
-                                        <span class="btn-text-mobile">Excluir</span>
-                                    </button>
-                                </form>
-                            </div>
+                            <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Gerenciar</a>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -102,10 +89,4 @@
         {% endif %}
     </div>
 </div>
-
-<script>
-function confirmDelete(disciplinaNome) {
-    return confirm(`Tem certeza que deseja excluir permanentemente "${disciplinaNome}"?\n\nEsta ação não pode ser desfeita.`);
-}
-</script>
 {% endblock %}

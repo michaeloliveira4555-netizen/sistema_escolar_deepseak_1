@@ -5,15 +5,17 @@
 {% block content %}
 <div class="content-header">
     <h1>Turmas</h1>
-    <p>Visualize e gerencie as turmas e seus alunos.</p>
+    <p>Visualize as turmas e seus alunos.</p>
 </div>
 
 <div class="table-container">
     <div class="table-header">
         <h3>Turmas Cadastradas</h3>
+        {% if current_user.role in ['admin', 'programador'] %}
         <a href="{{ url_for('turma.cadastrar_turma') }}" class="btn btn-primary">
             <span>+</span> Cadastrar Nova Turma
         </a>
+        {% endif %}
     </div>
 
     <div class="turmas-grid">
@@ -32,7 +34,9 @@
         <div class="empty-state">
             <div class="empty-icon">🏫</div>
             <h2>Nenhuma Turma Cadastrada</h2>
+            {% if current_user.role in ['admin', 'programador'] %}
             <p>Clique no botão acima para cadastrar a primeira turma.</p>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

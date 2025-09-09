@@ -11,8 +11,13 @@ from utils.validators import validate_email, validate_password_strength
 
 instrutor_bp = Blueprint('instrutor', __name__, url_prefix='/instrutor')
 
-# ... (o resto do controller que não foi alterado) ...
+@instrutor_bp.route('/listar')
+@login_required # Permite que todos os logados acessem
+def listar_instrutores():
+    instrutores = InstrutorService.get_all_instrutores()
+    return render_template('listar_instrutores.html', instrutores=instrutores)
 
+# As rotas de edição e cadastro permanecem apenas para admins
 @instrutor_bp.route('/cadastro_admin', methods=['GET', 'POST'])
 @login_required
 @admin_or_programmer_required
@@ -32,7 +37,6 @@ def cadastro_instrutor_admin():
         telefone = request.form.get('telefone')
         disciplina_id = request.form.get('disciplina_id')
 
-        # Validação principal (não inclui disciplina_id, tornando-o opcional)
         if not all([nome_completo, matricula, email, password, password2, especializacao, formacao]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
@@ -75,9 +79,7 @@ def cadastro_instrutor_admin():
         success, message = InstrutorService.save_instrutor(new_user.id, request.form.to_dict())
 
         if success:
-            # Este bloco só executa se uma disciplina for selecionada no formulário
             if disciplina_id and disciplina_id.isdigit():
-                # CORREÇÃO: Passando o ID do usuário (new_user.id) em vez do ID do perfil
                 DisciplinaService.update_disciplina_instrutor(int(disciplina_id), new_user.id)
             
             flash('Instrutor cadastrado com sucesso!', 'success')
@@ -89,14 +91,6 @@ def cadastro_instrutor_admin():
             return render_template('cadastro_instrutor.html', form_data=request.form, disciplinas=disciplinas, is_admin_flow=True)
 
     return render_template('cadastro_instrutor.html', form_data={}, disciplinas=disciplinas, is_admin_flow=True)
-# ... (o resto do controller que não foi alterado) ...
-
-@instrutor_bp.route('/listar')
-@login_required
-@admin_or_programmer_required
-def listar_instrutores():
-    instrutores = InstrutorService.get_all_instrutores()
-    return render_template('listar_instrutores.html', instrutores=instrutores)
 
 @instrutor_bp.route('/editar/<int:instrutor_id>', methods=['GET', 'POST'])
 @login_required

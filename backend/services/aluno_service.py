@@ -1,16 +1,34 @@
+import os
+import uuid
+from flask import current_app
+from werkzeug.utils import secure_filename
 from ..models.database import db
 from ..models.aluno import Aluno
 from ..models.user import User
 from ..models.historico import HistoricoAluno
-from ..models.turma import Turma # Importa o modelo Turma
+from ..models.turma import Turma
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from flask import current_app
 from datetime import datetime
+from utils.image_utils import allowed_file
+
+def _save_profile_picture(file):
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4()}.{ext}"
+        
+        upload_folder = os.path.join(current_app.static_folder, 'uploads', 'profile_pics')
+        os.makedirs(upload_folder, exist_ok=True)
+        file_path = os.path.join(upload_folder, unique_filename)
+        file.save(file_path)
+        
+        return unique_filename
+    return None
 
 class AlunoService:
     @staticmethod
-    def save_aluno(user_id, data):
+    def save_aluno(user_id, data, foto_perfil=None):
         existing_aluno = db.session.execute(
             select(Aluno).where(Aluno.user_id == user_id)
         ).scalar_one_or_none()
@@ -19,7 +37,6 @@ class AlunoService:
 
         matricula = data.get('matricula')
         opm = data.get('opm')
-        # O campo 'pelotao' foi substituído por 'turma_id'
         turma_id = data.get('turma_id')
         funcao_atual = data.get('funcao_atual')
 
@@ -27,12 +44,15 @@ class AlunoService:
             return False, "Todos os campos (Matrícula, OPM) são obrigatórios."
 
         try:
+            foto_filename = _save_profile_picture(foto_perfil)
+
             novo_aluno = Aluno(
                 user_id=user_id,
                 matricula=matricula,
                 opm=opm,
                 turma_id=int(turma_id) if turma_id else None,
-                funcao_atual=funcao_atual
+                funcao_atual=funcao_atual,
+                foto_perfil=foto_filename if foto_filename else 'default.png'
             )
             db.session.add(novo_aluno)
             db.session.commit()
@@ -50,9 +70,7 @@ class AlunoService:
         stmt = select(Aluno).join(User)
         stmt = stmt.where(User.role != 'admin')
         
-        # --- LÓGICA DE FILTRO ATUALIZADA ---
         if nome_turma:
-            # Junta a tabela Aluno com a tabela Turma e filtra pelo nome da turma
             stmt = stmt.join(Turma).where(Turma.nome == nome_turma) 
             
         stmt = stmt.order_by(User.username)
@@ -64,18 +82,19 @@ class AlunoService:
         return db.session.get(Aluno, aluno_id)
 
     @staticmethod
-    def update_aluno(aluno_id: int, data: dict):
+    def update_aluno(aluno_id: int, data: dict, foto_perfil=None):
         aluno = db.session.get(Aluno, aluno_id)
         if not aluno:
             return False, "Aluno não encontrado."
 
+        nome_completo = data.get('nome_completo')
         matricula = data.get('matricula')
         opm = data.get('opm')
         turma_id = data.get('turma_id')
         nova_funcao_atual = data.get('funcao_atual')
 
-        if not all([matricula, opm]):
-            return False, "Todos os campos (Matrícula, OPM) são obrigatórios."
+        if not all([nome_completo, matricula, opm, turma_id]):
+            return False, "Nome, Matrícula, OPM e Turma são campos obrigatórios."
 
         try:
             old_funcao = aluno.funcao_atual if aluno.funcao_atual else ''
@@ -91,6 +110,13 @@ class AlunoService:
                 )
                 db.session.add(log_historico)
 
+            if aluno.user:
+                aluno.user.nome_completo = nome_completo
+            
+            if foto_perfil:
+                foto_filename = _save_profile_picture(foto_perfil)
+                aluno.foto_perfil = foto_filename
+            
             aluno.matricula = matricula
             aluno.opm = opm
             aluno.turma_id = int(turma_id) if turma_id else None
