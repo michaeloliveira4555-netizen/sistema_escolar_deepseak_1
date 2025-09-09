@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from ..models.database import db
+from ..extensions import db
 from ..models.image_asset import ImageAsset
 from ..models.site_config import SiteConfig
 from ..services.site_config_service import SiteConfigService
-from ..utils.decorators import admin_required
+from utils.decorators import admin_required
 
 customizer_bp = Blueprint('customizer', __name__, url_prefix='/customizer')
 

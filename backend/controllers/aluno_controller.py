@@ -5,8 +5,8 @@ from flask_login import login_required, current_user
 from ..extensions import db
 from ..services.aluno_service import AlunoService
 from ..models.user import User
-from ..utils.decorators import admin_required
-from ..utils.validators import validate_email, validate_password_strength
+from utils.decorators import admin_required
+from utils.validators import validate_email, validate_password_strength
 
 aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 

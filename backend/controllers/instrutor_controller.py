@@ -2,12 +2,12 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 
-from ..models.database import db
+from ..extensions import db
 from ..models.user import User
 from ..services.instrutor_service import InstrutorService
 from ..services.disciplina_service import DisciplinaService
-from ..utils.decorators import admin_required
-from ..utils.validators import validate_username, validate_email, validate_password_strength, validate_cpf, validate_telefone
+from utils.decorators import admin_required
+from utils.validators import validate_username, validate_email, validate_password_strength, validate_cpf, validate_telefone
 
 instrutor_bp = Blueprint('instrutor', __name__, url_prefix='/instrutor')
 

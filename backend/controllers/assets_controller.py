@@ -3,10 +3,10 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-from ..models.database import db
+from ..extensions import db
 from ..models.image_asset import ImageAsset
-from ..utils.decorators import admin_required
-from ..utils.image_utils import allowed_file, generate_unique_filename, optimize_image, get_file_hash
+from utils.decorators import admin_required
+from utils.image_utils import allowed_file, generate_unique_filename, optimize_image, get_file_hash
 
 assets_bp = Blueprint('assets', __name__, url_prefix='/assets')
 
