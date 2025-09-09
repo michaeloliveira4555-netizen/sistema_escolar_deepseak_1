@@ -5,7 +5,7 @@
 {% block content %}
 <div class="content-header">
     <h1>{{ turma.nome }}</h1>
-    <p>Gerencie os alunos e as disciplinas desta turma.</p>
+    <p>Visualize os alunos e as disciplinas desta turma.</p>
 </div>
 
 <div class="turma-details-grid">
@@ -27,7 +27,7 @@
                     <input type="checkbox" name="aluno_ids" value="{{ aluno.id }}" class="aluno-checkbox">
                     {% endif %}
                     <div class="aluno-avatar">
-                        <img src="{{ url_for('static', filename='uploads/' + (aluno.foto_perfil or 'default.png')) }}" alt="Foto do Aluno">
+                        <img src="{{ url_for('static', filename='uploads/profile_pics/' + (aluno.foto_perfil or 'default.png')) }}" alt="Foto do Aluno">
                     </div>
                     <div class="aluno-info">
                         <strong>{{ aluno.user.nome_completo or aluno.user.username }}</strong>
@@ -118,7 +118,7 @@
 </div>
 
 <style>
-/* Estilos existentes... */
+/* ... (estilos existentes) ... */
 .disciplina-item-readonly {
     padding: 1rem;
     border-bottom: 1px solid #f1f5f9;

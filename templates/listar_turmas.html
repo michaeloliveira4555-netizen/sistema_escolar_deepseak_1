@@ -22,7 +22,15 @@
         {% for turma in turmas %}
         <a href="{{ url_for('turma.detalhes_turma', turma_id=turma.id) }}" class="turma-card-link">
             <div class="turma-card">
-                <div class="turma-card-icon">🏫</div>
+                <div class="turma-card-icon">
+                    {% set turma_index = loop.index %}
+                    {% set icon_key = 'turma_' ~ turma_index ~ '_icon' %}
+                    {% if site_config[icon_key] %}
+                        <img src="{{ site_config[icon_key] }}" alt="Ícone da {{ turma.nome }}" class="turma-icon-img">
+                    {% else %}
+                        <span>🏫</span>
+                    {% endif %}
+                </div>
                 <div class="turma-card-content">
                     <h4>{{ turma.nome }}</h4>
                     <p>{{ turma.ano }}</p>
@@ -72,8 +80,23 @@
 }
 
 .turma-card-icon {
-    font-size: 3rem;
+    /* Aumentado o tamanho para melhor visualização do ícone */
+    width: 150px; /* Antes 48px */
+    height: 150px; /* Antes 48px */
+    font-size: 3.5rem; /* Ajustado para ícones de texto, caso não haja imagem */
     color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 8px; /* Adicionado um leve arredondamento para o contêiner do ícone */
+    background-color: var(--color-background); /* Adicionado um fundo para destaque */
+}
+
+.turma-icon-img {
+    width: 90%; /* A imagem preencherá quase todo o contêiner do ícone */
+    height: 90%;
+    object-fit: contain; /* Garante que a imagem inteira seja visível, sem corte */
 }
 
 .turma-card-content h4 {
@@ -91,6 +114,31 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-primary-light);
+}
+
+.empty-state {
+    grid-column: 1 / -1; /* Ocupa todas as colunas */
+    text-align: center;
+    padding: 3rem;
+    background-color: var(--color-background);
+    border-radius: var(--border-radius);
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.empty-state .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-dark);
+}
+
+.empty-state p {
+    font-size: 1rem;
 }
 </style>
 {% endblock %}

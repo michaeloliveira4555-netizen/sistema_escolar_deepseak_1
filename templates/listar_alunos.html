@@ -32,11 +32,13 @@
     <div class="table-filters">
         <strong>Filtrar por Turma:</strong>
         <div class="filter-buttons">
-            {% for i in range(1, 9) %}
-            <a href="{{ url_for('aluno.listar_alunos', turma=i ~ '° Pelotão') }}" 
-               class="btn btn-sm {% if turma_filtrada == i ~ '° Pelotão' %}btn-primary{% else %}btn-secondary{% endif %}">
-                {{ i }}º Pelotão
+            {% for turma in turmas %}
+            <a href="{{ url_for('aluno.listar_alunos', turma=turma.nome) }}" 
+               class="btn btn-sm {% if turma_filtrada == turma.nome %}btn-primary{% else %}btn-secondary{% endif %}">
+                {{ turma.nome }}
             </a>
+            {% else %}
+            <p style="margin: 0.5rem; color: var(--color-text-muted);">Nenhuma turma cadastrada. Vá para a seção "Turmas" para criar uma.</p>
             {% endfor %}
             {% if turma_filtrada %}
             <a href="{{ url_for('aluno.listar_alunos') }}" class="btn btn-sm btn-danger">Limpar Filtro</a>

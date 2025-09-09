@@ -84,6 +84,7 @@ def adicionar_alunos_turma_pagina(turma_id):
 
     return render_template('adicionar_aluno_turma.html', turma=turma, alunos_sem_turma=alunos_sem_turma)
 
+
 @turma_bp.route('/<int:turma_id>/adicionar-alunos', methods=['POST'])
 @login_required
 @admin_or_programmer_required
@@ -189,6 +190,7 @@ def editar_disciplinas_turma(turma_id):
         flash(f'Erro ao salvar as alterações: {e}', 'danger')
 
     return redirect(url_for('turma.detalhes_turma', turma_id=turma_id))
+
 
 @turma_bp.route('/cadastrar', methods=['GET', 'POST'])
 @login_required

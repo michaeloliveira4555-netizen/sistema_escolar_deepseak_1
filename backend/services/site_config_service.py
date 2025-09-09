@@ -83,6 +83,16 @@ class SiteConfigService:
             
             # Sidebar
             ('sidebar_logo', '', 'image', 'Logo da sidebar', 'sidebar'),
+
+            # Ícones das Turmas (NOVA SEÇÃO)
+            ('turma_1_icon', '', 'image', 'Ícone da Turma 1', 'turmas'),
+            ('turma_2_icon', '', 'image', 'Ícone da Turma 2', 'turmas'),
+            ('turma_3_icon', '', 'image', 'Ícone da Turma 3', 'turmas'),
+            ('turma_4_icon', '', 'image', 'Ícone da Turma 4', 'turmas'),
+            ('turma_5_icon', '', 'image', 'Ícone da Turma 5', 'turmas'),
+            ('turma_6_icon', '', 'image', 'Ícone da Turma 6', 'turmas'),
+            ('turma_7_icon', '', 'image', 'Ícone da Turma 7', 'turmas'),
+            ('turma_8_icon', '', 'image', 'Ícone da Turma 8', 'turmas'),
         ]
         
         for key, value, config_type, description, category in defaults:

@@ -24,7 +24,6 @@
     </div>
 
     <div class="customizer-grid">
-        <!-- Configurações Gerais -->
         <div class="config-section">
             <h2>⚙️ Configurações Gerais</h2>
             <div class="config-cards">
@@ -70,7 +69,6 @@
             </div>
         </div>
 
-        <!-- Ícones e Imagens do Dashboard -->
         <div class="config-section">
             <h2>📊 Dashboard - Ícones e Imagens</h2>
             <div class="config-cards">
@@ -137,7 +135,6 @@
             </div>
         </div>
 
-        <!-- Sidebar -->
         <div class="config-section">
             <h2>📂 Sidebar</h2>
             <div class="config-cards">
@@ -171,9 +168,39 @@
                 {% endfor %}
             </div>
         </div>
+
+        <div class="config-section">
+            <h2>🏫 Ícones das Turmas</h2>
+            <div class="config-cards">
+                {% for config in configs_by_category.get('turmas', []) %}
+                <div class="config-card">
+                    <label class="config-label">{{ config.description or config.config_key }}</label>
+                    <div class="image-selector">
+                        <div class="current-image">
+                            {% if config.config_value %}
+                                <img src="{{ config.config_value }}" alt="Current" class="preview-img">
+                            {% else %}
+                                <div class="no-image">🏫</div>
+                            {% endif %}
+                        </div>
+                        <select class="form-control image-select" data-config-key="{{ config.config_key }}" data-config-type="image">
+                            <option value="">Ícone Padrão</option>
+                            {% for asset in assets %}
+                                {% if asset.asset_type in ['logo', 'icon'] %}
+                                    <option value="{{ url_for('static', filename='uploads/' + asset.filename) }}" 
+                                           {% if config.config_value == url_for('static', filename='uploads/' + asset.filename) %}selected{% endif %}>
+                                        {{ asset.original_filename }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
-    <!-- Botão de Salvar Global -->
     <div class="save-section">
         <button id="apply-changes" class="btn btn-success btn-lg">
             ✅ Aplicar Todas as Mudanças
@@ -183,231 +210,58 @@
 </div>
 
 <style>
-.customizer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.customizer-header h1 {
-    color: #1a202c;
-    font-size: 2rem;
-    font-weight: 800;
-    margin: 0;
-}
-
-.header-actions {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.customizer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
-}
-
-.config-section {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
-}
-
-.config-section h2 {
-    color: #1a202c;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.config-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.config-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-.config-card:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-}
-
-.config-label {
-    display: block;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
-}
-
-.image-selector {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.current-image {
-    width: 80px;
-    height: 60px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.current-image.card-preview {
-    position: relative;
-    background: linear-gradient(135deg, #1a232c, #2d3748);
-}
-
-.preview-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.preview-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.7rem;
-    font-weight: bold;
-}
-
-.no-image {
-    color: #94a3b8;
-    font-size: 0.8rem;
-    text-align: center;
-    width: 100%;
-}
-
-.default-bg {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-    color: #64748b;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-}
-
-.icon-selector {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.current-icon {
-    width: 50px;
-    height: 50px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
-.save-section {
-    text-align: center;
-    padding: 2rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
-}
-
-.save-help {
-    color: #64748b;
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.color-input {
-    width: 80px;
-    height: 40px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-}
-
+.customizer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0; }
+.customizer-header h1 { color: #1a202c; font-size: 2rem; font-weight: 800; margin: 0; }
+.header-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.customizer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
+.config-section { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+.config-section h2 { color: #1a202c; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.config-cards { display: flex; flex-direction: column; gap: 1.5rem; }
+.config-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; transition: all 0.3s ease; }
+.config-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
+.config-label { display: block; font-weight: 600; color: #374151; margin-bottom: 0.75rem; font-size: 0.9rem; }
+.image-selector { display: flex; align-items: center; gap: 1rem; }
+.current-image { width: 80px; height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.current-image.card-preview { position: relative; background: linear-gradient(135deg, #1a232c, #2d3748); }
+.preview-img { width: 100%; height: 100%; object-fit: cover; }
+.preview-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; }
+.no-image { color: #94a3b8; font-size: 0.8rem; text-align: center; width: 100%; }
+.default-bg { background: linear-gradient(135deg, #e2e8f0, #cbd5e1); color: #64748b; padding: 0.5rem; border-radius: 4px; font-size: 0.7rem; }
+.icon-selector { display: flex; align-items: center; gap: 1rem; }
+.current-icon { width: 50px; height: 50px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+.save-section { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+.save-help { color: #64748b; margin-top: 0.5rem; font-size: 0.9rem; }
+.color-input { width: 80px; height: 40px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; }
 @media (max-width: 768px) {
-    .customizer-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-    }
-    
-    .customizer-grid {
-        grid-template-columns: 1fr;
-    }
-    
+    .customizer-header { flex-direction: column; gap: 1rem; align-items: stretch; }
+    .customizer-grid { grid-template-columns: 1fr; }
     .image-selector,
-    .icon-selector {
-        flex-direction: column;
-        align-items: stretch;
-        text-align: center;
-    }
-
-    .current-image {
-        width: 100%;
-        height: 80px;
-    }
+    .icon-selector { flex-direction: column; align-items: stretch; text-align: center; }
+    .current-image { width: 100%; height: 80px; }
 }
 </style>
 
 <script>
 let pendingChanges = {};
 
-// Função para atualizar configuração
 function updateConfig(key, value, type) {
     pendingChanges[key] = { value: value, type: type };
-    
-    // Visual feedback
     const card = document.querySelector(`[data-config-key="${key}"]`).closest('.config-card');
     card.style.borderColor = '#f59e0b';
     card.style.backgroundColor = '#fffbeb';
 }
 
-// Event listeners para inputs
 document.addEventListener('change', function(e) {
     if (e.target.matches('.image-select, .icon-select, .text-input, .color-input')) {
         const key = e.target.dataset.configKey;
         const value = e.target.value;
         const type = e.target.dataset.configType;
-        
         updateConfig(key, value, type);
         
-        // Atualizar preview visual
         if (type === 'image') {
-            const previewImg = e.target.parentNode.querySelector('.preview-img');
-            const noImage = e.target.parentNode.querySelector('.no-image');
-            const currentImage = e.target.parentNode.querySelector('.current-image');
+            const previewImg = e.target.closest('.image-selector').querySelector('.preview-img');
+            const noImage = e.target.closest('.image-selector').querySelector('.no-image');
+            const currentImage = e.target.closest('.image-selector').querySelector('.current-image');
             
             if (value) {
                 if (previewImg) {
@@ -419,16 +273,13 @@ document.addEventListener('change', function(e) {
                     }
                 }
             } else {
-                if (previewImg) {
-                    if (currentImage.classList.contains('card-preview')) {
-                        currentImage.innerHTML = '<div class="no-image"><div class="default-bg">Imagem Padrão</div></div>';
-                    } else {
-                        currentImage.innerHTML = '<div class="no-image">Nenhuma imagem</div>';
-                    }
+                if (currentImage) {
+                    const defaultText = currentImage.closest('.config-section').querySelector('h2').textContent.includes('Turmas') ? '🏫' : 'Nenhuma imagem';
+                    currentImage.innerHTML = `<div class="no-image">${defaultText}</div>`;
                 }
             }
         } else if (type === 'text' && key.includes('icon')) {
-            const currentIcon = e.target.parentNode.querySelector('.current-icon');
+            const currentIcon = e.target.closest('.icon-selector').querySelector('.current-icon');
             if (currentIcon) {
                 currentIcon.textContent = value || '📋';
             }
@@ -436,62 +287,42 @@ document.addEventListener('change', function(e) {
     }
 });
 
-// Aplicar todas as mudanças
 document.getElementById('apply-changes').addEventListener('click', function() {
     if (Object.keys(pendingChanges).length === 0) {
         alert('Nenhuma alteração para aplicar');
         return;
     }
-    
     this.disabled = true;
     this.innerHTML = '⏳ Aplicando...';
     
-    const promises = [];
-    
-    Object.entries(pendingChanges).forEach(([key, config]) => {
+    const promises = Object.entries(pendingChanges).map(([key, config]) => {
         const formData = new FormData();
         formData.append('config_key', key);
         formData.append('config_value', config.value);
         formData.append('config_type', config.type);
-        
-        promises.push(
-            fetch('/customizer/update', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.json())
-        );
+        return fetch('/customizer/update', { method: 'POST', body: formData }).then(response => response.json());
     });
     
     Promise.all(promises)
         .then(results => {
             const failed = results.filter(r => !r.success);
-            
             if (failed.length === 0) {
                 alert('✅ Todas as configurações foram aplicadas com sucesso!\n\n🔄 A página será recarregada para mostrar as mudanças.');
-                
-                // Recarrega a página para mostrar as mudanças
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-                
+                setTimeout(() => window.location.reload(), 1000);
             } else {
                 alert(`❌ Algumas configurações falharam: ${failed.map(f => f.message).join(', ')}`);
             }
         })
-        .catch(error => {
-            alert('❌ Erro ao aplicar configurações: ' + error);
-        })
+        .catch(error => alert('❌ Erro ao aplicar configurações: ' + error))
         .finally(() => {
             this.disabled = false;
             this.innerHTML = '✅ Aplicar Todas as Mudanças';
         });
 });
 
-// Indicador de mudanças pendentes
 function updatePendingIndicator() {
     const count = Object.keys(pendingChanges).length;
     const button = document.getElementById('apply-changes');
-    
     if (count > 0) {
         button.innerHTML = `✅ Aplicar ${count} Mudança${count > 1 ? 's' : ''}`;
         button.classList.add('btn-warning');
@@ -502,8 +333,6 @@ function updatePendingIndicator() {
         button.classList.remove('btn-warning');
     }
 }
-
-// Atualizar indicador quando há mudanças
 setInterval(updatePendingIndicator, 500);
 </script>
 {% endblock %}
