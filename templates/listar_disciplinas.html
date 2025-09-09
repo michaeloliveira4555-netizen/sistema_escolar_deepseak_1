@@ -68,7 +68,26 @@
                             {% endif %}
                         </td>
                         <td data-label="Ações" class="text-right">
-                            <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Gerenciar</a>
+                            <div class="btn-group">
+                                <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    <span class="btn-icon-mobile">⚙️</span>
+                                    <span class="btn-text-mobile">Gerenciar</span>
+                                </a>
+                                <a href="{{ url_for('disciplina.editar_nome_disciplina', disciplina_id=disciplina.id) }}" 
+                                   class="btn btn-sm btn-warning">
+                                    <span class="btn-icon-mobile">✏️</span>
+                                    <span class="btn-text-mobile">Editar Nome</span>
+                                </a>
+                                <form action="{{ url_for('disciplina.excluir_disciplina', disciplina_id=disciplina.id) }}" 
+                                      method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                            onclick="return confirmDelete('{{ disciplina.materia }}')">
+                                        <span class="btn-icon-mobile">🗑️</span>
+                                        <span class="btn-text-mobile">Excluir</span>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -83,4 +102,10 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+function confirmDelete(disciplinaNome) {
+    return confirm(`Tem certeza que deseja excluir permanentemente "${disciplinaNome}"?\n\nEsta ação não pode ser desfeita.`);
+}
+</script>
 {% endblock %}
