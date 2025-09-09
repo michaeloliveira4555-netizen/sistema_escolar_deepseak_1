@@ -47,16 +47,17 @@
     </div>
 
     <div class="modules-grid">
-        {% if current_user.role in ['admin', 'programador'] %}
         <div class="module-card">
             <div class="card-content">
                 <div class="card-header">
                     <div class="card-icon">{{ site_config.dashboard_card_alunos_icon or "👥" }}</div>
-                    <h3 class="card-title">Gestão de Alunos</h3>
+                    <h3 class="card-title">Alunos</h3>
                 </div>
-                <p class="card-description">Controle de alunos por pelotões</p>
+                <p class="card-description">Consulte os alunos matriculados.</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">Gerenciar Alunos</a>
+                    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">
+                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                    </a>
                 </div>
             </div>
         </div>
@@ -65,11 +66,13 @@
             <div class="card-content">
                 <div class="card-header">
                     <div class="card-icon">{{ site_config.dashboard_card_instrutores_icon or "🎓" }}</div>
-                    <h3 class="card-title">Gestão de Instrutores</h3>
+                    <h3 class="card-title">Instrutores</h3>
                 </div>
-                <p class="card-description">Gerenciar corpo docente</p>
+                <p class="card-description">Consulte o corpo docente da escola.</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">Gerenciar Instrutores</a>
+                    <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">
+                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                    </a>
                 </div>
             </div>
         </div>
@@ -80,9 +83,11 @@
                     <div class="card-icon">{{ site_config.dashboard_card_disciplinas_icon or "📚" }}</div>
                     <h3 class="card-title">Disciplinas</h3>
                 </div>
-                <p class="card-description">Controle acadêmico</p>
+                <p class="card-description">Consulte as disciplinas e seus instrutores.</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">Gerenciar Disciplinas</a>
+                    <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">
+                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                    </a>
                 </div>
             </div>
         </div>
@@ -90,56 +95,99 @@
         <div class="module-card">
             <div class="card-content">
                 <div class="card-header">
-                    <span class="card-icon">📅</span>
-                    <h3 class="card-title">Quadro Horário</h3>
+                    <span class="card-icon">🏫</span>
+                    <h3 class="card-title">Turmas</h3>
                 </div>
-                <p class="card-description">Visualize e gerencie os horários</p>
+                <p class="card-description">Visualize a composição das turmas.</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('horario.index') }}" class="btn-card primary">Acessar</a>
+                    <a href="{{ url_for('turma.listar_turmas') }}" class="btn-card primary">
+                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="module-card">
-            <div class="card-content">
-                <div class="card-header">
-                    <span class="card-icon">📊</span>
-                    <h3 class="card-title">Relatórios</h3>
-                </div>
-                <p class="card-description">Análises e estatísticas</p>
-                <div class="card-actions">
-                    <a href="#" class="btn-card primary">Acessar</a>
+        {% if current_user.role == 'aluno' %}
+            <div class="module-card">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-icon">📅</span>
+                        <h3 class="card-title">Meu Horário</h3>
+                    </div>
+                    <p class="card-description">Consulte sua grade de aulas da semana.</p>
+                    <div class="card-actions">
+                        <a href="{{ url_for('horario.index') }}" class="btn-card primary">Acessar</a>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div class="module-card">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <h3 class="card-title">Meu Histórico</h3>
+                    </div>
+                    <p class="card-description">Acompanhe suas notas e progresso.</p>
+                    <div class="card-actions">
+                        <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="btn-card primary">Acessar</a>
+                    </div>
+                </div>
+            </div>
         {% endif %}
 
-        {% if current_user.role == 'programador' %}
-        <div class="module-card">
-            <div class="card-content">
-                <div class="card-header">
-                    <span class="card-icon">📁</span>
-                    <h3 class="card-title">Assets</h3>
-                </div>
-                <p class="card-description">Gerenciar recursos</p>
-                <div class="card-actions">
-                    <a href="{{ url_for('assets.manage_assets') }}" class="btn-card dev-primary">Gerenciar</a>
+        {% if current_user.role in ['admin', 'programador'] %}
+            <div class="module-card">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-icon">📅</span>
+                        <h3 class="card-title">Quadro Horário</h3>
+                    </div>
+                    <p class="card-description">Edite e gerencie os horários das turmas.</p>
+                    <div class="card-actions">
+                        <a href="{{ url_for('horario.index') }}" class="btn-card primary">Gerenciar</a>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="module-card">
-            <div class="card-content">
-                <div class="card-header">
-                    <span class="card-icon">🎨</span>
-                    <h3 class="card-title">Personalizar</h3>
-                </div>
-                <p class="card-description">Customizar interface</p>
-                <div class="card-actions">
-                    <a href="{{ url_for('customizer.index') }}" class="btn-card dev-primary">Editar</a>
+            <div class="module-card">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <h3 class="card-title">Relatórios</h3>
+                    </div>
+                    <p class="card-description">Análises e estatísticas do curso.</p>
+                    <div class="card-actions">
+                        <a href="#" class="btn-card primary">Acessar</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
+        
+        {% if current_user.role == 'programador' %}
+            <div class="module-card">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-icon">📁</span>
+                        <h3 class="card-title">Assets</h3>
+                    </div>
+                    <p class="card-description">Gerenciar imagens e ícones do site.</p>
+                    <div class="card-actions">
+                        <a href="{{ url_for('assets.manage_assets') }}" class="btn-card dev-primary">Gerenciar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-card">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-icon">🎨</span>
+                        <h3 class="card-title">Personalizar</h3>
+                    </div>
+                    <p class="card-description">Customizar a interface do sistema.</p>
+                    <div class="card-actions">
+                        <a href="{{ url_for('customizer.index') }}" class="btn-card dev-primary">Editar</a>
+                    </div>
+                </div>
+            </div>
         {% endif %}
 
     </div>

@@ -3,26 +3,38 @@
 {% block title %}Quadro Horário{% endblock %}
 
 {% block content %}
-<div class="content-header">
+<div class="horario-header-container">
     <div class="page-title-with-controls">
         <div class="title-group">
             <h1>Quadro Horário</h1>
-            <p>Visualize a grade de horários das turmas.</p>
+            <p>Selecione um pelotão e uma semana para visualizar o horário correspondente.</p>
         </div>
+        {% if current_user.role in ['admin', 'programador', 'instrutor'] %}
         <div class="controls-group">
-            <div class="form-group">
-                <label for="turma_selector">Escolha a Turma:</label>
-                <select id="turma_selector" name="turma_id" class="form-control" style="width: auto;">
-                    <option value="1">Turma 1</option>
-                    <option value="2">Turma 2</option>
-                    <option value="3">Turma 3</option>
-                    <option value="4">Turma 4</option>
-                    <option value="5">Turma 5</option>
-                    <option value="6">Turma 6</option>
-                    <option value="7">Turma 7</option>
-                    <option value="8">Turma 8</option>
-                </select>
-            </div>
+            <a href="{{ url_for('horario.editar_horario_grid', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-primary">
+                Editar Quadro Horário
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    <div class="horario-selectors">
+        <div class="pelotao-pills">
+            {% for turma in todas_as_turmas %}
+                <a href="{{ url_for('horario.index', pelotao=turma.nome, semana_id=semana_selecionada.id) }}" 
+                   class="btn btn-sm {% if turma.nome == pelotao_selecionado %}btn-primary{% else %}btn-secondary{% endif %}">
+                    {{ turma.nome }}
+                </a>
+            {% endfor %}
+        </div>
+        <div class="semana-selector-wrapper">
+            <label for="semana_selector">Semana:</label>
+            <select id="semana_selector" name="semana" class="form-control">
+                {% for semana in todas_as_semanas %}
+                    <option value="{{ semana.id }}" {% if semana.id == semana_selecionada.id %}selected{% endif %}>
+                        {{ semana.nome }} ({{ semana.data_inicio.strftime('%d/%m') }} a {{ semana.data_fim.strftime('%d/%m') }})
+                    </option>
+                {% endfor %}
+            </select>
         </div>
     </div>
 </div>
@@ -49,31 +61,45 @@
             ] %}
 
             {% for row_idx in range(15) %}
-            <tr>
-                <td class="cell-tempo">
-                    <strong>{{ tempos[row_idx][0] }}</strong>
-                    <span>{{ tempos[row_idx][1] }}</span>
-                </td>
-                
-                {% for col_idx in range(5) %}
-                    {% set aula = horario_matrix[row_idx][col_idx] %}
-                    {% if aula != 'SKIP' %}
-                        <td class="schedule-slot" rowspan="{{ aula.duracao if aula else 1 }}">
-                            {% if aula %}
-                            <div class="slot-content {% if aula.is_disposicao %}disposicao{% endif %}">
-                                <div class="disciplina-title">{{ aula.materia }}</div>
-                                {% if aula.instrutor %}
-                                <div class="instrutor-name">{{ aula.instrutor }}</div>
+                {% set row_has_content = false %}
+                {% if loop.index0 >= 12 %}
+                    {% for col_idx in range(5) %}
+                        {% set aula = horario_matrix[row_idx][col_idx] %}
+                        {% if aula != 'SKIP' and not aula.is_disposicao %}
+                            {% set row_has_content = true %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <tr class="periodo-row {% if loop.index0 >= 12 %}periodo-extra{% endif %}" {% if loop.index0 >= 12 and not row_has_content %}style="display: none;"{% endif %}>
+                    <td class="cell-tempo">
+                        <strong>{{ tempos[row_idx][0] }}</strong>
+                        <span>{{ tempos[row_idx][1] }}</span>
+                    </td>
+                    
+                    {% for col_idx in range(5) %}
+                        {% set aula = horario_matrix[row_idx][col_idx] %}
+                        {% if aula != 'SKIP' %}
+                            <td class="schedule-slot" rowspan="{{ aula.duracao if aula else 1 }}">
+                                {% if aula %}
+                                <div class="slot-content {% if aula.is_disposicao %}disposicao{% endif %}">
+                                    <div class="disciplina-title">{{ aula.materia }}</div>
+                                    {% if aula.instrutor %}
+                                    <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                    {% endif %}
+                                </div>
                                 {% endif %}
-                            </div>
-                            {% endif %}
-                        </td>
-                    {% endif %}
-                {% endfor %}
-            </tr>
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
+
+<div class="horario-actions">
+    <button type="button" class="btn btn-secondary" id="toggle-extra-horarios">Mostrar/Ocultar Horários Estendidos</button>
 </div>
 
 <button class="weekend-toggle-btn" id="weekend-toggle">
@@ -120,25 +146,50 @@
 </div>
 
 <style>
-    .slot-content.disposicao {
-        background-color: #f1f5f9;
-        border: 1px solid #e2e8f0;
-        cursor: default;
-    }
-    .slot-content.disposicao .disciplina-title {
-        color: #94a3b8;
-        font-style: italic;
-        font-size: 0.75rem;
-    }
+.horario-header-container { background-color: var(--color-white); border-radius: var(--border-radius); padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-soft); }
+.page-title-with-controls { display: flex; justify-content: space-between; align-items: flex-start; }
+.horario-selectors { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); }
+.pelotao-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+.semana-selector-wrapper { display: flex; align-items: center; gap: 1rem; max-width: 400px; }
+.semana-selector-wrapper label { font-weight: 600; white-space: nowrap; }
+.slot-content.disposicao { background-color: #f1f5f9; border: 1px solid #e2e8f0; cursor: default; }
+.slot-content.disposicao .disciplina-title { color: #94a3b8; font-style: italic; font-size: 0.75rem; }
+.horario-actions { display: flex; justify-content: center; margin-top: 1.5rem; }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const toggleBtn = document.getElementById('weekend-toggle');
+        const semanaSelector = document.getElementById('semana_selector');
+
+        semanaSelector.addEventListener('change', function() {
+            const semanaId = this.value;
+            const pelotao = "{{ pelotao_selecionado }}";
+            window.location.href = `{{ url_for('horario.index') }}?pelotao=${pelotao}&semana_id=${semanaId}`;
+        });
         
+        const toggleBtn = document.getElementById('weekend-toggle');
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function() {
                 document.body.classList.toggle('weekend-panel-open');
+            });
+        }
+
+        const toggleExtraBtn = document.getElementById('toggle-extra-horarios');
+        const extraRows = document.querySelectorAll('.periodo-extra');
+        if (toggleExtraBtn && extraRows.length > 0) {
+            toggleExtraBtn.addEventListener('click', function() {
+                const hiddenRows = document.querySelectorAll('.periodo-extra[style*="display: none;"]');
+                hiddenRows.forEach(row => {
+                    row.style.display = 'table-row';
+                });
+                
+                if (document.querySelectorAll('.periodo-extra[style*="display: none;"]').length === 0) {
+                     extraRows.forEach(row => {
+                         if(row.style.display !== 'none' && !row.dataset.hasContent){
+                            row.style.display = 'none';
+                         }
+                     });
+                }
             });
         }
     });

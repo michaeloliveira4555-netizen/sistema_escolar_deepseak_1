@@ -71,7 +71,7 @@
     </div>
 
     <div class="form-actions">
-        <a href="{{ url_for('horario.selecionar_turma_edicao') }}" class="btn btn-secondary">Voltar</a>
+        <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-secondary">Voltar</a>
         <button type="button" class="btn btn-primary" id="save-horario-btn">Salvar Alterações</button>
     </div>
 </form>
@@ -80,9 +80,9 @@
 
 <script>
     const DISCIPLINAS_DISPONIVEIS = {{ disciplinas_disponiveis | tojson }};
-    const INSTRUTORES_DISPONIVEIS = {{ instrutores_disponiveis | tojson }};
     const PELOTAO_SELECIONADO = "{{ pelotao_selecionado }}";
     const SEMANA_ID = "{{ semana_selecionada.id }}";
+    const IS_ADMIN = {{ is_admin | tojson }};
 </script>
 
 <script>
@@ -104,16 +104,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         modalDisciplinaSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
         DISCIPLINAS_DISPONIVEIS.forEach(d => {
-            modalDisciplinaSelect.innerHTML += `<option value="${d.id}">${d.nome}</option>`;
+            let texto = `${d.nome} (Restam: ${d.carga_restante}h)`;
+            modalDisciplinaSelect.innerHTML += `<option value="${d.id}" data-instrutor1="${d.instrutor_id}" data-instrutor2="${d.instrutor_id_2 || ''}">${texto}</option>`;
         });
-
-        modalInstrutorSelect.innerHTML = '<option value="">Selecione o instrutor</option>';
-        INSTRUTORES_DISPONIVEIS.forEach(i => {
-            modalInstrutorSelect.innerHTML += `<option value="${i.id}">${i.nome}</option>`;
-        });
-
+        
+        modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
         modalOverlay.classList.add('visible');
     }
+
+    modalDisciplinaSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const instrutor1 = selectedOption.dataset.instrutor1;
+        const instrutor2 = selectedOption.dataset.instrutor2;
+        
+        modalInstrutorSelect.innerHTML = ''; // Limpa as opções
+        
+        if (instrutor1) {
+            modalInstrutorSelect.innerHTML += `<option value="${instrutor1}">Instrutor 1</option>`; // Simplificado, pode ser melhorado para buscar o nome
+        }
+        if (instrutor2) {
+             modalInstrutorSelect.innerHTML += `<option value="${instrutor2}">Instrutor 2</option>`;
+        }
+        if (!instrutor1 && !instrutor2) {
+            modalInstrutorSelect.innerHTML = '<option value="">Nenhum instrutor associado</option>';
+        }
+    });
 
     document.querySelectorAll('.slot-button.disponivel').forEach(button => {
         button.addEventListener('click', () => {
@@ -124,17 +139,20 @@ document.addEventListener('DOMContentLoaded', function() {
     modalForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const dia = modalDiaInput.value;
-        const periodo = modalPeriodoInput.value;
-        const key = `${dia}-${periodo}`;
+        const periodo = parseInt(modalPeriodoInput.value);
+        const duracao = parseInt(document.getElementById('modal-duracao').value);
 
-        agendamentos[key] = {
-            dia: dia,
-            periodo: periodo,
-            disciplina_id: modalDisciplinaSelect.value,
-            instrutor_id: modalInstrutorSelect.value,
-            duracao: document.getElementById('modal-duracao').value
-        };
-
+        for (let i=0; i < duracao; i++) {
+            const key = `${dia}-${periodo + i}`;
+            agendamentos[key] = {
+                dia: dia,
+                periodo: periodo + i,
+                disciplina_id: modalDisciplinaSelect.value,
+                instrutor_id: modalInstrutorSelect.value,
+                duracao: 1 
+            };
+        }
+        
         alert('Aula pré-agendada. Clique em "Salvar Alterações" para confirmar.');
         modalOverlay.classList.remove('visible');
     });
@@ -164,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 alert(data.message);
-                window.location.href = `/horario/editar?pelotao=${PELOTAO_SELECIONADO}&semana_id=${SEMANA_ID}`;
+                window.location.reload();
             } else {
                 alert('Erro: ' + data.message);
             }

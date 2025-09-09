@@ -11,6 +11,9 @@
 <div class="table-container" style="max-width: 800px; margin-bottom: 2rem;">
     <div class="table-header">
         <h3>Adicionar Nova Semana</h3>
+        <form method="POST" action="{{ url_for('semana.adicionar_proxima_semana') }}" style="margin: 0;">
+            <button type="submit" class="btn btn-sm btn-success">Adicionar Próxima Semana</button>
+        </form>
     </div>
     <form method="POST" action="{{ url_for('semana.adicionar_semana') }}" style="padding: 1rem 0;">
         <div class="form-grid">
@@ -27,7 +30,7 @@
                 <input type="date" id="data_fim" name="data_fim" class="form-control" required>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Adicionar Semana</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Adicionar Semana Manualmente</button>
     </form>
 </div>
 
@@ -51,7 +54,8 @@
                     <td>{{ semana.nome }}</td>
                     <td>{{ semana.data_inicio.strftime('%d/%m/%Y') }}</td>
                     <td>{{ semana.data_fim.strftime('%d/%m/%Y') }}</td>
-                    <td class="text-right">
+                    <td class="text-right actions-group">
+                        <a href="{{ url_for('semana.editar_semana', semana_id=semana.id) }}" class="btn btn-sm btn-warning">Editar</a>
                         <form method="POST" action="{{ url_for('semana.deletar_semana', semana_id=semana.id) }}" onsubmit="return confirm('Tem certeza que deseja deletar esta semana?');">
                             <button type="submit" class="btn btn-sm btn-danger">Deletar</button>
                         </form>
@@ -68,11 +72,7 @@
 </div>
 
 <style>
-.form-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 1.5rem;
-    align-items: flex-end;
-}
+.form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; align-items: flex-end; }
+.actions-group { display: flex; justify-content: flex-end; gap: 0.5rem; }
 </style>
 {% endblock %}

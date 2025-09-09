@@ -8,14 +8,18 @@ if t.TYPE_CHECKING:
     from .disciplina import Disciplina
     from .aluno import Aluno
 
-
 class HistoricoDisciplina(db.Model):
     __tablename__ = 'historico_disciplinas'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    nota: Mapped[t.Optional[float]] = mapped_column(db.Float)
+    nota: Mapped[t.Optional[float]] = mapped_column(db.Float) # Armazenará a média final (MPD ou MFD)
     data_conclusao: Mapped[t.Optional[datetime]] = mapped_column()
     status: Mapped[str] = mapped_column(db.String(50), default='cursando')
+
+    # NOVOS CAMPOS PARA AS NOTAS
+    nota_p1: Mapped[t.Optional[float]] = mapped_column(db.Float)
+    nota_p2: Mapped[t.Optional[float]] = mapped_column(db.Float)
+    nota_rec: Mapped[t.Optional[float]] = mapped_column(db.Float)
 
     disciplina_id: Mapped[int] = mapped_column(db.ForeignKey('disciplinas.id'))
     disciplina: Mapped["Disciplina"] = relationship(back_populates="historico_disciplinas")

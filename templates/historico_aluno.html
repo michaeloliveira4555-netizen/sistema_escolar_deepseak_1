@@ -1,119 +1,158 @@
 {% extends "base.html" %}
 
-{% block title %}Histórico do Aluno - {{ aluno.user.username }}{% endblock %}
+{% block title %}Meu CTSP - {{ aluno.user.nome_completo or aluno.user.username }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="text-center mb-4">Histórico do Aluno: {{ aluno.user.username }}</h1>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Detalhes do Aluno</h3>
-        </div>
-        <div class="card-body">
-            <p><strong>Matrícula:</strong> {{ aluno.matricula }}</p>
-            <p><strong>OPM:</strong> {{ aluno.opm }}</p>
-            <p><strong>Pelotão:</strong> {{ aluno.pelotao }}</p>
-            <p><strong>Função Atual:</strong> {{ aluno.funcao_atual if aluno.funcao_atual else 'N/A' }}</p>
-            {# Adicione mais detalhes do aluno conforme necessário #}
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Disciplinas Cursadas</h3>
-        </div>
-        <div class="card-body">
-            {% if historico_disciplinas %} {# Usando a nova variável #}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Disciplina</th>
-                        <th>Nota</th>
-                        <th>Status</th>
-                        <th>Data Conclusão</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for registro in historico_disciplinas %}
-                    <tr>
-                        <td>{{ registro.disciplina.materia }}</td>
-                        <td>{{ registro.nota if registro.nota is not none else 'N/A' }}</td>
-                        <td>{{ registro.status }}</td>
-                        <td>{{ registro.data_conclusao.strftime('%d/%m/%Y') if registro.data_conclusao else 'N/A' }}</td>
-                        <td>
-                            {# Formulário para avaliar/atualizar nota #}
-                            <form action="{{ url_for('historico.avaliar_aluno_disciplina', historico_id=registro.id) }}" method="POST" class="d-inline">
-                                <input type="number" name="nota" placeholder="Nota" step="0.1" min="0" max="10" value="{{ registro.nota if registro.nota is not none else '' }}" class="form-control-sm">
-                                <button type="submit" class="btn btn-sm btn-primary">Avaliar</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p>Nenhuma disciplina cursada ainda.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    {# NOVA SEÇÃO AQUI: Para o histórico de atividades #}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Histórico de Atividades</h3>
-        </div>
-        <div class="card-body">
-            {% if historico_atividades %} {# Usando a nova variável #}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Descrição</th>
-                        <th>Data e Hora</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for atividade in historico_atividades %}
-                    <tr>
-                        <td>{{ atividade.tipo }}</td>
-                        <td>{{ atividade.descricao }}</td>
-                        <td>{{ atividade.data_inicio.strftime('%d/%m/%Y %H:%M:%S') }}</td> {# Exibe data e hora completa #}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p>Nenhum registro de atividade encontrado.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Disciplinas Disponíveis para Matrícula</h3>
-        </div>
-        <div class="card-body">
-            {% if disciplinas_nao_cursadas %}
-            <form action="{{ url_for('historico.matricular_aluno_em_disciplina', aluno_id=aluno.id) }}" method="POST">
-                <div class="form-group">
-                    <label for="disciplina_id">Selecionar Disciplina:</label>
-                    <select id="disciplina_id" name="disciplina_id" class="form-control" required>
-                        <option value="">-- Selecione uma disciplina --</option>
-                        {% for disciplina in disciplinas_nao_cursadas %}
-                            <option value="{{ disciplina.id }}">{{ disciplina.materia }} (Carga Horária: {{ disciplina.carga_horaria_prevista }}h)</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-success mt-3">Matricular Aluno</button>
-            </form>
-            {% else %}
-            <p>Todas as disciplinas já foram cursadas ou não há disciplinas disponíveis.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <a href="{{ url_for('aluno.listar_alunos') }}" class="btn btn-secondary">Voltar para Lista de Alunos</a>
+<div class="content-header">
+    <h1>Meu CTSP</h1>
+    <p>Acompanhe suas notas e médias das disciplinas do Curso Técnico em Segurança Pública.</p>
 </div>
+
+<div class="disciplinas-grid">
+    {% for registro in historico_disciplinas %}
+    <div class="disciplina-card">
+        <form method="POST" action="{{ url_for('historico.avaliar_aluno_disciplina', historico_id=registro.id) }}">
+            <h4>{{ registro.disciplina.materia }}</h4>
+            <div class="notas-container">
+                <div class="form-group">
+                    <label>1ª Prova</label>
+                    <input type="number" step="0.001" min="0" max="10" class="form-control nota-input p1" name="nota_p1" value="{{ registro.nota_p1 or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>2ª Prova</label>
+                    <input type="number" step="0.001" min="0" max="10" class="form-control nota-input p2" name="nota_p2" value="{{ registro.nota_p2 or '' }}">
+                </div>
+                <div class="form-group rec-group" style="display: none;">
+                    <label>Recuperação</label>
+                    <input type="number" step="0.001" min="0" max="10" class="form-control nota-input rec" name="nota_rec" value="{{ registro.nota_rec or '' }}">
+                </div>
+            </div>
+            <div class="medias-container">
+                <div class="media-display">
+                    <strong>MPD:</strong>
+                    <span class="media-value mpd">--</span>
+                </div>
+                <div class="media-display mfd-display" style="display: none;">
+                    <strong>MFD:</strong>
+                    <span class="media-value mfd">--</span>
+                </div>
+            </div>
+            {% if current_user.role in ['admin', 'programador'] %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-sm btn-primary">Salvar Notas</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+    {% else %}
+    <p>Você ainda não está matriculado em nenhuma disciplina.</p>
+    {% endfor %}
+</div>
+
+
+<style>
+.disciplinas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+.disciplina-card {
+    background: var(--color-white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--color-border);
+}
+.disciplina-card h4 {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+}
+.notas-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.medias-container {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+.media-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+}
+.media-display strong {
+    color: var(--color-secondary);
+}
+.media-value {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+.form-actions {
+    margin-top: 1.5rem;
+    text-align: right;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.disciplina-card').forEach(card => {
+        const p1_input = card.querySelector('.nota-input.p1');
+        const p2_input = card.querySelector('.nota-input.p2');
+        const rec_input = card.querySelector('.nota-input.rec');
+        
+        const rec_group = card.querySelector('.rec-group');
+        
+        const mpd_display = card.querySelector('.media-value.mpd');
+        const mfd_display_container = card.querySelector('.mfd-display');
+        const mfd_display = card.querySelector('.media-value.mfd');
+
+        function calcularMedias() {
+            const p1 = parseFloat(p1_input.value) || 0;
+            const p2 = parseFloat(p2_input.value) || 0;
+            const rec = parseFloat(rec_input.value) || 0;
+
+            if (p1_input.value && p2_input.value) {
+                // Calcula MPD
+                const mpd = (p1 + p2) / 2;
+                mpd_display.textContent = mpd.toFixed(3);
+
+                if (mpd < 7.0) {
+                    rec_group.style.display = 'block';
+                    mfd_display_container.style.display = 'flex';
+
+                    if (rec_input.value) {
+                        const mfd = (p1 + p2 + rec) / 3;
+                        mfd_display.textContent = mfd.toFixed(3);
+                    } else {
+                        mfd_display.textContent = '--';
+                    }
+                } else {
+                    rec_group.style.display = 'none';
+                    rec_input.value = ''; // Limpa o valor de REC se não for necessário
+                    mfd_display_container.style.display = 'none';
+                    mfd_display.textContent = '--';
+                }
+            } else {
+                mpd_display.textContent = '--';
+                mfd_display_container.style.display = 'none';
+                mfd_display.textContent = '--';
+                rec_group.style.display = 'none';
+            }
+        }
+
+        card.querySelectorAll('.nota-input').forEach(input => {
+            input.addEventListener('input', calcularMedias);
+        });
+
+        // Calcula as médias iniciais ao carregar a página
+        calcularMedias();
+    });
+});
+</script>
 {% endblock %}

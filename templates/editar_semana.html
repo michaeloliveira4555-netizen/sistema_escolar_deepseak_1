@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Semana - {{ semana.nome }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Editar Semana</h1>
+    <p>Ajuste as informações da semana letiva selecionada.</p>
+</div>
+
+<div class="table-container" style="max-width: 700px; margin: 0 auto;">
+    <div class="table-header">
+        <h3>Editando: {{ semana.nome }}</h3>
+    </div>
+    
+    <form method="POST" action="{{ url_for('semana.editar_semana', semana_id=semana.id) }}" style="padding: 1rem 0;">
+        <div class="form-group">
+            <label for="nome">Nome da Semana</label>
+            <input type="text" id="nome" name="nome" class="form-control" value="{{ semana.nome }}" required>
+        </div>
+        <div class="form-group">
+            <label for="data_inicio">Data de Início</label>
+            <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ semana.data_inicio.strftime('%Y-%m-%d') }}" required>
+        </div>
+        <div class="form-group">
+            <label for="data_fim">Data de Fim</label>
+            <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ semana.data_fim.strftime('%Y-%m-%d') }}" required>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('semana.gerenciar_semanas') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

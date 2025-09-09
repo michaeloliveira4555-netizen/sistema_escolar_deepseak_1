@@ -2,7 +2,9 @@ from ..models.database import db
 from ..models.disciplina import Disciplina
 from ..models.user import User
 from ..models.turma import Turma
+from ..models.aluno import Aluno
 from ..models.disciplina_turma import DisciplinaTurma
+from ..models.historico_disciplina import HistoricoDisciplina
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
@@ -28,15 +30,30 @@ class DisciplinaService:
             return False, "Uma disciplina com este nome já existe."
 
         try:
-            # A função agora apenas cria a disciplina. A associação com as turmas
-            # é feita dinamicamente pela tela de detalhes da turma.
             nova_disciplina = Disciplina(
                 materia=nome_materia,
                 carga_horaria_prevista=carga_horaria_int
             )
             db.session.add(nova_disciplina)
             db.session.commit()
-            return True, "Disciplina cadastrada com sucesso!"
+
+            # LÓGICA DE MATRÍCULA AUTOMÁTICA
+            todos_os_alunos = db.session.scalars(select(Aluno)).all()
+            for aluno in todos_os_alunos:
+                nova_matricula = HistoricoDisciplina(aluno_id=aluno.id, disciplina_id=nova_disciplina.id)
+                db.session.add(nova_matricula)
+            
+            # Lógica para associar a nova disciplina a todas as turmas (pelotões)
+            turmas = db.session.scalars(select(Turma)).all()
+            for turma in turmas:
+                associacao = DisciplinaTurma(
+                    pelotao=turma.nome,
+                    disciplina_id=nova_disciplina.id
+                )
+                db.session.add(associacao)
+
+            db.session.commit()
+            return True, "Disciplina cadastrada e associada a todos os alunos e turmas!"
         except IntegrityError:
             db.session.rollback()
             return False, "Uma disciplina com este nome já existe."
@@ -45,6 +62,7 @@ class DisciplinaService:
             current_app.logger.error(f"Erro inesperado ao cadastrar disciplina: {e}")
             return False, f"Erro inesperado ao cadastrar disciplina: {str(e)}"
 
+    # O restante do arquivo permanece o mesmo
     @staticmethod
     def get_all_disciplinas():
         stmt = select(Disciplina).order_by(Disciplina.materia)
@@ -85,7 +103,6 @@ class DisciplinaService:
             current_app.logger.error(f"Erro inesperado ao atualizar disciplina: {e}")
             return False, f"Erro inesperado ao atualizar disciplina: {str(e)}"
             
-    # As funções abaixo foram mantidas para evitar quebras em outras partes do sistema
     @staticmethod
     def update_disciplina_instrutor(disciplina_id: int, user_id: int):
         current_app.logger.info(

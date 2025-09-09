@@ -7,6 +7,8 @@ from ..models.aluno import Aluno
 from ..models.user import User
 from ..models.historico import HistoricoAluno
 from ..models.turma import Turma
+from ..models.disciplina import Disciplina
+from ..models.historico_disciplina import HistoricoDisciplina
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
@@ -56,7 +58,23 @@ class AlunoService:
             )
             db.session.add(novo_aluno)
             db.session.commit()
-            return True, "Perfil de aluno cadastrado com sucesso!"
+
+            # LÓGICA DE MATRÍCULA AUTOMÁTICA
+            todas_as_disciplinas = db.session.scalars(select(Disciplina)).all()
+            for disciplina in todas_as_disciplinas:
+                # Verifica se a matrícula já não existe por algum motivo
+                matricula_existente = db.session.execute(
+                    select(HistoricoDisciplina).where(
+                        HistoricoDisciplina.aluno_id == novo_aluno.id,
+                        HistoricoDisciplina.disciplina_id == disciplina.id
+                    )
+                ).scalar_one_or_none()
+                if not matricula_existente:
+                    nova_matricula = HistoricoDisciplina(aluno_id=novo_aluno.id, disciplina_id=disciplina.id)
+                    db.session.add(nova_matricula)
+            
+            db.session.commit()
+            return True, "Perfil de aluno cadastrado e matriculado em todas as disciplinas!"
         except IntegrityError:
             db.session.rollback()
             return False, "Erro de integridade dos dados. Verifique se a matrícula já está em uso."
@@ -65,6 +83,7 @@ class AlunoService:
             current_app.logger.error(f"Erro inesperado ao cadastrar aluno: {e}")
             return False, f"Erro ao cadastrar aluno: {str(e)}"
 
+    # O restante do arquivo (get_all_alunos, update_aluno, etc.) permanece o mesmo.
     @staticmethod
     def get_all_alunos(nome_turma=None):
         stmt = select(Aluno).join(User)

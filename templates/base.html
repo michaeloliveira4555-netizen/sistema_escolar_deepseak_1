@@ -100,10 +100,10 @@
                     </a>
                 {% endif %}
                 
-                {% if current_user.role == 'aluno' %}
+             {% if current_user.role == 'aluno' %}
                     <div class="nav-separator"></div>
                     <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📊</div> Meu Histórico
+                        <div class="nav-icon">📊</div> Meu CTSP
                     </a>
                     <a href="#" class="nav-link">
                         <div class="nav-icon">📋</div> Atividades
