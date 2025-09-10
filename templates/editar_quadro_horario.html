@@ -8,73 +8,66 @@
     <p>Você está editando o horário para: <strong>{{ pelotao_selecionado }}</strong> na semana <strong>{{ semana_selecionada.nome }}</strong></p>
 </div>
 
-<form id="horario-form">
-    <input type="hidden" name="pelotao" value="{{ pelotao_selecionado }}">
-    <input type="hidden" name="semana_id" value="{{ semana_selecionada.id }}">
-    
-    <div class="table-wrapper">
-        <table class="horario-table-new editable">
-            <thead>
-                <tr>
-                    <th class="header-tempo">Horário</th>
-                    <th class="header-dia">Segunda-feira</th>
-                    <th class="header-dia">Terça-feira</th>
-                    <th class="header-dia">Quarta-feira</th>
-                    <th class="header-dia">Quinta-feira</th>
-                    <th class="header-dia">Sexta-feira</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% set tempos = [
-                    ("1º", "07:30-08:15"), ("2º", "08:15-09:00"), ("3º", "09:00-09:45"),
-                    ("4º", "10:05-10:50"), ("5º", "10:50-11:35"), ("6º", "11:35-12:20"),
-                    ("7º", "13:30-14:15"), ("8º", "14:15-15:00"), ("9º", "15:00-15:45"),
-                    ("10º", "16:05-16:50"), ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
-                    ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
-                ] %}
-                {% set dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta'] %}
+<div class="table-wrapper">
+    <table class="horario-table-new editable">
+        <thead>
+            <tr>
+                <th class="header-tempo">Horário</th>
+                <th class="header-dia">Segunda-feira</th>
+                <th class="header-dia">Terça-feira</th>
+                <th class="header-dia">Quarta-feira</th>
+                <th class="header-dia">Quinta-feira</th>
+                <th class="header-dia">Sexta-feira</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set tempos = [
+                ("1º", "07:30-08:15"), ("2º", "08:15-09:00"), ("3º", "09:00-09:45"),
+                ("4º", "10:05-10:50"), ("5º", "10:50-11:35"), ("6º", "11:35-12:20"),
+                ("7º", "13:30-14:15"), ("8º", "14:15-15:00"), ("9º", "15:00-15:45"),
+                ("10º", "16:05-16:50"), ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
+                ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
+            ] %}
+            {% set dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta'] %}
 
-                {% for row_idx in range(15) %}
-                <tr>
-                    <td class="cell-tempo">
-                        <strong>{{ tempos[row_idx][0] }}</strong>
-                        <span>{{ tempos[row_idx][1] }}</span>
-                    </td>
-                    
-                    {% for col_idx in range(5) %}
-                        {% set aula = horario_matrix[row_idx][col_idx] %}
-                        {% if aula != 'SKIP' %}
-                            <td class="schedule-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
-                                {% if aula.is_disposicao %}
-                                    <button type="button" class="slot-button disponivel" 
-                                            data-dia="{{ dias[col_idx] }}" data-periodo="{{ row_idx + 1 }}">
-                                        Selecionar
-                                    </button>
-                                {% else %}
-                                    <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}">
-                                        <div class="disciplina-title">{{ aula.materia }}</div>
-                                        <div class="instrutor-name">{{ aula.instrutor }}</div>
-                                        {% if aula.status == 'pendente' %}
-                                            <span class="status-icon" title="Aguardando confirmação">🕐</span>
-                                        {% elif aula.status == 'confirmado' %}
-                                            <span class="status-icon" title="Confirmado">✅</span>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                    {% endfor %}
-                </tr>
+            {% for row_idx in range(15) %}
+            <tr>
+                <td class="cell-tempo">
+                    <strong>{{ tempos[row_idx][0] }}</strong>
+                    <span>{{ tempos[row_idx][1] }}</span>
+                </td>
+                
+                {% for col_idx in range(5) %}
+                    {% set aula = horario_matrix[row_idx][col_idx] %}
+                    {% if aula != 'SKIP' %}
+                        <td class="schedule-slot" 
+                            data-dia="{{ dias[col_idx] }}" 
+                            data-periodo="{{ row_idx + 1 }}" 
+                            rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
+                            
+                            {% if aula.is_disposicao %}
+                                <button type="button" class="slot-button disponivel">Selecionar</button>
+                            {% else %}
+                                <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}" title="Clique para remover">
+                                    <div class="disciplina-title">{{ aula.materia }}</div>
+                                    <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                    <span class="status-icon" title="{% if aula.status == 'pendente' %}Aguardando confirmação{% else %}Confirmado{% endif %}">
+                                        {% if aula.status == 'pendente' %}🕐{% else %}✅{% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </td>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-    <div class="form-actions">
-        <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-secondary">Voltar</a>
-        <button type="button" class="btn btn-primary" id="save-horario-btn">Salvar Alterações</button>
-    </div>
-</form>
+<div class="form-actions">
+    <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-secondary">Voltar para Visualização</a>
+</div>
 
 {% include '_horario_modal.html' %}
 
@@ -94,103 +87,105 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalDiaInput = document.getElementById('modal-dia');
     const modalPeriodoInput = document.getElementById('modal-periodo');
     const modalCancelBtn = document.getElementById('modal-cancel');
-    const saveHorarioBtn = document.getElementById('save-horario-btn');
+    const selecionarButtons = document.querySelectorAll('.slot-button.disponivel');
+    const aulasAgendadas = document.querySelectorAll('.slot-content');
 
-    let agendamentos = {};
+    if (!modalOverlay) {
+        console.error("ERRO CRÍTICO: O elemento do modal (horario-modal-overlay) não foi encontrado.");
+        return;
+    }
 
     function openModal(dia, periodo) {
         modalDiaInput.value = dia;
         modalPeriodoInput.value = periodo;
+        modalForm.reset();
 
         modalDisciplinaSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
         DISCIPLINAS_DISPONIVEIS.forEach(d => {
             let texto = `${d.nome} (Restam: ${d.carga_restante}h)`;
-            modalDisciplinaSelect.innerHTML += `<option value="${d.id}" data-instrutor1="${d.instrutor_id}" data-instrutor2="${d.instrutor_id_2 || ''}">${texto}</option>`;
+            modalDisciplinaSelect.innerHTML += `<option value="${d.id}" data-instrutor1="${d.instrutor_id || ''}">${texto}</option>`;
         });
         
-        modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
+        modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
         modalOverlay.classList.add('visible');
     }
-
-    modalDisciplinaSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const instrutor1 = selectedOption.dataset.instrutor1;
-        const instrutor2 = selectedOption.dataset.instrutor2;
-        
-        modalInstrutorSelect.innerHTML = ''; // Limpa as opções
-        
-        if (instrutor1) {
-            modalInstrutorSelect.innerHTML += `<option value="${instrutor1}">Instrutor 1</option>`; // Simplificado, pode ser melhorado para buscar o nome
-        }
-        if (instrutor2) {
-             modalInstrutorSelect.innerHTML += `<option value="${instrutor2}">Instrutor 2</option>`;
-        }
-        if (!instrutor1 && !instrutor2) {
-            modalInstrutorSelect.innerHTML = '<option value="">Nenhum instrutor associado</option>';
-        }
-    });
-
-    document.querySelectorAll('.slot-button.disponivel').forEach(button => {
-        button.addEventListener('click', () => {
-            openModal(button.dataset.dia, button.dataset.periodo);
-        });
-    });
-
-    modalForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const dia = modalDiaInput.value;
-        const periodo = parseInt(modalPeriodoInput.value);
-        const duracao = parseInt(document.getElementById('modal-duracao').value);
-
-        for (let i=0; i < duracao; i++) {
-            const key = `${dia}-${periodo + i}`;
-            agendamentos[key] = {
-                dia: dia,
-                periodo: periodo + i,
-                disciplina_id: modalDisciplinaSelect.value,
-                instrutor_id: modalInstrutorSelect.value,
-                duracao: 1 
-            };
-        }
-        
-        alert('Aula pré-agendada. Clique em "Salvar Alterações" para confirmar.');
-        modalOverlay.classList.remove('visible');
-    });
-
-    modalCancelBtn.addEventListener('click', () => modalOverlay.classList.remove('visible'));
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) {
-            modalOverlay.classList.remove('visible');
-        }
-    });
     
-    saveHorarioBtn.addEventListener('click', function() {
-        const payload = {
-            pelotao: PELOTAO_SELECIONADO,
-            semana_id: SEMANA_ID,
-            aulas: Object.values(agendamentos)
-        };
+    function closeModal() {
+        modalOverlay.classList.remove('visible');
+    }
 
-        fetch("{{ url_for('horario.salvar_horario') }}", {
+    function sendRequest(endpoint, payload) {
+        fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
                 window.location.reload();
             } else {
                 alert('Erro: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Erro de comunicação com o servidor:', error);
             alert('Ocorreu um erro de comunicação com o servidor.');
         });
+    }
+
+    selecionarButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const slot = e.target.closest('.schedule-slot');
+            if (slot) {
+                openModal(slot.dataset.dia, slot.dataset.periodo);
+            }
+        });
+    });
+
+    aulasAgendadas.forEach(slotContent => {
+        slotContent.addEventListener('click', (e) => {
+            if (confirm('Deseja remover esta aula?')) {
+                const slot = e.target.closest('.schedule-slot');
+                sendRequest("{{ url_for('horario.remover_aula') }}", {
+                    pelotao: PELOTAO_SELECIONADO,
+                    semana_id: SEMANA_ID,
+                    dia: slot.dataset.dia,
+                    periodo: slot.dataset.periodo
+                });
+            }
+        });
+    });
+    
+    modalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendRequest("{{ url_for('horario.agendar_aula') }}", {
+            pelotao: PELOTAO_SELECIONADO,
+            semana_id: SEMANA_ID,
+            dia: modalDiaInput.value,
+            periodo: modalPeriodoInput.value,
+            disciplina_id: modalDisciplinaSelect.value,
+            instrutor_id: modalInstrutorSelect.value,
+            duracao: document.getElementById('modal-duracao').value
+        });
+        closeModal();
+    });
+
+    modalDisciplinaSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const instrutor1 = selectedOption.dataset.instrutor1;
+        
+        modalInstrutorSelect.innerHTML = '';
+        if (instrutor1 && instrutor1 !== 'None') {
+            modalInstrutorSelect.innerHTML += `<option value="${instrutor1}">Instrutor Padrão</option>`;
+        } else {
+            modalInstrutorSelect.innerHTML = '<option value="">Nenhum instrutor principal</option>';
+        }
+    });
+
+    if(modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
     });
 });
 </script>

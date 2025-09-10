@@ -100,7 +100,7 @@ def editar_horario_grid(pelotao, semana_id):
         disciplinas_disponiveis.append({
             "id": a.disciplina.id,
             "nome": a.disciplina.materia,
-            "instrutor_id": a.instrutor_id_1 if not is_admin or not a.instrutor_id_2 else a.instrutor_id_1,
+            "instrutor_id": a.instrutor_id_1,
             "instrutor_id_2": a.instrutor_id_2,
             "carga_total": total_previsto,
             "carga_feita": horas_agendadas,
@@ -116,37 +116,57 @@ def editar_horario_grid(pelotao, semana_id):
         is_admin=is_admin
     )
 
-@horario_bp.route('/salvar', methods=['POST'])
+@horario_bp.route('/agendar-aula', methods=['POST'])
 @login_required
-def salvar_horario():
+def agendar_aula():
     data = request.json
     pelotao = data.get('pelotao')
     semana_id = data.get('semana_id')
-    aulas = data.get('aulas', [])
-    
+    dia = data.get('dia')
+    periodo = data.get('periodo')
+    disciplina_id = data.get('disciplina_id')
+    instrutor_id = data.get('instrutor_id')
+    duracao = data.get('duracao', 1)
+
     try:
-        # Deleta apenas as aulas da semana e pelotão correspondentes
-        db.session.query(Horario).filter_by(pelotao=pelotao, semana_id=semana_id).delete()
-        
-        for aula_data in aulas:
-            nova_aula = Horario(
-                pelotao=pelotao,
-                semana_id=int(semana_id),
-                dia_semana=aula_data['dia'],
-                periodo=int(aula_data['periodo']),
-                disciplina_id=int(aula_data['disciplina_id']),
-                instrutor_id=int(aula_data['instrutor_id']),
-                duracao=int(aula_data.get('duracao', 1)),
-                status='confirmado' if current_user.role in ['admin', 'programador'] else 'pendente'
-            )
-            db.session.add(nova_aula)
-        
+        # Remove aulas existentes nesse mesmo slot para evitar sobreposição
+        db.session.query(Horario).filter_by(pelotao=pelotao, semana_id=semana_id, dia_semana=dia, periodo=periodo).delete()
+
+        nova_aula = Horario(
+            pelotao=pelotao,
+            semana_id=int(semana_id),
+            dia_semana=dia,
+            periodo=int(periodo),
+            disciplina_id=int(disciplina_id),
+            instrutor_id=int(instrutor_id),
+            duracao=int(duracao),
+            status='confirmado' if current_user.role in ['admin', 'programador'] else 'pendente'
+        )
+        db.session.add(nova_aula)
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Quadro horário salvo com sucesso!'})
+        return jsonify({'success': True, 'message': 'Aula agendada com sucesso!'})
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Erro ao salvar horário: {e}")
-        return jsonify({'success': False, 'message': 'Ocorreu um erro ao salvar o horário.'}), 500
+        current_app.logger.error(f"Erro ao agendar aula: {e}")
+        return jsonify({'success': False, 'message': 'Ocorreu um erro ao agendar a aula.'}), 500
+
+@horario_bp.route('/remover-aula', methods=['POST'])
+@login_required
+def remover_aula():
+    data = request.json
+    pelotao = data.get('pelotao')
+    semana_id = data.get('semana_id')
+    dia = data.get('dia')
+    periodo = data.get('periodo')
+
+    try:
+        db.session.query(Horario).filter_by(pelotao=pelotao, semana_id=semana_id, dia_semana=dia, periodo=periodo).delete()
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Aula removida com sucesso!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': 'Ocorreu um erro ao remover a aula.'}), 500
+
 
 @horario_bp.route('/aprovar', methods=['GET', 'POST'])
 @login_required
@@ -179,7 +199,7 @@ def aprovar_horarios():
     return render_template('aprovar_horarios.html', aulas_pendentes=aulas_pendentes)
 
 def construir_matriz_horario(pelotao, semana_id):
-    a_disposicao = {'materia': 'A disposição do C Al /S Ens', 'instrutor': None, 'duracao': 1, 'is_disposicao': True}
+    a_disposicao = {'materia': 'A disposição do C Al /S Ens', 'instrutor': None, 'duracao': 1, 'is_disposicao': True, 'id': None}
     horario_matrix = [[a_disposicao for _ in range(7)] for _ in range(15)]
     dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
 
@@ -197,9 +217,12 @@ def construir_matriz_horario(pelotao, semana_id):
                     instrutor_nome = aula.instrutor.user.nome_completo or aula.instrutor.user.username
                 
                 aula_info = {
+                    'id': aula.id,
                     'materia': aula.disciplina.materia,
-                    'instrutor': instrutor_nome, 'duracao': aula.duracao,
-                    'status': aula.status, 'is_disposicao': False
+                    'instrutor': instrutor_nome, 
+                    'duracao': aula.duracao,
+                    'status': aula.status, 
+                    'is_disposicao': False
                 }
                 horario_matrix[periodo_idx][dia_idx] = aula_info
                 for i in range(1, aula.duracao):
