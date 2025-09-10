@@ -4,7 +4,6 @@ from ..models.user import User
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
-# REMOVIDO: validate_cpf, já que não é mais um campo.
 from utils.validators import validate_telefone
 
 class InstrutorService:
@@ -16,20 +15,17 @@ class InstrutorService:
         if existing_instrutor:
             return False, "Este usuário já possui um perfil de instrutor cadastrado."
 
-        # ALTERADO: Pega a 'matricula' em vez do 'cpf'
         matricula_raw = data.get('matricula')
         telefone_raw = data.get('telefone')
-        especializacao = data.get('especializacao')
-        formacao = data.get('formacao')
+        especializacao = data.get('especializacao', '') # Aceita campo vazio
+        formacao = data.get('formacao', '') # Aceita campo vazio
 
         matricula = ''.join(filter(str.isdigit, matricula_raw)) if matricula_raw else None
         telefone = ''.join(filter(str.isdigit, telefone_raw)) if telefone_raw else None
 
-        # ALTERADO: Validação agora usa a 'matricula'
-        if not all([matricula, especializacao, formacao]):
-            return False, "Matrícula, Especialização e Formação são campos obrigatórios."
+        if not matricula:
+            return False, "Matrícula é um campo obrigatório."
         
-        # ALTERADO: A validação de CPF foi removida, se quiser uma validação de matrícula, adicione aqui.
         if not matricula.isdigit():
             return False, "Matrícula deve conter apenas números."
         if telefone and not validate_telefone(telefone):
@@ -38,7 +34,6 @@ class InstrutorService:
         try:
             novo_instrutor = Instrutor(
                 user_id=user_id,
-                # ALTERADO: Salva a 'matricula' limpa
                 matricula=matricula,
                 especializacao=especializacao,
                 formacao=formacao,
@@ -49,7 +44,6 @@ class InstrutorService:
             return True, "Perfil de instrutor cadastrado com sucesso!"
         except IntegrityError:
             db.session.rollback()
-            # ALTERADO: Mensagem de erro para a 'matricula'
             return False, "Erro de integridade de dados. Verifique se a matrícula já existe."
         except Exception as e:
             db.session.rollback()
@@ -73,27 +67,23 @@ class InstrutorService:
         if not instrutor:
             return False, "Instrutor não encontrado."
 
-        # ALTERADO: Pega a 'matricula' em vez do 'cpf'
         matricula_raw = data.get('matricula')
         telefone_raw = data.get('telefone')
-        especializacao = data.get('especializacao')
-        formacao = data.get('formacao')
+        especializacao = data.get('especializacao', '') # Aceita campo vazio
+        formacao = data.get('formacao', '') # Aceita campo vazio
 
         matricula = ''.join(filter(str.isdigit, matricula_raw)) if matricula_raw else None
         telefone = ''.join(filter(str.isdigit, telefone_raw)) if telefone_raw else None
 
-        # ALTERADO: Validação agora usa a 'matricula'
-        if not all([matricula, especializacao, formacao]):
-            return False, "Matrícula, Especialização e Formação são campos obrigatórios."
+        if not matricula:
+            return False, "Matrícula é um campo obrigatório."
         
-        # ALTERADO: A validação de CPF foi removida.
         if not matricula.isdigit():
             return False, "Matrícula deve conter apenas números."
         if telefone and not validate_telefone(telefone):
             return False, "Telefone inválido."
 
         try:
-            # ALTERADO: Atualiza a 'matricula'
             instrutor.matricula = matricula
             instrutor.especializacao = especializacao
             instrutor.formacao = formacao
@@ -103,7 +93,6 @@ class InstrutorService:
             return True, "Perfil do instrutor atualizado com sucesso!"
         except IntegrityError:
             db.session.rollback()
-            # ALTERADO: Mensagem de erro para a 'matricula'
             return False, "Erro de integridade de dados. Verifique se a matrícula já existe."
         except Exception as e:
             db.session.rollback()

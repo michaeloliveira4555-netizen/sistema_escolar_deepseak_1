@@ -41,19 +41,25 @@
                     {% set aula = horario_matrix[row_idx][col_idx] %}
                     {% if aula != 'SKIP' %}
                         <td class="schedule-slot" 
+                            rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}"
                             data-dia="{{ dias[col_idx] }}" 
-                            data-periodo="{{ row_idx + 1 }}" 
-                            rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
+                            data-periodo="{{ row_idx + 1 }}">
                             
                             {% if aula.is_disposicao %}
-                                <button type="button" class="slot-button disponivel">Selecionar</button>
+                                <button type="button" class="slot-button disponivel" data-action="add">Adicionar</button>
                             {% else %}
-                                <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}" title="Clique para remover">
-                                    <div class="disciplina-title">{{ aula.materia }}</div>
-                                    <div class="instrutor-name">{{ aula.instrutor }}</div>
-                                    <span class="status-icon" title="{% if aula.status == 'pendente' %}Aguardando confirmação{% else %}Confirmado{% endif %}">
-                                        {% if aula.status == 'pendente' %}🕐{% else %}✅{% endif %}
-                                    </span>
+                                <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}">
+                                    <div class="slot-info">
+                                        <div class="disciplina-title">{{ aula.materia }}</div>
+                                        <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                    </div>
+                                    <div class="slot-actions">
+                                        <button class="btn-icon" data-action="edit" data-id="{{ aula.id }}" title="Editar Aula">✏️</button>
+                                        <button class="btn-icon" data-action="delete" data-id="{{ aula.id }}" title="Remover Aula">🗑️</button>
+                                    </div>
+                                    {% if aula.status == 'pendente' %}
+                                        <span class="status-icon" title="Aguardando confirmação">🕐</span>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         </td>
@@ -71,6 +77,16 @@
 
 {% include '_horario_modal.html' %}
 
+<button class="weekend-toggle-btn" id="weekend-toggle">
+    <span>Fim de Semana</span>
+</button>
+
+<div class="weekend-panel" id="weekend-panel">
+    <div class="table-wrapper">
+         <p class="text-center" style="padding: 1rem; font-weight: 600;">Em desenvolvimento.</p>
+    </div>
+</div>
+
 <script>
     const DISCIPLINAS_DISPONIVEIS = {{ disciplinas_disponiveis | tojson }};
     const PELOTAO_SELECIONADO = "{{ pelotao_selecionado }}";
@@ -81,32 +97,51 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const modalOverlay = document.getElementById('horario-modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
     const modalForm = document.getElementById('modal-form');
     const modalDisciplinaSelect = document.getElementById('modal-disciplina');
     const modalInstrutorSelect = document.getElementById('modal-instrutor');
+    const modalDuracaoInput = document.getElementById('modal-duracao');
+    const modalHorarioIdInput = document.getElementById('modal-horario-id');
     const modalDiaInput = document.getElementById('modal-dia');
     const modalPeriodoInput = document.getElementById('modal-periodo');
     const modalCancelBtn = document.getElementById('modal-cancel');
-    const selecionarButtons = document.querySelectorAll('.slot-button.disponivel');
-    const aulasAgendadas = document.querySelectorAll('.slot-content');
+    const table = document.querySelector('.horario-table-new');
+    const weekendToggle = document.getElementById('weekend-toggle');
 
-    if (!modalOverlay) {
-        console.error("ERRO CRÍTICO: O elemento do modal (horario-modal-overlay) não foi encontrado.");
-        return;
-    }
-
-    function openModal(dia, periodo) {
-        modalDiaInput.value = dia;
-        modalPeriodoInput.value = periodo;
+    function openModal(config) {
         modalForm.reset();
+        modalHorarioIdInput.value = config.horario_id || '';
+        modalDiaInput.value = config.dia || '';
+        modalPeriodoInput.value = config.periodo || '';
+        modalTitle.textContent = config.horario_id ? 'Editar Aula' : 'Agendar Aula';
 
         modalDisciplinaSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
         DISCIPLINAS_DISPONIVEIS.forEach(d => {
             let texto = `${d.nome} (Restam: ${d.carga_restante}h)`;
-            modalDisciplinaSelect.innerHTML += `<option value="${d.id}" data-instrutor1="${d.instrutor_id || ''}">${texto}</option>`;
+            modalDisciplinaSelect.innerHTML += `<option 
+                value="${d.id}"
+                data-instrutor1-id="${d.instrutor_id || ''}" data-instrutor1-name="${d.instrutor_nome || ''}"
+                data-instrutor2-id="${d.instrutor_id_2 || ''}" data-instrutor2-name="${d.instrutor_nome_2 || ''}"
+            >${texto}</option>`;
         });
         
-        modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
+        if (config.horario_id) {
+            fetch(`/horario/get-aula/${config.horario_id}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    modalDisciplinaSelect.value = data.disciplina_id;
+                    updateInstrutorOptions(data.instrutor_id);
+                    modalDuracaoInput.value = data.duracao;
+                } else {
+                    alert('Erro ao carregar dados da aula.');
+                }
+            });
+        } else {
+             modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
+        }
+
         modalOverlay.classList.add('visible');
     }
     
@@ -114,75 +149,85 @@ document.addEventListener('DOMContentLoaded', function() {
         modalOverlay.classList.remove('visible');
     }
 
-    function sendRequest(endpoint, payload) {
-        fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erro de comunicação com o servidor:', error);
-            alert('Ocorreu um erro de comunicação com o servidor.');
-        });
+    function updateInstrutorOptions(selectedInstrutorId = null) {
+        const selectedOption = modalDisciplinaSelect.options[modalDisciplinaSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
+            return;
+        }
+
+        const instrutor1_id = selectedOption.dataset.instrutor1Id;
+        const instrutor1_name = selectedOption.dataset.instrutor1Name;
+        const instrutor2_id = selectedOption.dataset.instrutor2Id;
+        const instrutor2_name = selectedOption.dataset.instrutor2Name;
+
+        modalInstrutorSelect.innerHTML = '';
+        if (instrutor1_id) modalInstrutorSelect.innerHTML += `<option value="${instrutor1_id}">${instrutor1_name}</option>`;
+        if (instrutor2_id) modalInstrutorSelect.innerHTML += `<option value="${instrutor2_id}">${instrutor2_name}</option>`;
+        if (!modalInstrutorSelect.innerHTML) modalInstrutorSelect.innerHTML = '<option value="">Nenhum instrutor</option>';
+        
+        if (selectedInstrutorId) {
+            modalInstrutorSelect.value = selectedInstrutorId;
+        }
     }
 
-    selecionarButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const slot = e.target.closest('.schedule-slot');
-            if (slot) {
-                openModal(slot.dataset.dia, slot.dataset.periodo);
-            }
-        });
-    });
+    table.addEventListener('click', function(e) {
+        const target = e.target.closest('button');
+        if (!target) return;
 
-    aulasAgendadas.forEach(slotContent => {
-        slotContent.addEventListener('click', (e) => {
-            if (confirm('Deseja remover esta aula?')) {
-                const slot = e.target.closest('.schedule-slot');
-                sendRequest("{{ url_for('horario.remover_aula') }}", {
-                    pelotao: PELOTAO_SELECIONADO,
-                    semana_id: SEMANA_ID,
-                    dia: slot.dataset.dia,
-                    periodo: slot.dataset.periodo
+        const action = target.dataset.action;
+        const id = target.dataset.id;
+        const slot = target.closest('.schedule-slot');
+
+        if (action === 'add') {
+            openModal({ dia: slot.dataset.dia, periodo: slot.dataset.periodo });
+        } else if (action === 'edit') {
+            openModal({ horario_id: id });
+        } else if (action === 'delete') {
+            if (confirm('Tem certeza que deseja remover esta aula?')) {
+                fetch('/horario/remover-aula', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ horario_id: id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) window.location.reload();
+                    else alert('Erro: ' + data.message);
                 });
             }
-        });
+        }
     });
     
     modalForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        sendRequest("{{ url_for('horario.agendar_aula') }}", {
+        const payload = {
             pelotao: PELOTAO_SELECIONADO,
             semana_id: SEMANA_ID,
+            horario_id: modalHorarioIdInput.value,
             dia: modalDiaInput.value,
             periodo: modalPeriodoInput.value,
             disciplina_id: modalDisciplinaSelect.value,
             instrutor_id: modalInstrutorSelect.value,
-            duracao: document.getElementById('modal-duracao').value
+            duracao: modalDuracaoInput.value
+        };
+
+        fetch('/horario/salvar-aula', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) window.location.reload();
+            else alert('Erro: ' + data.message);
         });
-        closeModal();
     });
-
-    modalDisciplinaSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const instrutor1 = selectedOption.dataset.instrutor1;
-        
-        modalInstrutorSelect.innerHTML = '';
-        if (instrutor1 && instrutor1 !== 'None') {
-            modalInstrutorSelect.innerHTML += `<option value="${instrutor1}">Instrutor Padrão</option>`;
-        } else {
-            modalInstrutorSelect.innerHTML = '<option value="">Nenhum instrutor principal</option>';
-        }
-    });
-
+    
+    if(weekendToggle) {
+        weekendToggle.addEventListener('click', () => document.body.classList.toggle('weekend-panel-open'));
+    }
+    modalDisciplinaSelect.addEventListener('change', () => updateInstrutorOptions());
     if(modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();

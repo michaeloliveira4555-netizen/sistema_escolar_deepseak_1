@@ -32,8 +32,10 @@
                     {% endif %}
                 </div>
                 <div class="turma-card-content">
-                    <h4>{{ turma.nome }}</h4>
-                    <p>{{ turma.ano }}</p>
+                    <div class="turma-card-title">
+                        <h4>{{ turma.nome }}</h4>
+                        <p>{{ turma.ano }}</p>
+                    </div>
                     <span class="aluno-count">{{ turma.alunos|length }} aluno(s)</span>
                 </div>
             </div>
@@ -80,34 +82,42 @@
 }
 
 .turma-card-icon {
-    /* Aumentado o tamanho para melhor visualização do ícone */
-    width: 150px; /* Antes 48px */
-    height: 150px; /* Antes 48px */
-    font-size: 3.5rem; /* Ajustado para ícones de texto, caso não haja imagem */
+    width: 64px;
+    height: 64px;
+    font-size: 2.5rem;
     color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border-radius: 8px; /* Adicionado um leve arredondamento para o contêiner do ícone */
-    background-color: var(--color-background); /* Adicionado um fundo para destaque */
+    border-radius: 8px;
+    background-color: var(--color-background);
 }
 
 .turma-icon-img {
-    width: 90%; /* A imagem preencherá quase todo o contêiner do ícone */
+    width: 90%;
     height: 90%;
-    object-fit: contain; /* Garante que a imagem inteira seja visível, sem corte */
+    object-fit: contain;
 }
 
-.turma-card-content h4 {
+.turma-card-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.turma-card-title h4 {
     font-size: 1.25rem;
     font-weight: 700;
-    margin: 0 0 0.25rem 0;
+    margin: 0;
+    line-height: 1;
 }
 
-.turma-card-content p {
+.turma-card-title p {
     color: var(--color-text-muted);
-    margin: 0 0 0.5rem 0;
+    margin: 0;
+    font-weight: 500;
 }
 
 .aluno-count {
@@ -135,10 +145,6 @@
     font-size: 1.8rem;
     margin-bottom: 0.5rem;
     color: var(--color-text-dark);
-}
-
-.empty-state p {
-    font-size: 1rem;
 }
 </style>
 {% endblock %}

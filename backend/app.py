@@ -11,6 +11,7 @@ from backend.models.semana import Semana
 from backend.models.horario import Horario
 from backend.models.disciplina_turma import DisciplinaTurma
 from backend.models.turma import Turma
+from backend.models.turma_cargo import TurmaCargo
 
 def create_app(config_class=Config):
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -81,7 +82,6 @@ app = create_app()
 @app.cli.command("create-admin")
 def create_admin():
     with app.app_context():
-        # --- CORREÇÃO AQUI ---
         admin_user = db.session.execute(db.select(User).filter_by(id_func='ADMIN')).scalar_one_or_none()
         
         if admin_user:
@@ -90,7 +90,7 @@ def create_admin():
 
         print("Criando o usuário administrador 'admin'...")
         new_admin = User(
-            id_func='ADMIN', # Alterado de 'matricula' para 'id_func'
+            id_func='ADMIN',
             username='admin',
             email='admin@escola.com.br',
             role='admin',
@@ -107,7 +107,6 @@ def create_admin():
 @app.cli.command("create-programmer")
 def create_programmer():
     with app.app_context():
-        # --- CORREÇÃO AQUI ---
         prog_user = db.session.execute(db.select(User).filter_by(id_func='PROG001')).scalar_one_or_none()
         
         if prog_user:
@@ -116,7 +115,7 @@ def create_programmer():
 
         print("Criando o usuário programador...")
         new_programmer = User(
-            id_func='PROG001', # Alterado de 'matricula' para 'id_func'
+            id_func='PROG001',
             username='programador',
             email='dev@escola.com.br',
             role='programador',
@@ -139,10 +138,9 @@ def seed_disciplinas():
     lista_disciplinas = [
         "Educação Física", "Sistemas de Correição: Atribuição do Escrivão PJM",
         "A Transversalidade do D. Penal e Processual Penal no Atnd. De Oc.",
-        "Legislação Especial Aplicada a Função Policial Militar",
-        "Policiamento de Trânsito Aplicado a Função", "Gestão e Supervisão pela Qualidade do Serviço",
-        "Sistemas Informatizados da BM e SSPO", "Saúde Mental do Policial Militar e Psicologia da Ativ. Pol.",
-        "Direito Administrativo Aplicado a função Policial Militar",
+        "Legislação Especial Aplicada a Função Policial Militar", "Policiamento de Trânsito Aplicado a Função",
+        "Gestão e Supervisão pela Qualidade do Serviço", "Sistemas Informatizados da BM e SSPO",
+        "Saúde Mental do Policial Militar e Psicologia da Ativ. Pol.", "Direito Administrativo Aplicado a função Policial Militar",
         "Gerenciamento de Crise e Desastres", "Ordem Unida", "AMT I", "AMT II",
         "Atendimento Pré-Hospitalar Tático", "A disposição do C Al /S Ens"
     ]

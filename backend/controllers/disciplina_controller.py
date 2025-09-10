@@ -27,7 +27,7 @@ def adicionar_disciplina():
     return render_template('adicionar_disciplina.html')
 
 @disciplina_bp.route('/listar')
-@login_required # Permite que todos os logados acessem
+@login_required
 def listar_disciplinas():
     pelotao_filtrado = request.args.get('pelotao')
     disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
@@ -66,18 +66,32 @@ def editar_disciplina(disciplina_id):
         if carga_horaria_str and carga_horaria_str.isdigit():
             disciplina.carga_horaria_prevista = int(carga_horaria_str)
         
-        db.session.query(DisciplinaTurma).filter_by(disciplina_id=disciplina.id).delete()
-        for i in range(1, 11):
+        atribuicoes_existentes = db.session.scalars(
+            db.select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina.id)
+        ).all()
+        atribuicoes_map = {atr.pelotao: atr for atr in atribuicoes_existentes}
+
+        for i in range(1, 9):
             pelotao_nome = f'{i}° Pelotão'
             instrutor_id_1_str = request.form.get(f'pelotao_{i}_instrutor_1')
             instrutor_id_2_str = request.form.get(f'pelotao_{i}_instrutor_2')
-            
-            if instrutor_id_1_str and instrutor_id_1_str.isdigit():
+
+            instrutor_id_1 = int(instrutor_id_1_str) if instrutor_id_1_str and instrutor_id_1_str.isdigit() else None
+            instrutor_id_2 = int(instrutor_id_2_str) if instrutor_id_2_str and instrutor_id_2_str.isdigit() else None
+
+            associacao_existente = atribuicoes_map.get(pelotao_nome)
+
+            if associacao_existente:
+                # Se a associação já existe, apenas atualiza os instrutores
+                associacao_existente.instrutor_id_1 = instrutor_id_1
+                associacao_existente.instrutor_id_2 = instrutor_id_2
+            elif instrutor_id_1 or instrutor_id_2:
+                # Se não existe, mas um instrutor foi selecionado, cria a nova associação
                 nova_atribuicao = DisciplinaTurma(
                     pelotao=pelotao_nome,
                     disciplina_id=disciplina.id,
-                    instrutor_id_1=int(instrutor_id_1_str),
-                    instrutor_id_2=int(instrutor_id_2_str) if instrutor_id_2_str and instrutor_id_2_str.isdigit() else None
+                    instrutor_id_1=instrutor_id_1,
+                    instrutor_id_2=instrutor_id_2
                 )
                 db.session.add(nova_atribuicao)
         

@@ -61,17 +61,20 @@
             ] %}
 
             {% for row_idx in range(15) %}
-                {% set row_has_content = false %}
-                {% if loop.index0 >= 12 %}
+                {% set is_extra = loop.index0 >= 12 %}
+                {% set has_content = namespace(value=false) %}
+                {% if is_extra %}
                     {% for col_idx in range(5) %}
-                        {% set aula = horario_matrix[row_idx][col_idx] %}
-                        {% if aula != 'SKIP' and not aula.is_disposicao %}
-                            {% set row_has_content = true %}
+                        {% if not horario_matrix[row_idx][col_idx].is_disposicao %}
+                            {% set has_content.value = true %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
 
-                <tr class="periodo-row {% if loop.index0 >= 12 %}periodo-extra{% endif %}" {% if loop.index0 >= 12 and not row_has_content %}style="display: none;"{% endif %}>
+                <tr class="periodo-row {% if is_extra %}periodo-extra{% endif %}"
+                    {% if has_content.value %}data-has-content="true"{% endif %}
+                    {% if is_extra and not has_content.value %}style="display: none;"{% endif %}>
+                    
                     <td class="cell-tempo">
                         <strong>{{ tempos[row_idx][0] }}</strong>
                         <span>{{ tempos[row_idx][1] }}</span>
@@ -80,15 +83,15 @@
                     {% for col_idx in range(5) %}
                         {% set aula = horario_matrix[row_idx][col_idx] %}
                         {% if aula != 'SKIP' %}
-                            <td class="schedule-slot" rowspan="{{ aula.duracao if aula else 1 }}">
-                                {% if aula %}
-                                <div class="slot-content {% if aula.is_disposicao %}disposicao{% endif %}">
+                            <td class="schedule-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
+                                <div class="slot-content 
+                                    {% if aula.is_disposicao %}disposicao{% endif %}
+                                    {% if aula.status == 'pendente' %}pendente{% endif %}">
                                     <div class="disciplina-title">{{ aula.materia }}</div>
                                     {% if aula.instrutor %}
                                     <div class="instrutor-name">{{ aula.instrutor }}</div>
                                     {% endif %}
                                 </div>
-                                {% endif %}
                             </td>
                         {% endif %}
                     {% endfor %}
@@ -118,7 +121,20 @@
             </thead>
             <tbody>
                 {% for row_idx in range(15) %}
-                <tr>
+                    {% set is_extra = loop.index0 >= 12 %}
+                    {% set has_content = namespace(value=false) %}
+                    {% if is_extra %}
+                        {% for col_idx in range(5, 7) %}
+                            {% if not horario_matrix[row_idx][col_idx].is_disposicao %}
+                                {% set has_content.value = true %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                
+                <tr class="periodo-row {% if is_extra %}periodo-extra{% endif %}"
+                    {% if has_content.value %}data-has-content="true"{% endif %}
+                    {% if is_extra and not has_content.value %}style="display: none;"{% endif %}>
+
                     <td class="cell-tempo">
                         <strong>{{ tempos[row_idx][0] }}</strong>
                         <span>{{ tempos[row_idx][1] }}</span>
@@ -126,15 +142,15 @@
                     {% for col_idx in range(5, 7) %}
                         {% set aula = horario_matrix[row_idx][col_idx] %}
                         {% if aula != 'SKIP' %}
-                            <td class="schedule-slot weekend-slot" rowspan="{{ aula.duracao if aula else 1 }}">
-                                {% if aula %}
-                                <div class="slot-content {% if aula.is_disposicao %}disposicao weekend{% else %}weekend{% endif %}">
+                            <td class="schedule-slot weekend-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
+                                <div class="slot-content 
+                                    {% if aula.is_disposicao %}disposicao weekend{% else %}weekend{% endif %}
+                                    {% if aula.status == 'pendente' %}pendente{% endif %}">
                                     <div class="disciplina-title">{{ aula.materia }}</div>
                                     {% if aula.instrutor %}
                                     <div class="instrutor-name">{{ aula.instrutor }}</div>
                                     {% endif %}
                                 </div>
-                                {% endif %}
                             </td>
                         {% endif %}
                     {% endfor %}
@@ -152,7 +168,6 @@
 .pelotao-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
 .semana-selector-wrapper { display: flex; align-items: center; gap: 1rem; max-width: 400px; }
 .semana-selector-wrapper label { font-weight: 600; white-space: nowrap; }
-.slot-content.disposicao { background-color: #f1f5f9; border: 1px solid #e2e8f0; cursor: default; }
 .slot-content.disposicao .disciplina-title { color: #94a3b8; font-style: italic; font-size: 0.75rem; }
 .horario-actions { display: flex; justify-content: center; margin-top: 1.5rem; }
 </style>
@@ -175,21 +190,12 @@
         }
 
         const toggleExtraBtn = document.getElementById('toggle-extra-horarios');
-        const extraRows = document.querySelectorAll('.periodo-extra');
-        if (toggleExtraBtn && extraRows.length > 0) {
+        if (toggleExtraBtn) {
             toggleExtraBtn.addEventListener('click', function() {
-                const hiddenRows = document.querySelectorAll('.periodo-extra[style*="display: none;"]');
-                hiddenRows.forEach(row => {
-                    row.style.display = 'table-row';
+                const extraRows = document.querySelectorAll('.periodo-extra:not([data-has-content="true"])');
+                extraRows.forEach(row => {
+                    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
                 });
-                
-                if (document.querySelectorAll('.periodo-extra[style*="display: none;"]').length === 0) {
-                     extraRows.forEach(row => {
-                         if(row.style.display !== 'none' && !row.dataset.hasContent){
-                            row.style.display = 'none';
-                         }
-                     });
-                }
             });
         }
     });

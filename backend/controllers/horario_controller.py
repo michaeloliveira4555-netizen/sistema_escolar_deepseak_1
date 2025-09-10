@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload
 from datetime import date 
 
 from ..models.database import db
@@ -10,8 +11,10 @@ from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.semana import Semana
 from ..models.turma import Turma
+from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
+# --- LINHA MOVIDA PARA CIMA ---
 horario_bp = Blueprint('horario', __name__, url_prefix='/horario')
 
 @horario_bp.route('/')
@@ -24,7 +27,7 @@ def index():
         flash('Cadastre ao menos uma turma e uma semana para visualizar o horário.', 'warning')
         return redirect(url_for('main.dashboard'))
 
-    turma_selecionada_nome = request.args.get('pelotao', session.get('ultima_turma_visualizada', todas_as_turmas[0].nome))
+    turma_selecionada_nome = request.args.get('pelotao', session.get('ultima_turma_visualizada', todas_as_turmas[0].nome if todas_as_turmas else ''))
     
     semana_id_selecionada = request.args.get('semana_id')
     if semana_id_selecionada:
@@ -67,26 +70,15 @@ def editar_horario_grid(pelotao, semana_id):
         flash("Acesso negado.", "danger")
         return redirect(url_for('horario.index'))
 
-    if not is_admin:
-        associacao_instrutor = db.session.scalars(
-            select(DisciplinaTurma).where(
-                (DisciplinaTurma.pelotao == pelotao) &
-                ((DisciplinaTurma.instrutor_id_1 == instrutor_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_id))
-            )
-        ).first()
-        if not associacao_instrutor:
-            flash("Você não tem permissão para editar o horário deste pelotão.", "danger")
-            return redirect(url_for('horario.index', pelotao=pelotao, semana_id=semana_id))
-
     horario_matrix = construir_matriz_horario(pelotao, semana_id)
     
-    if is_admin:
-        associacoes = db.session.scalars(select(DisciplinaTurma).filter_by(pelotao=pelotao).join(Disciplina).order_by(Disciplina.materia)).all()
-    else:
-        associacoes = db.session.scalars(select(DisciplinaTurma).where(
-            (DisciplinaTurma.pelotao == pelotao) &
-            ((DisciplinaTurma.instrutor_id_1 == instrutor_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_id))
-        ).join(Disciplina).order_by(Disciplina.materia)).all()
+    associacoes = DisciplinaService.get_disciplinas_with_instrutores_for_pelotao(pelotao)
+
+    if not is_admin:
+        associacoes = [
+            a for a in associacoes 
+            if a.instrutor_id_1 == instrutor_id or a.instrutor_id_2 == instrutor_id
+        ]
 
     disciplinas_disponiveis = []
     for a in associacoes:
@@ -97,11 +89,21 @@ def editar_horario_grid(pelotao, semana_id):
             status='confirmado'
         ).scalar() or 0
         
+        instrutor1_nome = None
+        if a.instrutor_1 and a.instrutor_1.user:
+            instrutor1_nome = a.instrutor_1.user.nome_completo or a.instrutor_1.user.username
+
+        instrutor2_nome = None
+        if a.instrutor_2 and a.instrutor_2.user:
+            instrutor2_nome = a.instrutor_2.user.nome_completo or a.instrutor_2.user.username
+
         disciplinas_disponiveis.append({
             "id": a.disciplina.id,
             "nome": a.disciplina.materia,
             "instrutor_id": a.instrutor_id_1,
+            "instrutor_nome": instrutor1_nome,
             "instrutor_id_2": a.instrutor_id_2,
+            "instrutor_nome_2": instrutor2_nome,
             "carga_total": total_previsto,
             "carga_feita": horas_agendadas,
             "carga_restante": total_previsto - horas_agendadas
@@ -116,57 +118,72 @@ def editar_horario_grid(pelotao, semana_id):
         is_admin=is_admin
     )
 
-@horario_bp.route('/agendar-aula', methods=['POST'])
+@horario_bp.route('/get-aula/<int:horario_id>')
 @login_required
-def agendar_aula():
+def get_aula_details(horario_id):
+    aula = db.session.get(Horario, horario_id)
+    if not aula:
+        return jsonify({'success': False, 'message': 'Aula não encontrada'}), 404
+    
+    return jsonify({
+        'success': True,
+        'disciplina_id': aula.disciplina_id,
+        'instrutor_id': aula.instrutor_id,
+        'duracao': aula.duracao
+    })
+
+@horario_bp.route('/salvar-aula', methods=['POST'])
+@login_required
+def salvar_aula():
     data = request.json
-    pelotao = data.get('pelotao')
-    semana_id = data.get('semana_id')
-    dia = data.get('dia')
-    periodo = data.get('periodo')
-    disciplina_id = data.get('disciplina_id')
-    instrutor_id = data.get('instrutor_id')
-    duracao = data.get('duracao', 1)
+    horario_id = data.get('horario_id')
+
+    if not data.get('disciplina_id') or not data.get('instrutor_id'):
+        return jsonify({'success': False, 'message': 'Disciplina e Instrutor são obrigatórios.'}), 400
 
     try:
-        # Remove aulas existentes nesse mesmo slot para evitar sobreposição
-        db.session.query(Horario).filter_by(pelotao=pelotao, semana_id=semana_id, dia_semana=dia, periodo=periodo).delete()
+        if horario_id:
+            aula = db.session.get(Horario, int(horario_id))
+            if not aula:
+                return jsonify({'success': False, 'message': 'Aula não encontrada.'}), 404
+        else:
+            aula = Horario(
+                pelotao=data.get('pelotao'),
+                semana_id=int(data.get('semana_id')),
+                dia_semana=data.get('dia'),
+                periodo=int(data.get('periodo'))
+            )
+            db.session.add(aula)
 
-        nova_aula = Horario(
-            pelotao=pelotao,
-            semana_id=int(semana_id),
-            dia_semana=dia,
-            periodo=int(periodo),
-            disciplina_id=int(disciplina_id),
-            instrutor_id=int(instrutor_id),
-            duracao=int(duracao),
-            status='confirmado' if current_user.role in ['admin', 'programador'] else 'pendente'
-        )
-        db.session.add(nova_aula)
+        aula.disciplina_id = int(data.get('disciplina_id'))
+        aula.instrutor_id = int(data.get('instrutor_id'))
+        aula.duracao = int(data.get('duracao', 1))
+        aula.status = 'confirmado' if current_user.role in ['admin', 'programador'] else 'pendente'
+        
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Aula agendada com sucesso!'})
+        return jsonify({'success': True, 'message': 'Aula salva com sucesso!'})
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Erro ao agendar aula: {e}")
-        return jsonify({'success': False, 'message': 'Ocorreu um erro ao agendar a aula.'}), 500
+        current_app.logger.error(f"Erro ao salvar aula: {e}")
+        return jsonify({'success': False, 'message': 'Ocorreu um erro ao salvar a aula.'}), 500
 
 @horario_bp.route('/remover-aula', methods=['POST'])
 @login_required
 def remover_aula():
     data = request.json
-    pelotao = data.get('pelotao')
-    semana_id = data.get('semana_id')
-    dia = data.get('dia')
-    periodo = data.get('periodo')
+    horario_id = data.get('horario_id')
 
     try:
-        db.session.query(Horario).filter_by(pelotao=pelotao, semana_id=semana_id, dia_semana=dia, periodo=periodo).delete()
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Aula removida com sucesso!'})
+        aula = db.session.get(Horario, int(horario_id))
+        if aula:
+            db.session.delete(aula)
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Aula removida com sucesso!'})
+        return jsonify({'success': False, 'message': 'Aula não encontrada.'}), 404
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Erro ao remover aula: {e}")
         return jsonify({'success': False, 'message': 'Ocorreu um erro ao remover a aula.'}), 500
-
 
 @horario_bp.route('/aprovar', methods=['GET', 'POST'])
 @login_required
@@ -200,7 +217,7 @@ def aprovar_horarios():
 
 def construir_matriz_horario(pelotao, semana_id):
     a_disposicao = {'materia': 'A disposição do C Al /S Ens', 'instrutor': None, 'duracao': 1, 'is_disposicao': True, 'id': None}
-    horario_matrix = [[a_disposicao for _ in range(7)] for _ in range(15)]
+    horario_matrix = [[dict(a_disposicao) for _ in range(7)] for _ in range(15)]
     dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
 
     aulas_agendadas = db.session.scalars(
@@ -222,9 +239,10 @@ def construir_matriz_horario(pelotao, semana_id):
                     'instrutor': instrutor_nome, 
                     'duracao': aula.duracao,
                     'status': aula.status, 
-                    'is_disposicao': False
+                    'is_disposicao': False,
                 }
                 horario_matrix[periodo_idx][dia_idx] = aula_info
+                
                 for i in range(1, aula.duracao):
                     if periodo_idx + i < 15:
                         horario_matrix[periodo_idx + i][dia_idx] = 'SKIP'
