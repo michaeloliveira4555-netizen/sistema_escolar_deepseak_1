@@ -14,7 +14,6 @@ from ..models.turma import Turma
 from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
-# --- LINHA MOVIDA PARA CIMA ---
 horario_bp = Blueprint('horario', __name__, url_prefix='/horario')
 
 @horario_bp.route('/')
@@ -58,6 +57,10 @@ def index():
 @horario_bp.route('/editar/<pelotao>/<int:semana_id>')
 @login_required
 def editar_horario_grid(pelotao, semana_id):
+    print(f"\n=== DEBUG INÍCIO ===")
+    print(f"Usuário: {current_user.username} (Role: {current_user.role})")
+    print(f"Pelotão: {pelotao}, Semana ID: {semana_id}")
+    
     semana = db.session.get(Semana, semana_id)
     if not semana:
         flash("Semana não encontrada.", "danger")
@@ -65,6 +68,8 @@ def editar_horario_grid(pelotao, semana_id):
 
     is_admin = current_user.role in ['admin', 'programador']
     instrutor_id = current_user.instrutor_profile.id if current_user.instrutor_profile else None
+    
+    print(f"É admin: {is_admin}, Instrutor ID: {instrutor_id}")
 
     if not is_admin and not instrutor_id:
         flash("Acesso negado.", "danger")
@@ -72,42 +77,93 @@ def editar_horario_grid(pelotao, semana_id):
 
     horario_matrix = construir_matriz_horario(pelotao, semana_id)
     
-    associacoes = DisciplinaService.get_disciplinas_with_instrutores_for_pelotao(pelotao)
-
-    if not is_admin:
-        associacoes = [
-            a for a in associacoes 
-            if a.instrutor_id_1 == instrutor_id or a.instrutor_id_2 == instrutor_id
-        ]
-
+    # Preparar dados diferentes para admin e instrutor
     disciplinas_disponiveis = []
-    for a in associacoes:
-        total_previsto = a.disciplina.carga_horaria_prevista
-        horas_agendadas = db.session.query(func.sum(Horario.duracao)).filter_by(
-            disciplina_id=a.disciplina.id, 
-            pelotao=pelotao,
-            status='confirmado'
-        ).scalar() or 0
+    todos_instrutores = []
+    
+    if is_admin:
+        # ADMIN: Vê todas as disciplinas e todos os instrutores
+        print("--- MODO ADMINISTRADOR ---")
         
-        instrutor1_nome = None
-        if a.instrutor_1 and a.instrutor_1.user:
-            instrutor1_nome = a.instrutor_1.user.nome_completo or a.instrutor_1.user.username
+        # Buscar todas as disciplinas
+        todas_disciplinas = db.session.scalars(
+            select(Disciplina).order_by(Disciplina.materia)
+        ).all()
+        
+        # Buscar todos os instrutores
+        todos_instrutores_query = db.session.scalars(
+            select(Instrutor)
+            .options(joinedload(Instrutor.user))
+            .order_by(Instrutor.id)
+        ).all()
+        
+        for inst in todos_instrutores_query:
+            nome = "Sem nome"
+            if inst.user:
+                nome = inst.user.nome_completo or inst.user.username or f"User {inst.user.id}"
+            todos_instrutores.append({
+                "id": inst.id,
+                "nome": nome
+            })
+        
+        # Preparar disciplinas para admin
+        for disciplina in todas_disciplinas:
+            total_previsto = disciplina.carga_horaria_prevista or 0
+            horas_agendadas = db.session.query(func.sum(Horario.duracao)).filter_by(
+                disciplina_id=disciplina.id, 
+                pelotao=pelotao,
+                status='confirmado'
+            ).scalar() or 0
+            
+            disciplinas_disponiveis.append({
+                "id": disciplina.id,
+                "nome": disciplina.materia,
+                "carga_total": total_previsto,
+                "carga_feita": horas_agendadas,
+                "carga_restante": max(0, total_previsto - horas_agendadas)
+            })
+        
+        print(f"Admin vê {len(disciplinas_disponiveis)} disciplinas e {len(todos_instrutores)} instrutores")
+        
+    else:
+        # INSTRUTOR: Vê apenas suas disciplinas
+        print("--- MODO INSTRUTOR ---")
+        
+        associacoes_query = (
+            select(DisciplinaTurma)
+            .options(joinedload(DisciplinaTurma.disciplina))
+            .where(
+                DisciplinaTurma.pelotao == pelotao,
+                (DisciplinaTurma.instrutor_id_1 == instrutor_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_id)
+            )
+            .order_by(DisciplinaTurma.disciplina_id)
+        )
+        
+        associacoes = db.session.scalars(associacoes_query).unique().all()
+        
+        for a in associacoes:
+            total_previsto = a.disciplina.carga_horaria_prevista or 0
+            horas_agendadas = db.session.query(func.sum(Horario.duracao)).filter_by(
+                disciplina_id=a.disciplina.id, 
+                pelotao=pelotao,
+                status='confirmado'
+            ).scalar() or 0
+            
+            disciplinas_disponiveis.append({
+                "id": a.disciplina.id,
+                "nome": a.disciplina.materia,
+                "carga_total": total_previsto,
+                "carga_feita": horas_agendadas,
+                "carga_restante": max(0, total_previsto - horas_agendadas),
+                "instrutor_automatico": instrutor_id  # Instrutor será definido automaticamente
+            })
+        
+        print(f"Instrutor vê {len(disciplinas_disponiveis)} disciplinas")
 
-        instrutor2_nome = None
-        if a.instrutor_2 and a.instrutor_2.user:
-            instrutor2_nome = a.instrutor_2.user.nome_completo or a.instrutor_2.user.username
-
-        disciplinas_disponiveis.append({
-            "id": a.disciplina.id,
-            "nome": a.disciplina.materia,
-            "instrutor_id": a.instrutor_id_1,
-            "instrutor_nome": instrutor1_nome,
-            "instrutor_id_2": a.instrutor_id_2,
-            "instrutor_nome_2": instrutor2_nome,
-            "carga_total": total_previsto,
-            "carga_feita": horas_agendadas,
-            "carga_restante": total_previsto - horas_agendadas
-        })
+    print(f"--- RESULTADO FINAL ---")
+    print(f"Disciplinas disponíveis: {len(disciplinas_disponiveis)}")
+    print(f"Instrutores disponíveis: {len(todos_instrutores)}")
+    print("=== DEBUG FIM ===\n")
 
     return render_template(
         'editar_quadro_horario.html', 
@@ -115,7 +171,9 @@ def editar_horario_grid(pelotao, semana_id):
         pelotao_selecionado=pelotao,
         semana_selecionada=semana,
         disciplinas_disponiveis=disciplinas_disponiveis,
-        is_admin=is_admin
+        todos_instrutores=todos_instrutores,
+        is_admin=is_admin,
+        instrutor_logado_id=instrutor_id
     )
 
 @horario_bp.route('/get-aula/<int:horario_id>')
@@ -138,34 +196,126 @@ def salvar_aula():
     data = request.json
     horario_id = data.get('horario_id')
 
-    if not data.get('disciplina_id') or not data.get('instrutor_id'):
-        return jsonify({'success': False, 'message': 'Disciplina e Instrutor são obrigatórios.'}), 400
+    print(f"\n=== SALVANDO AULA ===")
+    print(f"Dados recebidos: {data}")
+    print(f"Usuário: {current_user.username} (Role: {current_user.role})")
+
+    # Validações básicas
+    if not data.get('disciplina_id'):
+        print("ERRO: disciplina_id vazio")
+        return jsonify({'success': False, 'message': 'Disciplina é obrigatória.'}), 400
+
+    # Determinar instrutor baseado no tipo de usuário
+    is_admin = current_user.role in ['admin', 'programador']
+    
+    if is_admin:
+        # Admin deve fornecer instrutor_id
+        if not data.get('instrutor_id'):
+            print("ERRO: Admin deve fornecer instrutor_id")
+            return jsonify({'success': False, 'message': 'Instrutor é obrigatório para administradores.'}), 400
+        instrutor_final_id = int(data.get('instrutor_id'))
+    else:
+        # Instrutor usa seu próprio ID
+        if not current_user.instrutor_profile:
+            print("ERRO: Usuário não tem perfil de instrutor")
+            return jsonify({'success': False, 'message': 'Usuário não é um instrutor válido.'}), 400
+        instrutor_final_id = current_user.instrutor_profile.id
+        print(f"Instrutor automático: {instrutor_final_id}")
+
+    # Validar se a disciplina existe
+    disciplina = db.session.get(Disciplina, int(data.get('disciplina_id')))
+    if not disciplina:
+        print(f"ERRO: Disciplina ID {data.get('disciplina_id')} não encontrada")
+        return jsonify({'success': False, 'message': 'Disciplina não encontrada.'}), 400
+
+    # Validar se o instrutor existe
+    instrutor = db.session.get(Instrutor, instrutor_final_id)
+    if not instrutor:
+        print(f"ERRO: Instrutor ID {instrutor_final_id} não encontrado")
+        return jsonify({'success': False, 'message': 'Instrutor não encontrado.'}), 400
+
+    # Para instrutor (não admin), validar se está associado à disciplina
+    if not is_admin:
+        pelotao = data.get('pelotao')
+        associacao = db.session.execute(
+            select(DisciplinaTurma).where(
+                DisciplinaTurma.pelotao == pelotao,
+                DisciplinaTurma.disciplina_id == disciplina.id,
+                (DisciplinaTurma.instrutor_id_1 == instrutor_final_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_final_id)
+            )
+        ).scalar_one_or_none()
+        
+        if not associacao:
+            print(f"ERRO: Instrutor {instrutor_final_id} não está associado à disciplina {disciplina.id} no pelotão {pelotao}")
+            return jsonify({'success': False, 'message': 'Você não está autorizado para esta disciplina neste pelotão.'}), 400
 
     try:
         if horario_id:
+            # Editando aula existente
             aula = db.session.get(Horario, int(horario_id))
             if not aula:
                 return jsonify({'success': False, 'message': 'Aula não encontrada.'}), 404
+            print(f"Editando aula existente ID {horario_id}")
+            
+            # Atualizar campos da aula existente
+            aula.disciplina_id = int(data.get('disciplina_id'))
+            aula.instrutor_id = instrutor_final_id
+            aula.duracao = int(data.get('duracao', 1))
+            aula.status = 'confirmado' if is_admin else 'pendente'
+            
         else:
-            aula = Horario(
-                pelotao=data.get('pelotao'),
-                semana_id=int(data.get('semana_id')),
-                dia_semana=data.get('dia'),
-                periodo=int(data.get('periodo'))
-            )
+            # Criando nova aula
+            # Verificar se já existe aula no mesmo horário
+            conflito = db.session.execute(
+                select(Horario).where(
+                    Horario.pelotao == data.get('pelotao'),
+                    Horario.semana_id == int(data.get('semana_id')),
+                    Horario.dia_semana == data.get('dia'),
+                    Horario.periodo == int(data.get('periodo'))
+                )
+            ).scalar_one_or_none()
+            
+            if conflito:
+                print(f"ERRO: Já existe aula no horário {data.get('dia')} {data.get('periodo')}º período")
+                return jsonify({'success': False, 'message': 'Já existe uma aula agendada neste horário.'}), 400
+            
+            # CORREÇÃO DEFINITIVA: Criar objeto usando construtor sem argumentos
+            print("Criando nova instância de Horario...")
+            aula = Horario()
+            
+            # Definir todos os campos obrigatórios
+            print("Definindo campos da aula...")
+            aula.pelotao = data.get('pelotao')
+            aula.semana_id = int(data.get('semana_id'))
+            aula.dia_semana = data.get('dia')
+            aula.periodo = int(data.get('periodo'))
+            aula.disciplina_id = int(data.get('disciplina_id'))
+            aula.instrutor_id = instrutor_final_id
+            aula.duracao = int(data.get('duracao', 1))
+            aula.status = 'confirmado' if is_admin else 'pendente'
+            
+            print(f"Adicionando aula à sessão...")
             db.session.add(aula)
-
-        aula.disciplina_id = int(data.get('disciplina_id'))
-        aula.instrutor_id = int(data.get('instrutor_id'))
-        aula.duracao = int(data.get('duracao', 1))
-        aula.status = 'confirmado' if current_user.role in ['admin', 'programador'] else 'pendente'
+            print(f"Nova aula criada: {data.get('pelotao')} - {data.get('dia')} {data.get('periodo')}º período")
         
+        print(f"Dados finais: Disciplina={aula.disciplina_id}, Instrutor={aula.instrutor_id}, Duração={aula.duracao}")
+        
+        print("Fazendo commit...")
         db.session.commit()
+        print("Aula salva com sucesso!")
         return jsonify({'success': True, 'message': 'Aula salva com sucesso!'})
+        
+    except ValueError as e:
+        db.session.rollback()
+        print(f"ERRO de valor: {e}")
+        return jsonify({'success': False, 'message': 'Dados inválidos fornecidos.'}), 400
     except Exception as e:
         db.session.rollback()
+        print(f"ERRO inesperado: {e}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         current_app.logger.error(f"Erro ao salvar aula: {e}")
-        return jsonify({'success': False, 'message': 'Ocorreu um erro ao salvar a aula.'}), 500
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
 
 @horario_bp.route('/remover-aula', methods=['POST'])
 @login_required
@@ -221,7 +371,12 @@ def construir_matriz_horario(pelotao, semana_id):
     dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
 
     aulas_agendadas = db.session.scalars(
-        select(Horario).where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
+        select(Horario)
+        .options(
+            joinedload(Horario.disciplina),
+            joinedload(Horario.instrutor).joinedload(Instrutor.user)
+        )
+        .where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
     ).all()
 
     for aula in aulas_agendadas:

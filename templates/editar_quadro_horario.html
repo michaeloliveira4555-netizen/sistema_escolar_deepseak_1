@@ -6,6 +6,9 @@
 <div class="content-header">
     <h1>Editar Quadro Horário</h1>
     <p>Você está editando o horário para: <strong>{{ pelotao_selecionado }}</strong> na semana <strong>{{ semana_selecionada.nome }}</strong></p>
+    {% if not is_admin %}
+    <p style="color: #10b981; font-weight: 600;">📌 Como instrutor, você pode agendar apenas suas próprias aulas.</p>
+    {% endif %}
 </div>
 
 <div class="table-wrapper">
@@ -75,7 +78,78 @@
     <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-secondary">Voltar para Visualização</a>
 </div>
 
-{% include '_horario_modal.html' %}
+<!-- Modal para agendamento -->
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay.visible {
+    display: flex;
+    opacity: 1;
+}
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal-overlay.visible .modal-content {
+    transform: scale(1);
+}
+</style>
+
+<div class="modal-overlay" id="horario-modal-overlay">
+    <div class="modal-content">
+        <h3 id="modal-title">Agendar Aula</h3>
+        <form id="modal-form">
+            <input type="hidden" id="modal-horario-id" name="horario_id">
+            <input type="hidden" id="modal-dia" name="dia">
+            <input type="hidden" id="modal-periodo" name="periodo">
+
+            <div class="form-group">
+                <label for="modal-disciplina">Disciplina</label>
+                <select id="modal-disciplina" name="disciplina_id" class="form-control" required>
+                    <option value="">Selecione a disciplina</option>
+                </select>
+            </div>
+
+            <!-- Campo instrutor - APENAS para administradores -->
+            {% if is_admin %}
+            <div class="form-group" id="modal-instrutor-group">
+                <label for="modal-instrutor">Instrutor</label>
+                <select id="modal-instrutor" name="instrutor_id" class="form-control" required>
+                    <option value="">Selecione o instrutor</option>
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="modal-duracao">Duração (períodos)</label>
+                <input type="number" id="modal-duracao" name="duracao" class="form-control" value="1" min="1" max="8">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="modal-confirm">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <button class="weekend-toggle-btn" id="weekend-toggle">
     <span>Fim de Semana</span>
@@ -89,9 +163,11 @@
 
 <script>
     const DISCIPLINAS_DISPONIVEIS = {{ disciplinas_disponiveis | tojson }};
+    const TODOS_INSTRUTORES = {{ todos_instrutores | tojson }};
     const PELOTAO_SELECIONADO = "{{ pelotao_selecionado }}";
     const SEMANA_ID = "{{ semana_selecionada.id }}";
     const IS_ADMIN = {{ is_admin | tojson }};
+    const INSTRUTOR_LOGADO_ID = {{ instrutor_logado_id | tojson }};
 </script>
 
 <script>
@@ -109,37 +185,71 @@ document.addEventListener('DOMContentLoaded', function() {
     const table = document.querySelector('.horario-table-new');
     const weekendToggle = document.getElementById('weekend-toggle');
 
+    console.log('=== CONFIGURAÇÃO INICIAL ===');
+    console.log('É admin:', IS_ADMIN);
+    console.log('Instrutor logado ID:', INSTRUTOR_LOGADO_ID);
+    console.log('Disciplinas disponíveis:', DISCIPLINAS_DISPONIVEIS);
+    console.log('Todos instrutores:', TODOS_INSTRUTORES);
+
     function openModal(config) {
+        console.log('Abrindo modal com config:', config);
+        
         modalForm.reset();
         modalHorarioIdInput.value = config.horario_id || '';
         modalDiaInput.value = config.dia || '';
         modalPeriodoInput.value = config.periodo || '';
         modalTitle.textContent = config.horario_id ? 'Editar Aula' : 'Agendar Aula';
 
+        // Limpar e popular disciplinas
         modalDisciplinaSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
+        
         DISCIPLINAS_DISPONIVEIS.forEach(d => {
-            let texto = `${d.nome} (Restam: ${d.carga_restante}h)`;
-            modalDisciplinaSelect.innerHTML += `<option 
-                value="${d.id}"
-                data-instrutor1-id="${d.instrutor_id || ''}" data-instrutor1-name="${d.instrutor_nome || ''}"
-                data-instrutor2-id="${d.instrutor_id_2 || ''}" data-instrutor2-name="${d.instrutor_nome_2 || ''}"
-            >${texto}</option>`;
+            let texto = `${d.nome}`;
+            if (d.carga_restante !== undefined) {
+                texto += ` (Restam: ${d.carga_restante}h)`;
+            }
+            
+            const option = document.createElement('option');
+            option.value = d.id;
+            option.textContent = texto;
+            modalDisciplinaSelect.appendChild(option);
         });
         
+        // Para administradores, popular lista de instrutores
+        if (IS_ADMIN && modalInstrutorSelect) {
+            modalInstrutorSelect.innerHTML = '<option value="">Selecione o instrutor</option>';
+            
+            TODOS_INSTRUTORES.forEach(inst => {
+                const option = document.createElement('option');
+                option.value = inst.id;
+                option.textContent = inst.nome;
+                modalInstrutorSelect.appendChild(option);
+            });
+            
+            console.log(`Carregados ${TODOS_INSTRUTORES.length} instrutores para admin`);
+        }
+        
+        // Se estiver editando, carregar dados da aula
         if (config.horario_id) {
             fetch(`/horario/get-aula/${config.horario_id}`)
             .then(res => res.json())
             .then(data => {
+                console.log('Dados da aula carregados:', data);
                 if(data.success) {
                     modalDisciplinaSelect.value = data.disciplina_id;
-                    updateInstrutorOptions(data.instrutor_id);
+                    if (IS_ADMIN && modalInstrutorSelect) {
+                        modalInstrutorSelect.value = data.instrutor_id;
+                    }
                     modalDuracaoInput.value = data.duracao;
                 } else {
                     alert('Erro ao carregar dados da aula.');
+                    console.error('Erro:', data.message);
                 }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar aula:', error);
+                alert('Erro ao carregar dados da aula.');
             });
-        } else {
-             modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
         }
 
         modalOverlay.classList.add('visible');
@@ -149,28 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modalOverlay.classList.remove('visible');
     }
 
-    function updateInstrutorOptions(selectedInstrutorId = null) {
-        const selectedOption = modalDisciplinaSelect.options[modalDisciplinaSelect.selectedIndex];
-        if (!selectedOption || !selectedOption.value) {
-            modalInstrutorSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
-            return;
-        }
-
-        const instrutor1_id = selectedOption.dataset.instrutor1Id;
-        const instrutor1_name = selectedOption.dataset.instrutor1Name;
-        const instrutor2_id = selectedOption.dataset.instrutor2Id;
-        const instrutor2_name = selectedOption.dataset.instrutor2Name;
-
-        modalInstrutorSelect.innerHTML = '';
-        if (instrutor1_id) modalInstrutorSelect.innerHTML += `<option value="${instrutor1_id}">${instrutor1_name}</option>`;
-        if (instrutor2_id) modalInstrutorSelect.innerHTML += `<option value="${instrutor2_id}">${instrutor2_name}</option>`;
-        if (!modalInstrutorSelect.innerHTML) modalInstrutorSelect.innerHTML = '<option value="">Nenhum instrutor</option>';
-        
-        if (selectedInstrutorId) {
-            modalInstrutorSelect.value = selectedInstrutorId;
-        }
-    }
-
+    // Event listeners para a tabela
     table.addEventListener('click', function(e) {
         const target = e.target.closest('button');
         if (!target) return;
@@ -192,15 +281,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) window.location.reload();
-                    else alert('Erro: ' + data.message);
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao remover aula:', error);
+                    alert('Erro ao remover aula.');
                 });
             }
         }
     });
     
+    // Submit do formulário
     modalForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        // Validação de disciplina
+        if (!modalDisciplinaSelect.value) {
+            alert('Por favor, selecione uma disciplina.');
+            return;
+        }
+        
+        // Para admin, validar instrutor
+        if (IS_ADMIN && modalInstrutorSelect && !modalInstrutorSelect.value) {
+            alert('Por favor, selecione um instrutor.');
+            return;
+        }
+        
+        // Montar payload
         const payload = {
             pelotao: PELOTAO_SELECIONADO,
             semana_id: SEMANA_ID,
@@ -208,9 +319,15 @@ document.addEventListener('DOMContentLoaded', function() {
             dia: modalDiaInput.value,
             periodo: modalPeriodoInput.value,
             disciplina_id: modalDisciplinaSelect.value,
-            instrutor_id: modalInstrutorSelect.value,
             duracao: modalDuracaoInput.value
         };
+
+        // Adicionar instrutor apenas se for admin
+        if (IS_ADMIN && modalInstrutorSelect) {
+            payload.instrutor_id = modalInstrutorSelect.value;
+        }
+
+        console.log('Enviando payload:', payload);
 
         fetch('/horario/salvar-aula', {
             method: 'POST',
@@ -219,16 +336,26 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) window.location.reload();
-            else alert('Erro: ' + data.message);
+            console.log('Resposta do servidor:', data);
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao salvar aula:', error);
+            alert('Erro ao salvar aula.');
         });
     });
     
+    // Outros event listeners
     if(weekendToggle) {
         weekendToggle.addEventListener('click', () => document.body.classList.toggle('weekend-panel-open'));
     }
-    modalDisciplinaSelect.addEventListener('change', () => updateInstrutorOptions());
+    
     if(modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+    
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });
