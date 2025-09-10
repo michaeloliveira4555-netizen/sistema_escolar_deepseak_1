@@ -11,10 +11,23 @@ from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.semana import Semana
 from ..models.turma import Turma
-from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
 horario_bp = Blueprint('horario', __name__, url_prefix='/horario')
+
+def can_edit_horario(horario_id):
+    """Verifica se o usuário atual pode editar/deletar um horário específico"""
+    # Admin e programador podem editar qualquer horário
+    if current_user.role in ['admin', 'programador']:
+        return True
+    
+    # Instrutor só pode editar seus próprios horários
+    if current_user.role == 'instrutor' and current_user.instrutor_profile:
+        horario = db.session.get(Horario, horario_id)
+        if horario and horario.instrutor_id == current_user.instrutor_profile.id:
+            return True
+    
+    return False
 
 @horario_bp.route('/')
 @login_required
@@ -129,6 +142,7 @@ def editar_horario_grid(pelotao, semana_id):
         # INSTRUTOR: Vê apenas suas disciplinas
         print("--- MODO INSTRUTOR ---")
         
+        # Query direta sem usar o service para evitar importação circular
         associacoes_query = (
             select(DisciplinaTurma)
             .options(joinedload(DisciplinaTurma.disciplina))
@@ -140,6 +154,40 @@ def editar_horario_grid(pelotao, semana_id):
         )
         
         associacoes = db.session.scalars(associacoes_query).unique().all()
+        
+        print(f"Query retornou {len(associacoes)} associação(ões)")
+        for assoc in associacoes:
+            print(f"  - Disciplina: {assoc.disciplina.materia}")
+            print(f"    Instrutor 1 ID: {assoc.instrutor_id_1}")
+            print(f"    Instrutor 2 ID: {assoc.instrutor_id_2}")
+            print(f"    Pelotão: {assoc.pelotao}")
+        
+        if len(associacoes) == 0:
+            print(f"DEBUG: NENHUMA associação encontrada para instrutor {instrutor_id} no {pelotao}")
+            
+            # Debug: Listar TODAS as associações deste pelotão
+            print(f"DEBUG: Listando TODAS as associações do {pelotao}:")
+            todas_associacoes = db.session.scalars(
+                select(DisciplinaTurma)
+                .options(joinedload(DisciplinaTurma.disciplina))
+                .where(DisciplinaTurma.pelotao == pelotao)
+            ).all()
+            
+            for assoc in todas_associacoes:
+                print(f"  - {assoc.disciplina.materia}: Inst1={assoc.instrutor_id_1}, Inst2={assoc.instrutor_id_2}")
+            
+            # Debug: Listar TODAS as associações deste instrutor
+            print(f"DEBUG: Listando TODAS as associações do instrutor {instrutor_id}:")
+            associacoes_instrutor = db.session.scalars(
+                select(DisciplinaTurma)
+                .options(joinedload(DisciplinaTurma.disciplina))
+                .where(
+                    (DisciplinaTurma.instrutor_id_1 == instrutor_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_id)
+                )
+            ).all()
+            
+            for assoc in associacoes_instrutor:
+                print(f"  - {assoc.disciplina.materia} no {assoc.pelotao}")
         
         for a in associacoes:
             total_previsto = a.disciplina.carga_horaria_prevista or 0
@@ -179,6 +227,10 @@ def editar_horario_grid(pelotao, semana_id):
 @horario_bp.route('/get-aula/<int:horario_id>')
 @login_required
 def get_aula_details(horario_id):
+    # Verificar se o usuário pode editar este horário
+    if not can_edit_horario(horario_id):
+        return jsonify({'success': False, 'message': 'Acesso negado. Você não pode editar esta aula.'}), 403
+    
     aula = db.session.get(Horario, horario_id)
     if not aula:
         return jsonify({'success': False, 'message': 'Aula não encontrada'}), 404
@@ -251,7 +303,10 @@ def salvar_aula():
 
     try:
         if horario_id:
-            # Editando aula existente
+            # Editando aula existente - verificar permissões
+            if not can_edit_horario(int(horario_id)):
+                return jsonify({'success': False, 'message': 'Acesso negado. Você não pode editar esta aula.'}), 403
+            
             aula = db.session.get(Horario, int(horario_id))
             if not aula:
                 return jsonify({'success': False, 'message': 'Aula não encontrada.'}), 404
@@ -323,6 +378,10 @@ def remover_aula():
     data = request.json
     horario_id = data.get('horario_id')
 
+    # Verificar se o usuário pode editar este horário
+    if not can_edit_horario(int(horario_id)):
+        return jsonify({'success': False, 'message': 'Acesso negado. Você não pode remover esta aula.'}), 403
+
     try:
         aula = db.session.get(Horario, int(horario_id))
         if aula:
@@ -379,6 +438,7 @@ def construir_matriz_horario(pelotao, semana_id):
         .where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
     ).all()
 
+    # Adicionar informação de permissão para cada aula
     for aula in aulas_agendadas:
         try:
             dia_idx = dias.index(aula.dia_semana)
@@ -388,6 +448,9 @@ def construir_matriz_horario(pelotao, semana_id):
                 if aula.instrutor and aula.instrutor.user:
                     instrutor_nome = aula.instrutor.user.nome_completo or aula.instrutor.user.username
                 
+                # Verificar se o usuário atual pode editar esta aula
+                can_edit = can_edit_horario(aula.id)
+                
                 aula_info = {
                     'id': aula.id,
                     'materia': aula.disciplina.materia,
@@ -395,6 +458,7 @@ def construir_matriz_horario(pelotao, semana_id):
                     'duracao': aula.duracao,
                     'status': aula.status, 
                     'is_disposicao': False,
+                    'can_edit': can_edit,  # Nova informação de permissão
                 }
                 horario_matrix[periodo_idx][dia_idx] = aula_info
                 

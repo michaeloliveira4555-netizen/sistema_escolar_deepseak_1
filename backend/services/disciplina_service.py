@@ -6,7 +6,7 @@ from ..models.aluno import Aluno
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.historico_disciplina import HistoricoDisciplina
 from ..models.instrutor import Instrutor
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
@@ -41,6 +41,72 @@ class DisciplinaService:
                 print(f"    Instrutor 1: {a.instrutor_1.user.nome_completo if a.instrutor_1.user else 'Sem user'}")
             if a.instrutor_2:
                 print(f"    Instrutor 2: {a.instrutor_2.user.nome_completo if a.instrutor_2.user else 'Sem user'}")
+        
+        return associacoes
+
+    @staticmethod
+    def get_disciplinas_for_instrutor_in_pelotao(instrutor_id: int, pelotao: str):
+        """
+        Busca disciplinas específicas de um instrutor em um pelotão específico.
+        Esta é a função crítica para o problema reportado.
+        """
+        print(f"DEBUG: Buscando disciplinas para instrutor ID {instrutor_id} no pelotão {pelotao}")
+        
+        # Query mais explícita e com debug
+        query = (
+            select(DisciplinaTurma)
+            .options(joinedload(DisciplinaTurma.disciplina))
+            .where(
+                DisciplinaTurma.pelotao == pelotao,
+                or_(
+                    DisciplinaTurma.instrutor_id_1 == instrutor_id,
+                    DisciplinaTurma.instrutor_id_2 == instrutor_id
+                )
+            )
+            .order_by(DisciplinaTurma.disciplina_id)
+        )
+        
+        print(f"DEBUG: Query SQL: {query}")
+        
+        associacoes = db.session.scalars(query).unique().all()
+        
+        print(f"DEBUG: Query retornou {len(associacoes)} associação(ões)")
+        
+        for assoc in associacoes:
+            print(f"  - Disciplina: {assoc.disciplina.materia}")
+            print(f"    Instrutor 1 ID: {assoc.instrutor_id_1}")
+            print(f"    Instrutor 2 ID: {assoc.instrutor_id_2}")
+            print(f"    Pelotão: {assoc.pelotao}")
+        
+        if len(associacoes) == 0:
+            print(f"DEBUG: NENHUMA associação encontrada para instrutor {instrutor_id} no {pelotao}")
+            
+            # Vamos buscar TODAS as associações deste pelotão para debug
+            print(f"DEBUG: Listando TODAS as associações do {pelotao}:")
+            todas_associacoes = db.session.scalars(
+                select(DisciplinaTurma)
+                .options(joinedload(DisciplinaTurma.disciplina))
+                .where(DisciplinaTurma.pelotao == pelotao)
+            ).all()
+            
+            for assoc in todas_associacoes:
+                print(f"  - {assoc.disciplina.materia}: Inst1={assoc.instrutor_id_1}, Inst2={assoc.instrutor_id_2}")
+            
+            # Vamos buscar TODAS as associações deste instrutor
+            print(f"DEBUG: Listando TODAS as associações do instrutor {instrutor_id}:")
+            associacoes_instrutor = db.session.scalars(
+                select(DisciplinaTurma)
+                .options(joinedload(DisciplinaTurma.disciplina))
+                .where(
+                    or_(
+                        DisciplinaTurma.instrutor_id_1 == instrutor_id,
+                        DisciplinaTurma.instrutor_id_2 == instrutor_id
+                    )
+                )
+            ).all()
+            
+            for assoc in associacoes_instrutor:
+                print(f"  - {assoc.disciplina.materia} no {assoc.pelotao}")
         
         return associacoes
         

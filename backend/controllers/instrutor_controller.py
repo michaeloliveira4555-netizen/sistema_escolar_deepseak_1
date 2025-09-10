@@ -34,7 +34,7 @@ def cadastro_instrutor_admin():
         especializacao = request.form.get('especializacao')
         formacao = request.form.get('formacao')
 
-        if not all([nome_completo, matricula, email, password, password2, especializacao, formacao]):
+        if not all([nome_completo, matricula, email, password, password2]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True)
 

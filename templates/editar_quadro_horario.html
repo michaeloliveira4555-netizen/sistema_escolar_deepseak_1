@@ -56,10 +56,20 @@
                                         <div class="disciplina-title">{{ aula.materia }}</div>
                                         <div class="instrutor-name">{{ aula.instrutor }}</div>
                                     </div>
+                                    
+                                    {% if aula.can_edit %}
+                                    <!-- Usuário pode editar esta aula -->
                                     <div class="slot-actions">
                                         <button class="btn-icon" data-action="edit" data-id="{{ aula.id }}" title="Editar Aula">✏️</button>
                                         <button class="btn-icon" data-action="delete" data-id="{{ aula.id }}" title="Remover Aula">🗑️</button>
                                     </div>
+                                    {% else %}
+                                    <!-- Usuário NÃO pode editar esta aula -->
+                                    <div class="slot-actions">
+                                        <span class="no-permission" title="Você não pode editar esta aula">🔒</span>
+                                    </div>
+                                    {% endif %}
+                                    
                                     {% if aula.status == 'pendente' %}
                                         <span class="status-icon" title="Aguardando confirmação">🕐</span>
                                     {% endif %}
@@ -110,6 +120,18 @@
 }
 .modal-overlay.visible .modal-content {
     transform: scale(1);
+}
+
+/* Estilo para indicar falta de permissão */
+.no-permission {
+    color: #94a3b8;
+    font-size: 1rem;
+    cursor: not-allowed;
+}
+
+.slot-content:has(.no-permission) {
+    opacity: 0.7;
+    border-color: #e2e8f0;
 }
 </style>
 
@@ -242,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     modalDuracaoInput.value = data.duracao;
                 } else {
-                    alert('Erro ao carregar dados da aula.');
+                    alert('Erro ao carregar dados da aula: ' + data.message);
                     console.error('Erro:', data.message);
                 }
             })

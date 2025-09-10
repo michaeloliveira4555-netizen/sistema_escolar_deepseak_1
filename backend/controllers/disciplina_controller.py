@@ -6,6 +6,8 @@ from ..models.database import db
 from ..models.disciplina import Disciplina
 from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
+from ..models.horario import Horario
+from ..models.historico_disciplina import HistoricoDisciplina
 from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
@@ -113,3 +115,79 @@ def editar_disciplina(disciplina_id):
         atribuicoes=atribuicoes,
         disciplinas_com_dois_instrutores=disciplinas_com_dois_instrutores
     )
+
+@disciplina_bp.route('/editar-nome/<int:disciplina_id>', methods=['GET', 'POST'])
+@login_required
+@admin_or_programmer_required
+def editar_nome_disciplina(disciplina_id):
+    """Rota para editar apenas o nome e carga horária da disciplina"""
+    disciplina = db.session.get(Disciplina, disciplina_id)
+    if not disciplina:
+        flash("Disciplina não encontrada.", 'danger')
+        return redirect(url_for('disciplina.listar_disciplinas'))
+    
+    if request.method == 'POST':
+        success, message = DisciplinaService.update_disciplina(disciplina_id, request.form.to_dict())
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('disciplina.listar_disciplinas'))
+        else:
+            flash(message, 'danger')
+            return render_template('editar_nome_disciplina.html', disciplina=disciplina, form_data=request.form)
+    
+    return render_template('editar_nome_disciplina.html', disciplina=disciplina)
+
+@disciplina_bp.route('/excluir/<int:disciplina_id>', methods=['POST'])
+@login_required
+@admin_or_programmer_required
+def excluir_disciplina(disciplina_id):
+    """Excluir disciplina e todos os dados relacionados"""
+    disciplina = db.session.get(Disciplina, disciplina_id)
+    if not disciplina:
+        flash("Disciplina não encontrada.", 'danger')
+        return redirect(url_for('disciplina.listar_disciplinas'))
+    
+    try:
+        disciplina_nome = disciplina.materia
+        
+        print(f"=== EXCLUINDO DISCIPLINA: {disciplina_nome} ===")
+        
+        # 1. Remover associações disciplina-turma
+        associacoes = db.session.scalars(
+            select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina_id)
+        ).all()
+        for associacao in associacoes:
+            db.session.delete(associacao)
+        print(f"Removidas {len(associacoes)} associações disciplina-turma")
+        
+        # 2. Remover aulas agendadas
+        aulas = db.session.scalars(
+            select(Horario).where(Horario.disciplina_id == disciplina_id)
+        ).all()
+        for aula in aulas:
+            db.session.delete(aula)
+        print(f"Removidas {len(aulas)} aulas agendadas")
+        
+        # 3. Remover histórico de disciplinas dos alunos
+        historicos = db.session.scalars(
+            select(HistoricoDisciplina).where(HistoricoDisciplina.disciplina_id == disciplina_id)
+        ).all()
+        for historico in historicos:
+            db.session.delete(historico)
+        print(f"Removidos {len(historicos)} registros de histórico")
+        
+        # 4. Finalmente, remover a disciplina
+        db.session.delete(disciplina)
+        
+        # Commit de todas as operações
+        db.session.commit()
+        
+        flash(f'Disciplina "{disciplina_nome}" e todos os dados relacionados foram excluídos com sucesso!', 'success')
+        print(f"=== DISCIPLINA {disciplina_nome} EXCLUÍDA COM SUCESSO ===")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERRO ao excluir disciplina: {e}")
+        flash(f'Erro ao excluir disciplina: {str(e)}', 'danger')
+    
+    return redirect(url_for('disciplina.listar_disciplinas'))

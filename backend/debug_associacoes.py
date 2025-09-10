@@ -23,97 +23,91 @@ def debug_associacoes():
     with app.app_context():
         print("=== DEBUG: ASSOCIAÇÕES DISCIPLINA-TURMA-INSTRUTOR ===\n")
         
-        # Buscar todas as associações
-        query = (
-            select(DisciplinaTurma)
-            .options(
-                joinedload(DisciplinaTurma.disciplina),
-                joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
-                joinedload(DisciplinaTurma.instrutor_2).joinedload(Instrutor.user)
+        # 1. Primeiro, verificar se existe a disciplina específica
+        disciplina_procurada = "Sistemas de Correição: Atribuição do Escrivão PJM"
+        disciplina = db.session.execute(
+            select(Disciplina).where(Disciplina.materia == disciplina_procurada)
+        ).scalar_one_or_none()
+        
+        if disciplina:
+            print(f"✅ Disciplina encontrada: {disciplina.materia} (ID: {disciplina.id})")
+        else:
+            print(f"❌ Disciplina '{disciplina_procurada}' NÃO encontrada!")
+            print("Disciplinas disponíveis:")
+            todas_disciplinas = db.session.scalars(select(Disciplina)).all()
+            for d in todas_disciplinas:
+                print(f"  - {d.materia}")
+            return
+        
+        # 2. Verificar se existe o instrutor Romario Pintasilgo
+        instrutor = db.session.execute(
+            select(Instrutor)
+            .options(joinedload(Instrutor.user))
+            .join(User)
+            .where(User.nome_completo.ilike('%Romario%Pintasilgo%'))
+        ).scalar_one_or_none()
+        
+        if instrutor:
+            print(f"✅ Instrutor encontrado: {instrutor.user.nome_completo} (ID: {instrutor.id})")
+        else:
+            print("❌ Instrutor 'Romario Pintasilgo' NÃO encontrado!")
+            print("Instrutores disponíveis:")
+            todos_instrutores = db.session.scalars(
+                select(Instrutor).options(joinedload(Instrutor.user))
+            ).all()
+            for inst in todos_instrutores:
+                nome = inst.user.nome_completo if inst.user else "Sem nome"
+                print(f"  - {nome} (ID: {inst.id})")
+            return
+        
+        # 3. Verificar associação para Turma 5
+        pelotao = "5° Pelotão"
+        associacao = db.session.execute(
+            select(DisciplinaTurma).where(
+                DisciplinaTurma.disciplina_id == disciplina.id,
+                DisciplinaTurma.pelotao == pelotao
             )
-            .order_by(DisciplinaTurma.pelotao, DisciplinaTurma.disciplina_id)
+        ).scalar_one_or_none()
+        
+        if associacao:
+            print(f"✅ Associação encontrada para {pelotao}:")
+            print(f"   - Disciplina: {disciplina.materia}")
+            print(f"   - Instrutor 1: {associacao.instrutor_id_1}")
+            print(f"   - Instrutor 2: {associacao.instrutor_id_2}")
+            
+            # Verificar se o Romario está vinculado
+            if associacao.instrutor_id_1 == instrutor.id or associacao.instrutor_id_2 == instrutor.id:
+                print(f"✅ ROMARIO ESTÁ VINCULADO à disciplina no {pelotao}!")
+            else:
+                print(f"❌ ROMARIO NÃO ESTÁ VINCULADO à disciplina no {pelotao}")
+                print(f"   Para vincular, execute o seguinte SQL:")
+                print(f"   UPDATE disciplina_turmas SET instrutor_id_1 = {instrutor.id} WHERE id = {associacao.id};")
+        else:
+            print(f"❌ NÃO existe associação da disciplina '{disciplina.materia}' com '{pelotao}'")
+            print(f"   Para criar, execute:")
+            print(f"   INSERT INTO disciplina_turmas (disciplina_id, pelotao, instrutor_id_1) VALUES ({disciplina.id}, '{pelotao}', {instrutor.id});")
+        
+        # 4. Testar a query que o sistema usa
+        print(f"\n=== TESTANDO A QUERY DO SISTEMA ===")
+        query_sistema = (
+            select(DisciplinaTurma)
+            .options(joinedload(DisciplinaTurma.disciplina))
+            .where(
+                DisciplinaTurma.pelotao == pelotao,
+                (DisciplinaTurma.instrutor_id_1 == instrutor.id) | (DisciplinaTurma.instrutor_id_2 == instrutor.id)
+            )
+            .order_by(DisciplinaTurma.disciplina_id)
         )
         
-        associacoes = db.session.scalars(query).unique().all()
+        resultados = db.session.scalars(query_sistema).unique().all()
         
-        print(f"Total de associações encontradas: {len(associacoes)}")
-        print("-" * 80)
+        print(f"Query retornou {len(resultados)} disciplina(s) para o instrutor {instrutor.user.nome_completo} no {pelotao}:")
+        for res in resultados:
+            print(f"  - {res.disciplina.materia}")
         
-        pelotoes = {}
-        
-        for assoc in associacoes:
-            pelotao = assoc.pelotao
-            if pelotao not in pelotoes:
-                pelotoes[pelotao] = []
-            
-            instrutor1_info = "NENHUM"
-            if assoc.instrutor_1:
-                nome1 = "SEM USER"
-                if assoc.instrutor_1.user:
-                    nome1 = assoc.instrutor_1.user.nome_completo or assoc.instrutor_1.user.username
-                instrutor1_info = f"ID:{assoc.instrutor_id_1} - {nome1}"
-            
-            instrutor2_info = "NENHUM"
-            if assoc.instrutor_2:
-                nome2 = "SEM USER"
-                if assoc.instrutor_2.user:
-                    nome2 = assoc.instrutor_2.user.nome_completo or assoc.instrutor_2.user.username
-                instrutor2_info = f"ID:{assoc.instrutor_id_2} - {nome2}"
-            
-            pelotoes[pelotao].append({
-                'disciplina': assoc.disciplina.materia,
-                'disciplina_id': assoc.disciplina.id,
-                'instrutor1': instrutor1_info,
-                'instrutor2': instrutor2_info
-            })
-        
-        # Exibir por pelotão
-        for pelotao, disciplinas in pelotoes.items():
-            print(f"\n🏫 {pelotao}:")
-            print("   " + "="*60)
-            
-            for disc in disciplinas:
-                print(f"   📚 {disc['disciplina']} (ID: {disc['disciplina_id']})")
-                print(f"      👨‍🏫 Instrutor 1: {disc['instrutor1']}")
-                print(f"      👨‍🏫 Instrutor 2: {disc['instrutor2']}")
-                print()
-        
-        # Verificar instrutores sem associação
-        print("\n" + "="*80)
-        print("🔍 VERIFICAÇÃO DE INSTRUTORES SEM ASSOCIAÇÃO")
-        print("="*80)
-        
-        todos_instrutores = db.session.scalars(
-            select(Instrutor).options(joinedload(Instrutor.user)).order_by(Instrutor.id)
-        ).all()
-        
-        instrutores_associados = set()
-        for assoc in associacoes:
-            if assoc.instrutor_id_1:
-                instrutores_associados.add(assoc.instrutor_id_1)
-            if assoc.instrutor_id_2:
-                instrutores_associados.add(assoc.instrutor_id_2)
-        
-        print(f"Total de instrutores: {len(todos_instrutores)}")
-        print(f"Instrutores com associação: {len(instrutores_associados)}")
-        
-        instrutores_sem_associacao = []
-        for inst in todos_instrutores:
-            if inst.id not in instrutores_associados:
-                nome = "SEM USER"
-                if inst.user:
-                    nome = inst.user.nome_completo or inst.user.username
-                instrutores_sem_associacao.append(f"ID:{inst.id} - {nome}")
-        
-        if instrutores_sem_associacao:
-            print("\n❌ Instrutores SEM associação:")
-            for inst in instrutores_sem_associacao:
-                print(f"   {inst}")
-        else:
-            print("\n✅ Todos os instrutores têm associação!")
-        
-        print("\n" + "="*80)
-        print("💡 DICAS PARA CORREÇÃO:")
-        print("="*80)
-        print("1. Se um instrutor não aparece na lista, vá em 'Disciplinas' → 'Gerenciar'")
-        print("2. Edite a disciplina e atribua o instrutor ao
+        if len(resultados) == 0:
+            print("❌ A query do sistema NÃO retorna nenhuma disciplina!")
+            print("   Isso explica por que a disciplina não aparece no dropdown.")
+
+if __name__ == '__main__':
+    debug_associacoes()
