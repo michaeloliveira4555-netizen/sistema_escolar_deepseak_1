@@ -45,6 +45,7 @@ def create_app(config_class=Config):
     from backend.controllers.semana_controller import semana_bp
     from backend.controllers.turma_controller import turma_bp
     from backend.controllers.vinculo_controller import vinculo_bp
+    from backend.controllers.user_controller import user_bp
 
     # Registra os Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -59,6 +60,7 @@ def create_app(config_class=Config):
     app.register_blueprint(semana_bp, url_prefix='/semana')
     app.register_blueprint(turma_bp, url_prefix='/turma')
     app.register_blueprint(vinculo_bp, url_prefix='/vinculos')
+    app.register_blueprint(user_bp)
 
     # Context processor para configurações do site
     @app.context_processor

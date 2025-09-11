@@ -120,12 +120,8 @@
             </nav>
 
             <div class="sidebar-footer">
-                {% if current_user.role == 'aluno' and current_user.aluno_profile %}
-                    <a href="{{ url_for('aluno.editar_meu_perfil') }}" class="nav-link">
-                        <div class="nav-icon">👤</div> Meu Perfil
-                    </a>
-                {% elif current_user.role != 'aluno' %}
-                     <a href="#" class="nav-link">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('user.meu_perfil') }}" class="nav-link">
                         <div class="nav-icon">👤</div> Meu Perfil
                     </a>
                 {% endif %}

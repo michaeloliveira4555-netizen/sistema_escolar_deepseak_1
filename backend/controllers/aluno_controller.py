@@ -16,6 +16,17 @@ aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 def cadastro_aluno():
     if request.method == 'POST':
         form_data = request.form.to_dict()
+        pelotao_nome = form_data.get('pelotao')
+
+        # Lógica para encontrar a turma correspondente
+        turma = db.session.execute(select(Turma).filter_by(nome=pelotao_nome)).scalar_one_or_none()
+        if turma:
+            form_data['turma_id'] = turma.id
+        else:
+            flash(f'A turma correspondente ao pelotão "{pelotao_nome}" não foi encontrada. Contate um administrador.', 'danger')
+            turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+            return render_template('cadastro_aluno.html', form_data=form_data, turmas=turmas)
+
         success, message = AlunoService.save_aluno(current_user.id, form_data)
 
         if success:

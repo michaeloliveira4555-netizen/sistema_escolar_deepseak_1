@@ -8,6 +8,7 @@
 
     <div class="cadastro-container">
         <h2>Completar Perfil de Aluno</h2>
+        <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #64748b;">Preencha seus dados para ter acesso completo ao sistema.</p>
         <hr style="margin-bottom: 25px;">
 
         <form method="POST" action="{{ url_for('aluno.cadastro_aluno') }}">
@@ -22,10 +23,11 @@
             </div>
 
             <div class="form-group">
-                <label for="pelotao">Pelotão:</label>
+                <label for="pelotao">Turma:</label>
                 <select id="pelotao" name="pelotao" class="form-control" required>
-                    {% for i in range(1, 9) %}
-                        <option value="{{ i }}° Pelotão">{{ i }}º Pelotão</option>
+                    <option value="">-- Selecione sua turma --</option>
+                    {% for turma in turmas %}
+                        <option value="{{ turma.nome }}">{{ turma.nome }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -33,7 +35,7 @@
             <div class="form-group">
                 <label for="funcao_atual">Função Atual:</label>
                 <select id="funcao_atual" name="funcao_atual" class="form-control">
-                    <option value="">-- Selecione uma função --</option>
+                    <option value="">-- Selecione uma função (opcional) --</option>
                     <option value="P1">P1</option>
                     <option value="P2">P2</option>
                     <option value="P3">P3</option>

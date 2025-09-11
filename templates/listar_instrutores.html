@@ -12,9 +12,14 @@
     <div class="table-header">
         <h3>Instrutores Cadastrados</h3>
         {% if current_user.is_authenticated and current_user.role in ['admin', 'programador'] %}
-            <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-primary">
-                <span>+</span> Cadastrar Novo Instrutor
-            </a>
+            <div class="header-actions">
+                <a href="{{ url_for('main.pre_cadastro') }}" class="btn btn-info">
+                    <span>+</span> Inserir Pré-Cadastro
+                </a>
+                <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-primary">
+                    <span>+</span> Cadastrar Novo Instrutor
+                </a>
+            </div>
         {% endif %}
     </div>
 
@@ -60,4 +65,11 @@
         {% endif %}
     </div>
 </div>
+
+<style>
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
 {% endblock %}
