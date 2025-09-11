@@ -13,47 +13,29 @@ from flask import current_app
 
 class DisciplinaService:
     @staticmethod
-    def get_disciplinas_with_instrutores_for_pelotao(pelotao: str):
-        """
-        Busca todas as associações de disciplina para um pelotão específico,
-        garantindo que os dados do instrutor e do usuário sejam pré-carregados.
-        """
-        query = (
-            select(DisciplinaTurma)
-            .options(
-                joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
-                joinedload(DisciplinaTurma.instrutor_2).joinedload(Instrutor.user),
-                joinedload(DisciplinaTurma.disciplina)
-            )
-            .join(Disciplina)
-            .filter(DisciplinaTurma.pelotao == pelotao)
-            .order_by(Disciplina.materia)
-        )
-        return db.session.scalars(query).unique().all()
-        
+    def get_disciplinas_com_instrutores(pelotao_filtrado):
+        disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
+        disciplinas_com_instrutores = []
+        if pelotao_filtrado:
+            for disciplina in disciplinas:
+                associacao = db.session.execute(
+                    select(DisciplinaTurma).where(
+                        DisciplinaTurma.disciplina_id == disciplina.id,
+                        DisciplinaTurma.pelotao == pelotao_filtrado
+                    )
+                ).scalar_one_or_none()
+                disciplinas_com_instrutores.append((disciplina, associacao))
+        else:
+            for disciplina in disciplinas:
+                disciplinas_com_instrutores.append((disciplina, None))
+        return disciplinas_com_instrutores
+
     @staticmethod
-    def save_disciplina(data):
-        nome_materia = data.get('materia')
-        carga_horaria = data.get('carga_horaria_prevista')
-
-        if not nome_materia or not carga_horaria:
-            return False, "Matéria e Carga Horária são campos obrigatórios."
-
-        try:
-            carga_horaria_int = int(carga_horaria)
-        except (ValueError, TypeError):
-            return False, "Carga horária deve ser um número inteiro."
-
-        existing_disciplina = db.session.execute(
-            select(Disciplina).where(Disciplina.materia == nome_materia)
-        ).scalar_one_or_none()
-        if existing_disciplina:
-            return False, "Uma disciplina com este nome já existe."
-
+    def save_disciplina(form):
         try:
             nova_disciplina = Disciplina(
-                materia=nome_materia,
-                carga_horaria_prevista=carga_horaria_int
+                materia=form.materia.data,
+                carga_horaria_prevista=form.carga_horaria_prevista.data
             )
             db.session.add(nova_disciplina)
             db.session.commit()
@@ -75,7 +57,7 @@ class DisciplinaService:
             return True, "Disciplina cadastrada e associada a todos os alunos e turmas!"
         except IntegrityError:
             db.session.rollback()
-            return False, "Uma disciplina com este nome já existe."
+            return False, "Uma disciplina with this name already exists."
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Erro inesperado ao cadastrar disciplina: {e}")
@@ -91,31 +73,43 @@ class DisciplinaService:
         return db.session.get(Disciplina, disciplina_id)
 
     @staticmethod
-    def update_disciplina(disciplina_id: int, data: dict):
+    def update_disciplina_com_instrutores(disciplina_id, form):
         disciplina = db.session.get(Disciplina, disciplina_id)
         if not disciplina:
             return False, "Disciplina não encontrada."
 
-        nome_materia = data.get('materia')
-        carga_horaria = data.get('carga_horaria_prevista')
-
-        if not nome_materia or not carga_horaria:
-            return False, "Matéria e Carga Horária são campos obrigatórios."
-
         try:
-            carga_horaria_int = int(carga_horaria)
-        except (ValueError, TypeError):
-            return False, "Carga horária deve ser um número inteiro."
+            disciplina.carga_horaria_prevista = form.carga_horaria.data
+            
+            atribuicoes_existentes = db.session.scalars(
+                db.select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina.id)
+            ).all()
+            atribuicoes_map = {atr.pelotao: atr for atr in atribuicoes_existentes}
 
-        try:
-            disciplina.materia = nome_materia
-            disciplina.carga_horaria_prevista = carga_horaria_int
+            for i in range(1, 9):
+                pelotao_nome = f'{i}° Pelotão'
+                instrutor_id_1_str = form[f'pelotao_{i}_instrutor_1'].data
+                instrutor_id_2_str = form[f'pelotao_{i}_instrutor_2'].data
+
+                instrutor_id_1 = int(instrutor_id_1_str) if instrutor_id_1_str and instrutor_id_1_str.isdigit() else None
+                instrutor_id_2 = int(instrutor_id_2_str) if instrutor_id_2_str and instrutor_id_2_str.isdigit() else None
+
+                associacao_existente = atribuicoes_map.get(pelotao_nome)
+
+                if associacao_existente:
+                    associacao_existente.instrutor_id_1 = instrutor_id_1
+                    associacao_existente.instrutor_id_2 = instrutor_id_2
+                elif instrutor_id_1 or instrutor_id_2:
+                    nova_atribuicao = DisciplinaTurma(
+                        pelotao=pelotao_nome,
+                        disciplina_id=disciplina.id,
+                        instrutor_id_1=instrutor_id_1,
+                        instrutor_id_2=instrutor_id_2
+                    )
+                    db.session.add(nova_atribuicao)
             
             db.session.commit()
-            return True, "Disciplina atualizada com sucesso!"
-        except IntegrityError:
-            db.session.rollback()
-            return False, "Erro de integridade dos dados. Verifique se a matéria já existe."
+            return True, f'Atribuições da disciplina "{disciplina.materia}" atualizadas com sucesso!'
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Erro inesperado ao atualizar disciplina: {e}")

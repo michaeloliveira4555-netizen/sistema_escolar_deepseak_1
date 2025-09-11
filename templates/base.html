@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema EsFAS{% endblock %}</title>
+    <title>{% block title %}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -90,21 +90,13 @@
                     </a>
                 {% endif %}
                 
-                {% if current_user.role == 'programador' %}
+                {% if current_user.role == 'aluno' %}
                     <div class="nav-separator"></div>
-                    <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if 'assets.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">📁</div> Assets
-                    </a>
-                    <a href="{{ url_for('customizer.index') }}" class="nav-link {% if 'customizer.' in request.endpoint %}active{% endif %}">
-                        <div class="nav-icon">🎨</div> Personalizar
-                    </a>
-                {% endif %}
-                
-             {% if current_user.role == 'aluno' %}
-                    <div class="nav-separator"></div>
+                    {% if current_user.aluno_profile %}
                     <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">📊</div> Meu CTSP
                     </a>
+                    {% endif %}
                     <a href="#" class="nav-link">
                         <div class="nav-icon">📋</div> Atividades
                     </a>

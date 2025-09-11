@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing as t
+import re
 from datetime import datetime
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,13 +26,19 @@ class Instrutor(db.Model):
         super().__init__(user_id=user_id, matricula=matricula, especializacao=especializacao, formacao=formacao, 
                          telefone=telefone, **kw)
 
+    @db.validates('telefone')
+    def validate_telefone(self, key, telefone):
+        if telefone and not re.match(r'^\d{10,11}', telefone):
+            raise ValueError("Telefone inválido. O telefone deve conter entre 10 e 11 dígitos.")
+        return telefone
+
     def to_dict(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
             'nome': self.user.username if self.user else None,
             'matricula': self.matricula,
-            'especialidade': self.especializacao,
+            'especializacao': self.especializacao,
             'formacao': self.formacao,
             'telefone': self.telefone
         }

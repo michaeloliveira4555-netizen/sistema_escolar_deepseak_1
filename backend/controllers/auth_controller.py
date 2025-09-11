@@ -1,52 +1,42 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_user, logout_user, login_required
+from sqlalchemy import or_
 
 from ..app import db
 from ..models.user import User
-from utils.validators import validate_email, validate_password_strength
+from ..forms import RegistrationForm, LoginForm
 
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        # Alterado de 'matricula' para 'id_func'
-        id_func = request.form.get('id_func')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        password2 = request.form.get('password2')
-        role = request.form.get('role')
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        email_exists = db.session.execute(db.select(User).filter_by(email=form.email.data)).scalar_one_or_none()
+        if email_exists:
+            flash('Este e-mail já está em uso por outra conta.', 'danger')
+            return render_template('register.html', form=form)
 
-        if not role:
-            flash('Por favor, selecione sua função (Aluno ou Instrutor).', 'danger')
-            return render_template('register.html', form_data=request.form)
+        username_exists = db.session.execute(db.select(User).filter_by(username=form.username.data)).scalar_one_or_none()
+        if username_exists:
+            flash('Este nome de usuário já está em uso por outra conta.', 'danger')
+            return render_template('register.html', form=form)
 
-        # Busca pelo usuário combinando a id_func E a função
         user = db.session.execute(
-            db.select(User).filter_by(id_func=id_func, role=role)
+            db.select(User).filter_by(id_func=form.id_func.data, role=form.role.data)
         ).scalar_one_or_none()
 
         if not user:
             flash('Identidade Funcional não encontrada para a função selecionada. Contate a administração.', 'danger')
-            return render_template('register.html', form_data=request.form)
+            return render_template('register.html', form=form)
         
         if user.is_active:
             flash('Esta conta já foi ativada. Tente fazer o login.', 'info')
             return redirect(url_for('auth.login'))
 
-        if password != password2:
-            flash('As senhas não coincidem.', 'danger')
-            return render_template('register.html', form_data=request.form)
-        
-        email_exists = db.session.execute(db.select(User).filter_by(email=email)).scalar_one_or_none()
-        if email_exists:
-            flash('Este e-mail já está em uso por outra conta.', 'danger')
-            return render_template('register.html', form_data=request.form)
-
-        # Ativa a conta
-        user.email = email
-        user.username = id_func # O nome de usuário inicial será a Id Func
-        user.set_password(password)
+        user.email = form.email.data
+        user.username = form.username.data
+        user.set_password(form.password.data)
         user.is_active = True
         
         db.session.commit()
@@ -54,24 +44,18 @@ def register():
         flash('Sua conta foi ativada com sucesso! Agora você pode fazer o login.', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('register.html')
+    return render_template('register.html', form=form)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        login_identifier = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = db.session.execute(db.select(User).filter(
+            or_(User.id_func == form.login_identifier.data, User.username == form.login_identifier.data)
+        )).scalar_one_or_none()
 
-        # --- CORREÇÃO PRINCIPAL AQUI ---
-        # Procura primeiro pela Id Func
-        user = db.session.execute(db.select(User).filter_by(id_func=login_identifier)).scalar_one_or_none()
-
-        # Se não encontrar, procura pelo username (para admin/programador)
-        if not user:
-            user = db.session.execute(db.select(User).filter_by(username=login_identifier)).scalar_one_or_none()
-
-        if user and user.is_active and user.check_password(password):
+        if user and user.is_active and user.check_password(form.password.data):
             login_user(user)
             return redirect(url_for('main.dashboard'))
         elif user and not user.is_active:
@@ -79,7 +63,7 @@ def login():
         else:
             flash('Id Func/Usuário ou senha inválidos.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 
 @auth_bp.route('/logout')

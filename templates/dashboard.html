@@ -128,7 +128,11 @@
                     </div>
                     <p class="card-description">Acompanhe suas notas e progresso.</p>
                     <div class="card-actions">
+                        {% if current_user.aluno_profile %}
                         <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="btn-card primary">Acessar</a>
+                        {% else %}
+                        <span class="btn-card primary disabled">Perfil de aluno não disponível</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>

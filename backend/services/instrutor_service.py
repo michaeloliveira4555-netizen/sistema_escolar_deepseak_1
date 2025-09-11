@@ -4,40 +4,55 @@ from ..models.user import User
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
-from utils.validators import validate_telefone
 
 class InstrutorService:
     @staticmethod
-    def save_instrutor(user_id, data):
+    def create_instrutor_with_user(form):
+        try:
+            user_exists_id_func = db.session.execute(db.select(User).filter_by(id_func=form.matricula.data)).scalar_one_or_none()
+            if user_exists_id_func:
+                return False, 'Esta matrícula (Id Funcional) já está em uso.'
+
+            new_user = User(
+                id_func=form.matricula.data,
+                username=form.matricula.data,
+                nome_completo=form.nome_completo.data,
+                email=form.email.data,
+                role='instrutor',
+                is_active=True
+            )
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+
+            success, message = InstrutorService.save_instrutor(new_user.id, form)
+
+            if not success:
+                db.session.delete(new_user)
+                db.session.commit()
+                return False, message
+
+            return True, "Instrutor cadastrado com sucesso!"
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro inesperado ao cadastrar instrutor: {e}")
+            return False, f"Erro ao cadastrar instrutor: {str(e)}"
+
+    @staticmethod
+    def save_instrutor(user_id, form):
         existing_instrutor = db.session.execute(
             select(Instrutor).where(Instrutor.user_id == user_id)
         ).scalar_one_or_none()
         if existing_instrutor:
             return False, "Este usuário já possui um perfil de instrutor cadastrado."
 
-        matricula_raw = data.get('matricula')
-        telefone_raw = data.get('telefone')
-        especializacao = data.get('especializacao', '') # Aceita campo vazio
-        formacao = data.get('formacao', '') # Aceita campo vazio
-
-        matricula = ''.join(filter(str.isdigit, matricula_raw)) if matricula_raw else None
-        telefone = ''.join(filter(str.isdigit, telefone_raw)) if telefone_raw else None
-
-        if not matricula:
-            return False, "Matrícula é um campo obrigatório."
-        
-        if not matricula.isdigit():
-            return False, "Matrícula deve conter apenas números."
-        if telefone and not validate_telefone(telefone):
-            return False, "Telefone inválido."
-
         try:
             novo_instrutor = Instrutor(
                 user_id=user_id,
-                matricula=matricula,
-                especializacao=especializacao,
-                formacao=formacao,
-                telefone=telefone
+                matricula=form.matricula.data,
+                especializacao=form.especializacao.data,
+                formacao=form.formacao.data,
+                telefone=form.telefone.data
             )
             db.session.add(novo_instrutor)
             db.session.commit()
@@ -62,32 +77,18 @@ class InstrutorService:
         return db.session.get(Instrutor, instrutor_id)
 
     @staticmethod
-    def update_instrutor(instrutor_id: int, data: dict):
+    def update_instrutor(instrutor_id: int, form):
         instrutor = db.session.get(Instrutor, instrutor_id)
         if not instrutor:
             return False, "Instrutor não encontrado."
 
-        matricula_raw = data.get('matricula')
-        telefone_raw = data.get('telefone')
-        especializacao = data.get('especializacao', '') # Aceita campo vazio
-        formacao = data.get('formacao', '') # Aceita campo vazio
-
-        matricula = ''.join(filter(str.isdigit, matricula_raw)) if matricula_raw else None
-        telefone = ''.join(filter(str.isdigit, telefone_raw)) if telefone_raw else None
-
-        if not matricula:
-            return False, "Matrícula é um campo obrigatório."
-        
-        if not matricula.isdigit():
-            return False, "Matrícula deve conter apenas números."
-        if telefone and not validate_telefone(telefone):
-            return False, "Telefone inválido."
-
         try:
-            instrutor.matricula = matricula
-            instrutor.especializacao = especializacao
-            instrutor.formacao = formacao
-            instrutor.telefone = telefone
+            instrutor.user.nome_completo = form.nome_completo.data
+            instrutor.user.email = form.email.data
+            instrutor.matricula = form.matricula.data
+            instrutor.especializacao = form.especializacao.data
+            instrutor.formacao = form.formacao.data
+            instrutor.telefone = form.telefone.data
             
             db.session.commit()
             return True, "Perfil do instrutor atualizado com sucesso!"

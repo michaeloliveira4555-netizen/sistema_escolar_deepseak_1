@@ -14,23 +14,19 @@
     </div>
     
     <form method="POST" action="{{ url_for('main.pre_cadastro') }}" style="padding: 1rem 0;">
+        {{ form.hidden_tag() }}
         <div class="form-group">
-            <label for="role">Função do Usuário</label>
-            <select id="role" name="role" class="form-control" required>
-                <option value="aluno" selected>Aluno</option>
-                <option value="instrutor">Instrutor</option>
-            </select>
+            {{ form.role.label }}
+            {{ form.role(class="form-control") }}
         </div>
         <div class="form-group">
-            <label for="id_func">Identidade Funcional (Id Func)</label>
-            <input type="text" id="id_func" name="id_func" class="form-control" 
-                   pattern="[0-9]*" inputmode="numeric" 
-                   placeholder="Digite apenas números" required>
+            {{ form.id_func.label }}
+            {{ form.id_func(class="form-control", placeholder="Digite apenas números") }}
         </div>
         
         <div class="form-actions">
             <a href="{{ url_for('aluno.listar_alunos') }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar Pré-Cadastro</button>
+            {{ form.submit(class="btn btn-primary") }}
         </div>
     </form>
 </div>

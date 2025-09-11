@@ -14,77 +14,61 @@
         <p style="font-size: 0.9rem; opacity: 0.8; margin-top: -15px; margin-bottom: 20px;">Complete seus dados para ativar seu acesso.</p>
         
         <form method="POST" action="{{ url_for('auth.register') }}">
-            
+            {{ form.hidden_tag() }}
             <div class="form-group">
-                <label for="role">Eu sou:</label>
-                <select id="role" name="role" class="form-control" required>
-                    <option value="aluno">Aluno</option>
-                    <option value="instrutor">Instrutor</option>
-                </select>
+                {{ form.role.label }}
+                {{ form.role(class="form-control") }}
             </div>
 
             <div class="form-group">
-                <label for="id_func">Sua Identidade Funcional (Id Func):</label>
-                <input type="text" id="id_func" name="id_func" class="form-control" 
-                       pattern="[0-9]*" inputmode="numeric"
-                       placeholder="Digite sua Id Func (apenas números)" 
-                       value="{{ form_data.id_func if form_data else '' }}" required>
+                {{ form.id_func.label }}
+                {{ form.id_func(class="form-control", placeholder="Digite sua Id Func (apenas números)") }}
+                {% for error in form.id_func.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
             </div>
 
-            <div class="form-group" id="pelotao-group">
-                <label for="pelotao">Seu Pelotão:</label>
-                <select id="pelotao" name="pelotao" class="form-control">
-                    {% for i in range(1, 11) %}
-                        <option value="{{ i }}° Pelotão">{{ i }}º Pelotão</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
             <div class="form-group">
-                <label for="email">Seu E-mail (Ex: nome.sobrenome@bm.rs.gov.br):</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="Digite seu e-mail completo" required>
+                {{ form.email.label }}
+                {{ form.email(class="form-control", placeholder="Digite seu e-mail completo") }}
+                {% for error in form.email.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
             </div>
-            
+
             <div class="form-group">
-                <label for="password">Crie uma Senha:</label>
-                <input type="password" id="password" name="password" class="form-control" required>
+                {{ form.username.label }}
+                {{ form.username(class="form-control", placeholder="Digite seu nome de usuário") }}
+                {% for error in form.username.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label }}
+                {{ form.password(class="form-control") }}
+                {% for error in form.password.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
             </div>
             
             <div class="password-rules">
-                <small>A senha deve conter pelo menos 8 caracteres, incluindo uma letra maiúscula, uma minúscula, um número e um caractere especial (!@#$%).</small>
+                <small>A senha deve conter pelo menos 6 caracteres.</small>
             </div>
             
             <div class="form-group">
-                <label for="password2">Confirme a Senha:</label>
-                <input type="password" id="password2" name="password2" class="form-control" required>
+                {{ form.password2.label }}
+                {{ form.password2(class="form-control") }}
+                {% for error in form.password2.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
             </div>
             
-            <button type="submit" class="btn btn-primary">Ativar Conta</button>
+            {{ form.submit(class="btn btn-primary") }}
         </form>
          <div class="auth-link">
             <a href="{{ url_for('auth.login') }}">Já tem uma conta ativa? Faça o login.</a>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const roleSelector = document.getElementById('role');
-        const pelotaoGroup = document.getElementById('pelotao-group');
-        const pelotaoSelect = document.getElementById('pelotao');
-
-        function togglePelotaoVisibility() {
-            if (roleSelector.value === 'instrutor') {
-                pelotaoGroup.style.display = 'none';
-                pelotaoSelect.required = false;
-            } else {
-                pelotaoGroup.style.display = 'block';
-                pelotaoSelect.required = true;
-            }
-        }
-
-        roleSelector.addEventListener('change', togglePelotaoVisibility);
-        togglePelotaoVisibility();
-    });
-</script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing as t
+import datetime
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +19,18 @@ class Turma(db.Model):
 
     def __init__(self, nome: str, ano: t.Optional[int] = None, **kw: t.Any) -> None:
         super().__init__(nome=nome, ano=ano, **kw)
+
+    @db.validates('nome')
+    def validate_nome(self, key, nome):
+        if not nome:
+            raise ValueError("Nome da turma não pode ser vazio.")
+        return nome
+
+    @db.validates('ano')
+    def validate_ano(self, key, ano):
+        if ano and (ano < 2000 or ano > datetime.date.today().year + 5):
+            raise ValueError("Ano inválido.")
+        return ano
 
     def __repr__(self):
         return f"<Turma id={self.id} nome='{self.nome}'>"

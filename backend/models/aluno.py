@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing as t
+import re
 from datetime import date
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,6 +15,9 @@ class Aluno(db.Model):
     __tablename__ = 'alunos'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # id_aluno: ID do aluno no sistema legado
+    # matricula: Matrícula do aluno na instituição
+    # num_aluno: Número do aluno na turma
     id_aluno: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=True)
     matricula: Mapped[str] = mapped_column(db.String(20), unique=True)
     opm: Mapped[str] = mapped_column(db.String(50))
@@ -21,8 +25,6 @@ class Aluno(db.Model):
     funcao_atual: Mapped[t.Optional[str]] = mapped_column(db.String(50))
     foto_perfil: Mapped[str] = mapped_column(db.String(255), default='default.png')
     
-    # --- CORREÇÃO NESTA LINHA ---
-    # Trocamos "Mapted" por "Mapped"
     telefone: Mapped[t.Optional[str]] = mapped_column(db.String(20))
     
     data_nascimento: Mapped[t.Optional[date]] = mapped_column(db.Date)
@@ -45,6 +47,12 @@ class Aluno(db.Model):
                          id_aluno=id_aluno, num_aluno=num_aluno,
                          funcao_atual=funcao_atual, foto_perfil=foto_perfil,
                          telefone=telefone, data_nascimento=data_nascimento, turma_id=turma_id, **kw)
+
+    @db.validates('telefone')
+    def validate_telefone(self, key, telefone):
+        if telefone and not re.match(r'^\d{10,11}', telefone):
+            raise ValueError("Telefone inválido. O telefone deve conter entre 10 e 11 dígitos.")
+        return telefone
 
     def __repr__(self):
         return f"<Aluno id={self.id} matricula='{self.matricula}'>"

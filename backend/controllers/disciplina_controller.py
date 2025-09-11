@@ -1,12 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
-from sqlalchemy import select
 
-from ..models.database import db
-from ..models.disciplina import Disciplina
-from ..models.instrutor import Instrutor
-from ..models.disciplina_turma import DisciplinaTurma
 from ..services.disciplina_service import DisciplinaService
+from ..forms import DisciplinaForm, EditDisciplinaForm
 from utils.decorators import admin_or_programmer_required
 
 disciplina_bp = Blueprint('disciplina', __name__, url_prefix='/disciplina')
@@ -15,35 +11,22 @@ disciplina_bp = Blueprint('disciplina', __name__, url_prefix='/disciplina')
 @login_required
 @admin_or_programmer_required
 def adicionar_disciplina():
-    if request.method == 'POST':
-        success, message = DisciplinaService.save_disciplina(request.form)
+    form = DisciplinaForm()
+    if form.validate_on_submit():
+        success, message = DisciplinaService.save_disciplina(form)
         if success:
             flash(message, 'success')
             return redirect(url_for('disciplina.listar_disciplinas'))
         else:
             flash(message, 'danger')
-            return render_template('adicionar_disciplina.html', form_data=request.form)
     
-    return render_template('adicionar_disciplina.html')
+    return render_template('adicionar_disciplina.html', form=form)
 
 @disciplina_bp.route('/listar')
 @login_required
 def listar_disciplinas():
     pelotao_filtrado = request.args.get('pelotao')
-    disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
-    disciplinas_com_instrutores = []
-    if pelotao_filtrado:
-        for disciplina in disciplinas:
-            associacao = db.session.execute(
-                select(DisciplinaTurma).where(
-                    DisciplinaTurma.disciplina_id == disciplina.id,
-                    DisciplinaTurma.pelotao == pelotao_filtrado
-                )
-            ).scalar_one_or_none()
-            disciplinas_com_instrutores.append((disciplina, associacao))
-    else:
-        for disciplina in disciplinas:
-            disciplinas_com_instrutores.append((disciplina, None))
+    disciplinas_com_instrutores = DisciplinaService.get_disciplinas_com_instrutores(pelotao_filtrado)
     return render_template(
         'listar_disciplinas.html', 
         disciplinas_com_instrutores=disciplinas_com_instrutores, 
@@ -54,60 +37,27 @@ def listar_disciplinas():
 @login_required
 @admin_or_programmer_required
 def editar_disciplina(disciplina_id):
-    disciplina = db.session.get(Disciplina, disciplina_id)
+    disciplina = DisciplinaService.get_disciplina_by_id(disciplina_id)
     if not disciplina:
         flash("Disciplina não encontrada.", 'danger')
         return redirect(url_for('disciplina.listar_disciplinas'))
     
+    form = EditDisciplinaForm(obj=disciplina)
+    if form.validate_on_submit():
+        success, message = DisciplinaService.update_disciplina_com_instrutores(disciplina_id, form)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('disciplina.listar_disciplinas'))
+        else:
+            flash(message, 'danger')
+
+    instrutores = DisciplinaService.get_all_instrutores()
+    atribuicoes = DisciplinaService.get_atribuicoes_by_disciplina(disciplina_id)
     disciplinas_com_dois_instrutores = ["AMT I", "AMT II", "Atendimento Pré-Hospitalar Tático"]
-    
-    if request.method == 'POST':
-        carga_horaria_str = request.form.get('carga_horaria')
-        if carga_horaria_str and carga_horaria_str.isdigit():
-            disciplina.carga_horaria_prevista = int(carga_horaria_str)
-        
-        atribuicoes_existentes = db.session.scalars(
-            db.select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina.id)
-        ).all()
-        atribuicoes_map = {atr.pelotao: atr for atr in atribuicoes_existentes}
-
-        for i in range(1, 9):
-            pelotao_nome = f'{i}° Pelotão'
-            instrutor_id_1_str = request.form.get(f'pelotao_{i}_instrutor_1')
-            instrutor_id_2_str = request.form.get(f'pelotao_{i}_instrutor_2')
-
-            instrutor_id_1 = int(instrutor_id_1_str) if instrutor_id_1_str and instrutor_id_1_str.isdigit() else None
-            instrutor_id_2 = int(instrutor_id_2_str) if instrutor_id_2_str and instrutor_id_2_str.isdigit() else None
-
-            associacao_existente = atribuicoes_map.get(pelotao_nome)
-
-            if associacao_existente:
-                # Se a associação já existe, apenas atualiza os instrutores
-                associacao_existente.instrutor_id_1 = instrutor_id_1
-                associacao_existente.instrutor_id_2 = instrutor_id_2
-            elif instrutor_id_1 or instrutor_id_2:
-                # Se não existe, mas um instrutor foi selecionado, cria a nova associação
-                nova_atribuicao = DisciplinaTurma(
-                    pelotao=pelotao_nome,
-                    disciplina_id=disciplina.id,
-                    instrutor_id_1=instrutor_id_1,
-                    instrutor_id_2=instrutor_id_2
-                )
-                db.session.add(nova_atribuicao)
-        
-        db.session.commit()
-        flash(f'Atribuições da disciplina "{disciplina.materia}" atualizadas com sucesso!', 'success')
-        return redirect(url_for('disciplina.listar_disciplinas'))
-
-    instrutores = db.session.scalars(select(Instrutor).order_by(Instrutor.id)).all()
-    atribuicoes_existentes = db.session.scalars(
-        select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina.id)
-    ).all()
-    
-    atribuicoes = {atr.pelotao: atr for atr in atribuicoes_existentes}
     
     return render_template(
         'editar_disciplina.html', 
+        form=form,
         disciplina=disciplina, 
         instrutores=instrutores,
         atribuicoes=atribuicoes,

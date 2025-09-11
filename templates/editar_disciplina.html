@@ -14,11 +14,10 @@
     </div>
     
     <form method="POST" action="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}">
+        {{ form.hidden_tag() }}
         <div class="form-group" style="padding: 1rem 0;">
-            <label for="carga_horaria"><strong>Carga Horária Total (em horas)</strong></label>
-            <input type="number" id="carga_horaria" name="carga_horaria" class="form-control" 
-                   value="{{ disciplina.carga_horaria_prevista if disciplina.carga_horaria_prevista > 0 else '' }}" 
-                   placeholder="Ex: 40" required>
+            {{ form.carga_horaria.label(class="font-weight-bold") }}
+            {{ form.carga_horaria(class="form-control", placeholder="Ex: 40") }}
         </div>
         
         <hr style="margin: 1rem 0 2rem 0;">
@@ -63,7 +62,7 @@
         
         <div class="form-actions">
             <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            {{ form.submit(class="btn btn-primary") }}
         </div>
     </form>
 </div>

@@ -48,24 +48,18 @@
             <h3>Cargos da Turma</h3>
         </div>
         <form method="POST" action="{{ url_for('turma.salvar_cargos_turma', turma_id=turma.id) }}">
+            {{ form.hidden_tag() }}
             <div class="cargos-grid">
                 {% for cargo in cargos_lista %}
                 <div class="form-group">
-                    <label for="cargo_{{ cargo }}">{{ cargo }}</label>
-                    <select id="cargo_{{ cargo }}" name="cargo_{{ cargo }}" class="form-control">
-                        <option value="">-- Nenhum --</option>
-                        {% for aluno in turma.alunos | sort(attribute='user.nome_completo') %}
-                            <option value="{{ aluno.id }}" {% if cargos_atuais[cargo] == aluno.id %}selected{% endif %}>
-                                {{ aluno.user.nome_completo or aluno.user.username }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    {{ form['cargo_' ~ cargo].label }}
+                    {{ form['cargo_' ~ cargo](class="form-control") }}
                 </div>
                 {% endfor %}
             </div>
             <div class="form-actions">
                 <a href="{{ url_for('turma.listar_turmas') }}" class="btn btn-secondary">Voltar</a>
-                <button type="submit" class="btn btn-primary">Salvar Cargos</button>
+                {{ form.submit(class="btn btn-primary") }}
             </div>
         </form>
     </div>
