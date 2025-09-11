@@ -12,10 +12,32 @@ from utils.validators import validate_email, validate_password_strength
 instrutor_bp = Blueprint('instrutor', __name__, url_prefix='/instrutor')
 
 @instrutor_bp.route('/listar')
-@login_required 
+@login_required
 def listar_instrutores():
     instrutores = InstrutorService.get_all_instrutores()
     return render_template('listar_instrutores.html', instrutores=instrutores)
+
+# NOVA ROTA ADICIONADA
+@instrutor_bp.route('/completar-cadastro', methods=['GET', 'POST'])
+@login_required
+def completar_cadastro():
+    # Se o perfil já existe, não deixa o usuário acessar esta página
+    if current_user.instrutor_profile:
+        return redirect(url_for('main.dashboard'))
+
+    if request.method == 'POST':
+        form_data = request.form.to_dict()
+        success, message = InstrutorService.save_instrutor(current_user.id, form_data)
+
+        if success:
+            flash("Perfil de instrutor completado com sucesso!", 'success')
+            return redirect(url_for('main.dashboard'))
+        else:
+            flash(message, 'danger')
+            return render_template('completar_cadastro_instrutor.html')
+
+    return render_template('completar_cadastro_instrutor.html')
+
 
 @instrutor_bp.route('/cadastro_admin', methods=['GET', 'POST'])
 @login_required
@@ -41,14 +63,12 @@ def cadastro_instrutor_admin():
         if password != password2:
             flash('As senhas não coincidem.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True)
-        
-        # (Outras validações de e-mail, senha, etc., permanecem aqui)
 
         new_user = User(
             id_func=matricula,
             username=matricula,
             nome_completo=nome_completo,
-            email=email, 
+            email=email,
             role=role,
             is_active=True
         )
@@ -77,17 +97,17 @@ def editar_instrutor(instrutor_id):
     if not instrutor:
         flash("Instrutor não encontrado.", 'danger')
         return redirect(url_for('instrutor.listar_instrutores'))
-    
+
     if request.method == 'POST':
         success, message = InstrutorService.update_instrutor(instrutor_id, request.form.to_dict())
-        
+
         if success:
             flash(message, 'success')
             return redirect(url_for('instrutor.listar_instrutores'))
         else:
             flash(message, 'error')
             return render_template('editar_instrutor.html', instrutor=instrutor, form_data=request.form)
-            
+
     return render_template('editar_instrutor.html', instrutor=instrutor)
 
 @instrutor_bp.route('/excluir/<int:instrutor_id>', methods=['POST'])
@@ -98,10 +118,8 @@ def excluir_instrutor(instrutor_id):
     if not instrutor:
         flash("Instrutor não encontrado.", 'danger')
         return redirect(url_for('instrutor.listar_instrutores'))
-    
+
     try:
-        # Ao deletar o usuário, o perfil do instrutor associado será
-        # deletado automaticamente devido à configuração 'cascade' no modelo.
         user_a_deletar = instrutor.user
         db.session.delete(user_a_deletar)
         db.session.commit()

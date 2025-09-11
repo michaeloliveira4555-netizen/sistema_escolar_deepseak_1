@@ -38,6 +38,10 @@
                 <label for="telefone">Telefone</label>
                 <input type="text" id="telefone" name="telefone" class="form-control" value="{{ current_user.instrutor_profile.telefone or '' }}">
             </div>
+            <div class="form-group">
+                <label for="credor">Credor (para fins de pagamento)</label>
+                <input type="text" id="credor" name="credor" class="form-control" value="{{ current_user.instrutor_profile.credor or '' }}">
+            </div>
             {% endif %}
 
             <hr style="margin: 2rem 0;">

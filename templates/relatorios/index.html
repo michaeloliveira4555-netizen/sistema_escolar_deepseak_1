@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Módulo de Relatórios</h1>
+    <p>Gere documentos a partir dos dados do sistema.</p>
+</div>
+
+<div class="modules-grid">
+    <div class="module-card">
+        <div class="card-content">
+            <div class="card-header">
+                <span class="card-icon">📄</span>
+                <h3 class="card-title">Horas-Aula por Instrutor</h3>
+            </div>
+            <p class="card-description">Gere um relatório detalhado de horas-aula ministradas por cada instrutor em um período específico.</p>
+            <div class="card-actions">
+                <a href="{{ url_for('relatorios.horas_aula_instrutor') }}" class="btn-card primary">
+                    Gerar Relatório
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -42,7 +42,6 @@ def register():
             flash('Este e-mail já está em uso por outra conta.', 'danger')
             return render_template('register.html', form_data=request.form)
 
-        # Ativa a conta
         user.nome_completo = nome_completo
         user.email = email
         user.username = id_func
@@ -70,10 +69,16 @@ def login():
 
         if user and user.is_active and user.check_password(password):
             login_user(user)
+
             # Se for um aluno sem perfil, redireciona para completar
             if user.role == 'aluno' and not user.aluno_profile:
                 flash('Por favor, complete seu perfil de aluno para continuar.', 'info')
                 return redirect(url_for('aluno.cadastro_aluno'))
+            # SE FOR UM INSTRUTOR SEM PERFIL, REDIRECIONA PARA COMPLETAR
+            elif user.role == 'instrutor' and not user.instrutor_profile:
+                flash('Por favor, complete seu perfil de instrutor para continuar.', 'info')
+                return redirect(url_for('instrutor.completar_cadastro'))
+
             return redirect(url_for('main.dashboard'))
         elif user and not user.is_active:
             flash('Sua conta precisa ser ativada. Use a página de registro para ativá-la.', 'warning')

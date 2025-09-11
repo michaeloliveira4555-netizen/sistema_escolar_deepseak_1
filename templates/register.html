@@ -38,15 +38,6 @@
                        value="{{ form_data.get('nome_completo', '') }}" required>
             </div>
 
-            <div class="form-group" id="pelotao-group">
-                <label for="pelotao">Seu Pelotão:</label>
-                <select id="pelotao" name="pelotao" class="form-control">
-                    {% for i in range(1, 11) %}
-                        <option value="{{ i }}° Pelotão">{{ i }}º Pelotão</option>
-                    {% endfor %}
-                </select>
-            </div>
-
             <div class="form-group">
                 <label for="email">Seu E-mail (Ex: nome.sobrenome@bm.rs.gov.br):</label>
                 <input type="email" id="email" name="email" class="form-control" placeholder="Digite seu e-mail completo" value="{{ form_data.get('email', '') }}" required>
@@ -68,30 +59,10 @@
 
             <button type="submit" class="btn btn-primary">Ativar Conta</button>
         </form>
-         <div class="auth-link">
+         <div class="auth-link" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
             <a href="{{ url_for('auth.login') }}">Já tem uma conta ativa? Faça o login.</a>
+            <a href="{{ url_for('auth.login') }}">Voltar para o Login</a>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const roleSelector = document.getElementById('role');
-        const pelotaoGroup = document.getElementById('pelotao-group');
-        const pelotaoSelect = document.getElementById('pelotao');
-
-        function togglePelotaoVisibility() {
-            if (roleSelector.value === 'instrutor') {
-                pelotaoGroup.style.display = 'none';
-                pelotaoSelect.required = false;
-            } else {
-                pelotaoGroup.style.display = 'block';
-                pelotaoSelect.required = true;
-            }
-        }
-
-        roleSelector.addEventListener('change', togglePelotaoVisibility);
-        togglePelotaoVisibility();
-    });
-</script>
 {% endblock %}

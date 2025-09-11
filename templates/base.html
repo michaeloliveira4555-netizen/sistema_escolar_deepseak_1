@@ -90,7 +90,7 @@
                     <a href="#" class="nav-link">
                         <div class="nav-icon">🔔</div> Notificações
                     </a>
-                    <a href="#" class="nav-link">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link {% if 'relatorios.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">📊</div> Relatórios
                     </a>
                 {% endif %}

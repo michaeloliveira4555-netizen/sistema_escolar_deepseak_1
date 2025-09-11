@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Relatório de Horas-Aula{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Relatório de Horas-Aula por Instrutor</h1>
+    <p>Selecione o período e personalize os dados para gerar o relatório.</p>
+</div>
+
+<div class="table-container" style="max-width: 800px; margin: 0 auto;">
+    <form method="POST" action="{{ url_for('relatorios.horas_aula_instrutor') }}" target="_blank">
+        <div class="form-group">
+            <label for="data_inicio"><strong>Período - Data de Início:</strong></label>
+            <input type="date" name="data_inicio" id="data_inicio" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="data_fim"><strong>Período - Data de Fim:</strong></label>
+            <input type="date" name="data_fim" id="data_fim" class="form-control" required>
+        </div>
+
+        <hr style="margin: 2rem 0;">
+        <h3>Dados para Assinatura</h3>
+
+        <div class="form-group">
+            <label for="chefe_ensino_nome">Nome Completo e Graduação do Chefe da Seção de Ensino:</label>
+            <input type="text" name="chefe_ensino_nome" id="chefe_ensino_nome" class="form-control" placeholder="Ex: CAP QOEM NOME COMPLETO">
+        </div>
+        <div class="form-group">
+            <label for="chefe_ensino_cargo">Cargo do Chefe da Seção de Ensino:</label>
+            <input type="text" name="chefe_ensino_cargo" id="chefe_ensino_cargo" class="form-control" value="Chefe da Seção de Ensino">
+        </div>
+
+        <div class="form-group">
+            <label for="comandante_nome">Nome Completo e Graduação do Comandante da Escola:</label>
+            <input type="text" name="comandante_nome" id="comandante_nome" class="form-control" placeholder="Ex: MAJ QOEM NOME COMPLETO">
+        </div>
+        <div class="form-group">
+            <label for="comandante_cargo">Cargo do Comandante da Escola:</label>
+            <input type="text" name="comandante_cargo" id="comandante_cargo" class="form-control" value="Comandante da EsFAS-SM">
+        </div>
+
+
+        <div class="form-actions" style="justify-content: flex-end;">
+            <a href="{{ url_for('relatorios.index') }}" class="btn btn-secondary">Voltar</a>
+            <button type="submit" name="action" value="preview" class="btn btn-info">Pré-Visualizar</button>
+            <button type="submit" name="action" value="download" class="btn btn-primary">Baixar PDF</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

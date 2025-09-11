@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Horas-Aula</title>
+    <style>
+        @page {
+            size: A4 landscape; /* FORÇA O MODO PAISAGEM */
+            margin: 1.5cm;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10pt; /* FONTE REDUZIDA */
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 1.5cm;
+            line-height: 1.2;
+        }
+        .header p {
+            margin: 0;
+            font-weight: bold;
+            font-size: 11pt; /* Fonte do cabeçalho reduzida */
+        }
+        h1 {
+            font-size: 12pt; /* Fonte do título reduzida */
+            text-transform: uppercase;
+            margin: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.8cm;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 5px; /* Padding reduzido */
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .assinaturas {
+            margin-top: 2cm;
+            text-align: center;
+        }
+        .assinatura {
+            display: inline-block;
+            width: 48%;
+            margin-top: 1.5cm;
+        }
+        .assinatura p {
+            border-top: 1px solid black;
+            padding-top: 5px;
+            margin: 0;
+            font-size: 10pt; /* Fonte da assinatura reduzida */
+        }
+        .footer {
+            text-align: right;
+            margin-top: 1.5cm;
+            font-size: 9pt; /* Fonte do rodapé reduzida */
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <p>ESTADO DO RIO GRANDE DO SUL</p>
+        <p>SECRETARIA DA SEGURANÇA PÚBLICA</p>
+        <p>BRIGADA MILITAR</p>
+        <p>DEPARTAMENTO DE ENSINO</p>
+        <p>ESCOLA DE FORMAÇÃO E APERFEIÇOAMENTO DE SARGENTOS</p>
+    </div>
+
+    <h1 style="text-align: center; margin-bottom: 1cm;">RELATÓRIO DE HORAS-AULA POR INSTRUTOR</h1>
+
+    <p><strong>Período de Referência:</strong> {{ data_inicio.strftime('%d/%m/%Y') }} a {{ data_fim.strftime('%d/%m/%Y') }}</p>
+
+    {% for instrutor_data in dados %}
+    <table>
+        <thead>
+            <tr>
+                <th colspan="2">INSTRUTOR</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="width: 25%;"><strong>Id. Func (Matrícula):</strong></td>
+                <td>{{ instrutor_data.info.matricula }}</td>
+            </tr>
+            <tr>
+                <td><strong>Nome Completo:</strong></td>
+                <td>{{ instrutor_data.info.user.nome_completo }}</td>
+            </tr>
+            <tr>
+                <td><strong>Credor:</strong></td>
+                <td>{{ instrutor_data.info.credor or 'Não informado' }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="background-color: #f2f2f2; text-align: center;"><strong>DISCIPLINAS MINISTRADAS</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Disciplina</strong></td>
+                <td style="text-align: center;"><strong>Total de Horas-Aula</strong></td>
+            </tr>
+            {% for disciplina in instrutor_data.disciplinas %}
+            <tr>
+                <td>{{ disciplina.nome }}</td>
+                <td style="text-align: center;">{{ disciplina.horas }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td style="text-align: right;"><strong>TOTAL GERAL DO INSTRUTOR</strong></td>
+                <td style="text-align: center; font-weight: bold;">{{ instrutor_data.total_geral }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <br> {% endfor %}
+
+    <div class="footer">
+        <p>{{ cidade_estado }}, {{ data_geracao }}.</p>
+    </div>
+
+    <div class="assinaturas">
+        <div class="assinatura">
+            <p>{{ chefe_ensino_nome or '____________________________________' }}<br>{{ chefe_ensino_cargo }}</p>
+        </div>
+        <div class="assinatura">
+            <p>{{ comandante_nome or '____________________________________' }}<br>{{ comandante_cargo }}</p>
+        </div>
+    </div>
+</body>
+</html>

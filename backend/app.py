@@ -46,6 +46,7 @@ def create_app(config_class=Config):
     from backend.controllers.turma_controller import turma_bp
     from backend.controllers.vinculo_controller import vinculo_bp
     from backend.controllers.user_controller import user_bp
+    from backend.controllers.relatorios_controller import relatorios_bp # <-- 1. IMPORTAR O NOVO BLUEPRINT
 
     # Registra os Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -61,6 +62,7 @@ def create_app(config_class=Config):
     app.register_blueprint(turma_bp, url_prefix='/turma')
     app.register_blueprint(vinculo_bp, url_prefix='/vinculos')
     app.register_blueprint(user_bp)
+    app.register_blueprint(relatorios_bp) # <-- 2. REGISTRAR O NOVO BLUEPRINT
 
     # Context processor para configurações do site
     @app.context_processor

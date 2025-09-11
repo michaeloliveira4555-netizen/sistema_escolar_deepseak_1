@@ -13,6 +13,7 @@ def meu_perfil():
         nome_completo = request.form.get('nome_completo')
         email = request.form.get('email')
         telefone = request.form.get('telefone')
+        credor = request.form.get('credor') # <-- CAPTURADO
         
         senha_atual = request.form.get('senha_atual')
         nova_senha = request.form.get('nova_senha')
@@ -26,7 +27,8 @@ def meu_perfil():
             current_user.aluno_profile.telefone = telefone
         elif current_user.role == 'instrutor' and current_user.instrutor_profile:
             current_user.instrutor_profile.telefone = telefone
-            
+            current_user.instrutor_profile.credor = credor # <-- SALVO
+
         # Lógica para alteração de senha
         if senha_atual and nova_senha and confirmar_nova_senha:
             if not current_user.check_password(senha_atual):
