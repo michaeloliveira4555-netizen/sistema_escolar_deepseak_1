@@ -86,7 +86,13 @@ def editar_aluno(aluno_id):
         flash("Aluno não encontrado.", 'danger')
         return redirect(url_for('aluno.listar_alunos'))
 
-    form = AdminEditAlunoForm(obj=aluno)
+    if request.method == 'POST':
+        form = AdminEditAlunoForm()
+    else:
+        form = AdminEditAlunoForm(obj=aluno)
+        form.nome_completo.data = aluno.user.nome_completo
+        form.email.data = aluno.user.email
+
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
     form.turma_id.choices = [(t.id, t.nome) for t in turmas]
 
@@ -97,7 +103,7 @@ def editar_aluno(aluno_id):
             return redirect(url_for('aluno.listar_alunos'))
         else:
             flash(message, 'error')
-    else:
+    elif request.method == 'POST':
         print("Form validation errors (AdminEditAlunoForm):", form.errors)
         flash("Por favor, corrija os erros no formulário.", 'error')
             

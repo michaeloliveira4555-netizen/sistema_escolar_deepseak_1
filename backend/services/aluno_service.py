@@ -144,9 +144,14 @@ class AlunoService:
             if aluno.user:
                 aluno.user.nome_completo = form.nome_completo.data
             
-            if foto_perfil:
+            if foto_perfil and hasattr(foto_perfil, 'filename') and foto_perfil.filename:
                 foto_filename = _save_profile_picture(foto_perfil)
-                aluno.foto_perfil = foto_filename
+                if foto_filename:
+                    if aluno.foto_perfil and aluno.foto_perfil != 'default.png':
+                        old_pic_path = os.path.join(current_app.static_folder, 'uploads', 'profile_pics', aluno.foto_perfil)
+                        if os.path.exists(old_pic_path):
+                            os.remove(old_pic_path)
+                    aluno.foto_perfil = foto_filename
             
             aluno.matricula = form.matricula.data
             aluno.opm = form.opm.data

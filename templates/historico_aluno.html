@@ -49,6 +49,36 @@
     {% endfor %}
 </div>
 
+<div class="content-header" style="margin-top: 2rem;">
+    <h2>Histórico de Atividades</h2>
+    <p>Funções e outras atividades registradas para o aluno.</p>
+</div>
+
+<div class="atividades-container">
+    {% if historico_atividades %}
+    <table class="table table-striped" style="width: 100%; margin-top: 1rem;">
+        <thead>
+            <tr>
+                <th style="width: 15%;">Data</th>
+                <th style="width: 20%;">Tipo</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atividade in historico_atividades %}
+            <tr>
+                <td>{{ atividade.data_inicio.strftime('%d/%m/%Y') }}</td>
+                <td>{{ atividade.tipo }}</td>
+                <td>{{ atividade.descricao }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nenhuma atividade registrada para este aluno.</p>
+    {% endif %}
+</div>
+
 
 <style>
 .disciplinas-grid {
