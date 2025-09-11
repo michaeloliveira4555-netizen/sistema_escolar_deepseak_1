@@ -11,23 +11,28 @@ user_bp = Blueprint('user', __name__, url_prefix='/usuario')
 def meu_perfil():
     if request.method == 'POST':
         nome_completo = request.form.get('nome_completo')
+        nome_de_guerra = request.form.get('nome_de_guerra')
         email = request.form.get('email')
         telefone = request.form.get('telefone')
-        credor = request.form.get('credor') # <-- CAPTURADO
+        credor = request.form.get('credor')
+        posto_graduacao = request.form.get('posto_graduacao')
         
         senha_atual = request.form.get('senha_atual')
         nova_senha = request.form.get('nova_senha')
         confirmar_nova_senha = request.form.get('confirmar_nova_senha')
 
-        # Atualiza informações básicas
+        # Atualiza informações básicas do usuário
         current_user.nome_completo = nome_completo
+        current_user.nome_de_guerra = nome_de_guerra
         current_user.email = email
 
+        # Atualiza perfil específico
         if current_user.role == 'aluno' and current_user.aluno_profile:
             current_user.aluno_profile.telefone = telefone
         elif current_user.role == 'instrutor' and current_user.instrutor_profile:
             current_user.instrutor_profile.telefone = telefone
-            current_user.instrutor_profile.credor = credor # <-- SALVO
+            current_user.instrutor_profile.credor = credor
+            current_user.instrutor_profile.posto_graduacao = posto_graduacao
 
         # Lógica para alteração de senha
         if senha_atual and nova_senha and confirmar_nova_senha:

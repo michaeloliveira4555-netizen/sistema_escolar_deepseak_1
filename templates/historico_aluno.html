@@ -8,6 +8,14 @@
     <p>Acompanhe suas notas e médias das disciplinas do Curso Técnico em Segurança Pública.</p>
 </div>
 
+<div class="media-final-curso-container">
+    <h3>Média Final do Curso</h3>
+    <div id="media-final-curso" class="media-final-valor">
+        {{ "%.3f"|format(media_final_curso) }}
+    </div>
+    <p>Esta é a média de todas as disciplinas com notas já lançadas e salvas.</p>
+</div>
+
 <div class="disciplinas-grid">
     {% for registro in historico_disciplinas %}
     <div class="disciplina-card">
@@ -16,15 +24,15 @@
             <div class="notas-container">
                 <div class="form-group">
                     <label>1ª Prova</label>
-                    <input type="number" step="0.001" min="0" max="10" class="form-control nota-input p1" name="nota_p1" value="{{ registro.nota_p1 or '' }}">
+                    <input type="number" step="0.01" min="0" max="10" class="form-control nota-input p1" name="nota_p1" value="{{ registro.nota_p1 or '' }}" {% if current_user.id != aluno.user.id %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label>2ª Prova</label>
-                    <input type="number" step="0.001" min="0" max="10" class="form-control nota-input p2" name="nota_p2" value="{{ registro.nota_p2 or '' }}">
+                    <input type="number" step="0.01" min="0" max="10" class="form-control nota-input p2" name="nota_p2" value="{{ registro.nota_p2 or '' }}" {% if current_user.id != aluno.user.id %}readonly{% endif %}>
                 </div>
                 <div class="form-group rec-group" style="display: none;">
                     <label>Recuperação</label>
-                    <input type="number" step="0.001" min="0" max="10" class="form-control nota-input rec" name="nota_rec" value="{{ registro.nota_rec or '' }}">
+                    <input type="number" step="0.01" min="0" max="10" class="form-control nota-input rec" name="nota_rec" value="{{ registro.nota_rec or '' }}" {% if current_user.id != aluno.user.id %}readonly{% endif %}>
                 </div>
             </div>
             <div class="medias-container">
@@ -37,9 +45,9 @@
                     <span class="media-value mfd">--</span>
                 </div>
             </div>
-            {% if current_user.role in ['admin', 'programador'] %}
+            {% if current_user.id == aluno.user.id %}
             <div class="form-actions">
-                <button type="submit" class="btn btn-sm btn-primary">Salvar Notas</button>
+                <button type="submit" class="btn btn-sm btn-primary">Salvar Minhas Notas</button>
             </div>
             {% endif %}
         </form>
@@ -49,8 +57,34 @@
     {% endfor %}
 </div>
 
-
 <style>
+/* ... (o CSS permanece o mesmo da versão anterior) ... */
+.media-final-curso-container {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-medium);
+}
+.media-final-curso-container h3 {
+    font-size: 1.5rem;
+    margin: 0;
+    opacity: 0.9;
+}
+.media-final-valor {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0.5rem 0;
+}
+.media-final-curso-container p {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
 .disciplinas-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -70,9 +104,13 @@
     padding-bottom: 1rem;
 }
 .notas-container {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
     margin-bottom: 1rem;
+}
+.rec-group {
+    grid-column: 1 / -1; /* Ocupa a linha inteira */
 }
 .medias-container {
     background: #f8fafc;
@@ -86,39 +124,59 @@
     align-items: center;
     font-size: 1.1rem;
 }
-.media-display strong {
-    color: var(--color-secondary);
-}
-.media-value {
-    font-weight: 700;
-    color: var(--color-primary);
-}
-.form-actions {
-    margin-top: 1.5rem;
-    text-align: right;
-}
+.media-display strong { color: var(--color-secondary); }
+.media-value { font-weight: 700; color: var(--color-primary); }
+.form-actions { margin-top: 1.5rem; text-align: right; }
 </style>
 
 <script>
+// O SCRIPT JAVASCRIPT PERMANECE O MESMO DA VERSÃO ANTERIOR
 document.addEventListener('DOMContentLoaded', function() {
+    const mediaFinalCursoDisplay = document.getElementById('media-final-curso');
+
+    function calcularMediaFinalCurso() {
+        let somaMedias = 0;
+        let countDisciplinas = 0;
+        document.querySelectorAll('.disciplina-card').forEach(card => {
+            const p1_input = card.querySelector('.nota-input.p1');
+            const p2_input = card.querySelector('.nota-input.p2');
+            
+            if (p1_input.value && p2_input.value) {
+                const mpdText = card.querySelector('.media-value.mpd').textContent;
+                const mfdText = card.querySelector('.media-value.mfd').textContent;
+                
+                if (mfdText !== '--' && card.querySelector('.mfd-display').style.display !== 'none') {
+                    somaMedias += parseFloat(mfdText) || 0;
+                } else if (mpdText !== '--') {
+                    somaMedias += parseFloat(mpdText) || 0;
+                }
+                countDisciplinas++;
+            }
+        });
+
+        if (countDisciplinas > 0) {
+            const mediaFinal = somaMedias / countDisciplinas;
+            mediaFinalCursoDisplay.textContent = mediaFinal.toFixed(3);
+        } else {
+            mediaFinalCursoDisplay.textContent = '0.000';
+        }
+    }
+
     document.querySelectorAll('.disciplina-card').forEach(card => {
         const p1_input = card.querySelector('.nota-input.p1');
         const p2_input = card.querySelector('.nota-input.p2');
         const rec_input = card.querySelector('.nota-input.rec');
-        
         const rec_group = card.querySelector('.rec-group');
-        
         const mpd_display = card.querySelector('.media-value.mpd');
         const mfd_display_container = card.querySelector('.mfd-display');
         const mfd_display = card.querySelector('.media-value.mfd');
 
-        function calcularMedias() {
+        function calcularMediasDisciplina() {
             const p1 = parseFloat(p1_input.value) || 0;
             const p2 = parseFloat(p2_input.value) || 0;
             const rec = parseFloat(rec_input.value) || 0;
 
             if (p1_input.value && p2_input.value) {
-                // Calcula MPD
                 const mpd = (p1 + p2) / 2;
                 mpd_display.textContent = mpd.toFixed(3);
 
@@ -134,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     rec_group.style.display = 'none';
-                    rec_input.value = ''; // Limpa o valor de REC se não for necessário
                     mfd_display_container.style.display = 'none';
                     mfd_display.textContent = '--';
                 }
@@ -147,12 +204,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         card.querySelectorAll('.nota-input').forEach(input => {
-            input.addEventListener('input', calcularMedias);
+            input.addEventListener('input', calcularMediasDisciplina);
         });
 
-        // Calcula as médias iniciais ao carregar a página
-        calcularMedias();
+        calcularMediasDisciplina();
     });
+
+    // Chama a função de cálculo da média geral uma vez no carregamento da página
+    // para garantir que o valor inicial (vindo do backend) seja atualizado se
+    // houver interações antes de salvar.
+    calcularMediaFinalCurso();
 });
 </script>
 {% endblock %}

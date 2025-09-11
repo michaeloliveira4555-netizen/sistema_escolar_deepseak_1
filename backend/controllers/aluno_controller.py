@@ -13,13 +13,11 @@ aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 @aluno_bp.route('/cadastro', methods=['GET', 'POST'])
 @login_required
 def cadastro_aluno():
-    # Se o perfil já existe, redireciona para o dashboard
     if hasattr(current_user, 'aluno_profile') and current_user.aluno_profile:
         return redirect(url_for('main.dashboard'))
         
     if request.method == 'POST':
         form_data = request.form.to_dict()
-        # Adiciona a matrícula (IdFunc) automaticamente a partir do usuário logado
         form_data['matricula'] = current_user.id_func
 
         success, message = AlunoService.save_aluno(current_user.id, form_data)
@@ -39,6 +37,7 @@ def cadastro_aluno():
 def cadastro_aluno_admin():
     if request.method == 'POST':
         nome_completo = request.form.get('nome_completo')
+        nome_de_guerra = request.form.get('nome_de_guerra')
         email = request.form.get('email')
         password = request.form.get('password')
         password2 = request.form.get('password2')
@@ -49,7 +48,7 @@ def cadastro_aluno_admin():
         turma_id = request.form.get('turma_id')
         foto_perfil = request.files.get('foto_perfil')
 
-        if not all([email, password, password2, matricula, opm, nome_completo]):
+        if not all([email, password, password2, matricula, opm, nome_completo, nome_de_guerra]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
             return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
@@ -69,6 +68,7 @@ def cadastro_aluno_admin():
             id_func=matricula,
             username=matricula,
             nome_completo=nome_completo,
+            nome_de_guerra=nome_de_guerra,
             email=email,
             role=role,
             is_active=True
@@ -77,7 +77,6 @@ def cadastro_aluno_admin():
         db.session.add(new_user)
         db.session.commit()
 
-        # Passa o form_data sem a função atual
         form_data_service = request.form.to_dict()
         form_data_service.pop('funcao_atual', None)
 
@@ -102,9 +101,7 @@ def cadastro_aluno_admin():
 def listar_alunos():
     turma_filtrada = request.args.get('turma', None)
     alunos = AlunoService.get_all_alunos(turma_filtrada)
-
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
-
     return render_template('listar_alunos.html', alunos=alunos, turmas=turmas, turma_filtrada=turma_filtrada)
 
 @aluno_bp.route('/editar/<int:aluno_id>', methods=['GET', 'POST'])
@@ -115,9 +112,7 @@ def editar_aluno(aluno_id):
     if not aluno:
         flash("Aluno não encontrado.", 'danger')
         return redirect(url_for('aluno.listar_alunos'))
-
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
-
     if request.method == 'POST':
         form_data = request.form.to_dict()
         foto_perfil = request.files.get('foto_perfil')
@@ -128,7 +123,6 @@ def editar_aluno(aluno_id):
         else:
             flash(message, 'error')
             return render_template('editar_aluno.html', aluno=aluno, turmas=turmas, form_data=request.form)
-
     return render_template('editar_aluno.html', aluno=aluno, turmas=turmas, form_data=aluno)
 
 @aluno_bp.route('/excluir/<int:aluno_id>', methods=['POST'])

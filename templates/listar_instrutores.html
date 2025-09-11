@@ -45,12 +45,16 @@
                         <td data-label="Telefone">{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
                         <td data-label="Email">{{ instrutor.user.email }}</td>
                         <td data-label="Ações" class="text-right">
+                            {% if current_user.role in ['admin', 'programador'] %}
                             <div class="btn-group">
                                 <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-warning btn-sm">Editar</a>
                                 <form method="POST" action="{{ url_for('instrutor.excluir_instrutor', instrutor_id=instrutor.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir este instrutor? Esta ação não pode ser desfeita.');">
                                     <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
                                 </form>
                             </div>
+                            {% else %}
+                                <span>N/A</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

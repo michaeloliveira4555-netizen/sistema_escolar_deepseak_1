@@ -12,8 +12,28 @@
         <form method="POST" action="{{ url_for('instrutor.completar_cadastro') }}">
             <div class="form-group">
                 <label for="matricula">Matrícula (use a mesma que sua Id Funcional):</label>
-                <input type="text" id="matricula" name="matricula" class="form-control" value="{{ current_user.id_func }}" required>
+                <input type="text" id="matricula" name="matricula" class="form-control" value="{{ current_user.id_func }}" readonly required>
             </div>
+
+            <div class="form-group">
+                <label for="posto_graduacao_select">Posto/Graduação:</label>
+                <select id="posto_graduacao_select" name="posto_graduacao_select" class="form-control">
+                    <option value="Sd PM">Sd PM</option>
+                    <option value="2º Sgt PM">2º Sgt PM</option>
+                    <option value="1º Sgt PM">1º Sgt PM</option>
+                    <option value="1º Ten PM">1º Ten PM</option>
+                    <option value="Cap PM">Cap PM</option>
+                    <option value="Maj PM">Maj PM</option>
+                    <option value="Ten Cel PM">Ten Cel PM</option>
+                    <option value="Cel PM">Cel PM</option>
+                    <option value="Outro">Outro (especificar)</option>
+                </select>
+            </div>
+            <div class="form-group" id="posto_graduacao_outro_div" style="display: none;">
+                <label for="posto_graduacao_outro">Especifique o Posto/Graduação:</label>
+                <input type="text" id="posto_graduacao_outro" name="posto_graduacao_outro" class="form-control">
+            </div>
+
 
             <div class="form-group">
                 <label for="especializacao">Especialização:</label>
@@ -34,4 +54,19 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const postoSelect = document.getElementById('posto_graduacao_select');
+    const outroDiv = document.getElementById('posto_graduacao_outro_div');
+
+    postoSelect.addEventListener('change', function() {
+        if (this.value === 'Outro') {
+            outroDiv.style.display = 'block';
+        } else {
+            outroDiv.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}

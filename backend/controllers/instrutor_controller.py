@@ -17,16 +17,15 @@ def listar_instrutores():
     instrutores = InstrutorService.get_all_instrutores()
     return render_template('listar_instrutores.html', instrutores=instrutores)
 
-# NOVA ROTA ADICIONADA
 @instrutor_bp.route('/completar-cadastro', methods=['GET', 'POST'])
 @login_required
 def completar_cadastro():
-    # Se o perfil já existe, não deixa o usuário acessar esta página
     if current_user.instrutor_profile:
         return redirect(url_for('main.dashboard'))
 
     if request.method == 'POST':
         form_data = request.form.to_dict()
+        form_data['matricula'] = current_user.id_func
         success, message = InstrutorService.save_instrutor(current_user.id, form_data)
 
         if success:
@@ -43,20 +42,16 @@ def completar_cadastro():
 @login_required
 @admin_or_programmer_required
 def cadastro_instrutor_admin():
-    disciplinas = DisciplinaService.get_all_disciplinas()
-
     if request.method == 'POST':
         nome_completo = request.form.get('nome_completo')
+        nome_de_guerra = request.form.get('nome_de_guerra')
         matricula = request.form.get('matricula')
         email = request.form.get('email')
         password = request.form.get('password')
         password2 = request.form.get('password2')
         role = 'instrutor'
-
-        especializacao = request.form.get('especializacao')
-        formacao = request.form.get('formacao')
-
-        if not all([nome_completo, matricula, email, password, password2]):
+        
+        if not all([nome_completo, nome_de_guerra, matricula, email, password, password2]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
             return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True)
 
@@ -68,6 +63,7 @@ def cadastro_instrutor_admin():
             id_func=matricula,
             username=matricula,
             nome_completo=nome_completo,
+            nome_de_guerra=nome_de_guerra,
             email=email,
             role=role,
             is_active=True

@@ -22,6 +22,11 @@
                 <label for="nome_completo">Nome Completo</label>
                 <input type="text" id="nome_completo" name="nome_completo" class="form-control" value="{{ current_user.nome_completo or '' }}" required>
             </div>
+            
+            <div class="form-group">
+                <label for="nome_de_guerra">Nome de Guerra</label>
+                <input type="text" id="nome_de_guerra" name="nome_de_guerra" class="form-control" value="{{ current_user.nome_de_guerra or '' }}" required>
+            </div>
 
             <div class="form-group">
                 <label for="email">E-mail</label>
@@ -41,6 +46,10 @@
             <div class="form-group">
                 <label for="credor">Credor (para fins de pagamento)</label>
                 <input type="text" id="credor" name="credor" class="form-control" value="{{ current_user.instrutor_profile.credor or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="posto_graduacao">Posto/Graduação</label>
+                <input type="text" id="posto_graduacao" name="posto_graduacao" class="form-control" value="{{ current_user.instrutor_profile.posto_graduacao or '' }}">
             </div>
             {% endif %}
 
