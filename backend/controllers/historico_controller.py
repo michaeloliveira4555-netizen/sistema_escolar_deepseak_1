@@ -4,7 +4,6 @@ from flask_login import login_required, current_user
 from ..models.database import db
 from ..services.historico_service import HistoricoService
 from ..services.aluno_service import AlunoService
-from ..models.historico_disciplina import HistoricoDisciplina
 # Alteramos o decorator importado
 from utils.decorators import admin_or_programmer_required
 

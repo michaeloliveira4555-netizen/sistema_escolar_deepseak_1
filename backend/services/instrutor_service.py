@@ -31,24 +31,15 @@ class InstrutorService:
         if telefone and not validate_telefone(telefone):
             return False, "Telefone inválido."
 
-        try:
-            novo_instrutor = Instrutor(
-                user_id=user_id,
-                matricula=matricula,
-                especializacao=especializacao,
-                formacao=formacao,
-                telefone=telefone
-            )
-            db.session.add(novo_instrutor)
-            db.session.commit()
-            return True, "Perfil de instrutor cadastrado com sucesso!"
-        except IntegrityError:
-            db.session.rollback()
-            return False, "Erro de integridade de dados. Verifique se a matrícula já existe."
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Erro inesperado ao cadastrar instrutor: {e}")
-            return False, f"Erro inesperado ao cadastrar instrutor: {str(e)}"
+        novo_instrutor = Instrutor(
+            user_id=user_id,
+            matricula=matricula,
+            especializacao=especializacao,
+            formacao=formacao,
+            telefone=telefone
+        )
+        db.session.add(novo_instrutor)
+        return True, "Perfil de instrutor cadastrado com sucesso!"
 
     @staticmethod
     def get_all_instrutores():
@@ -83,18 +74,26 @@ class InstrutorService:
         if telefone and not validate_telefone(telefone):
             return False, "Telefone inválido."
 
-        try:
-            instrutor.matricula = matricula
-            instrutor.especializacao = especializacao
-            instrutor.formacao = formacao
-            instrutor.telefone = telefone
+        instrutor.matricula = matricula
+        instrutor.especializacao = especializacao
+        instrutor.formacao = formacao
+        instrutor.telefone = telefone
             
+        return True, "Perfil do instrutor atualizado com sucesso!"
+
+    @staticmethod
+    def delete_instrutor(instrutor_id: int):
+        instrutor = db.session.get(Instrutor, instrutor_id)
+        if not instrutor:
+            return False, "Instrutor não encontrado."
+
+        try:
+            user_a_deletar = instrutor.user
+            db.session.delete(instrutor)
+            db.session.delete(user_a_deletar)
             db.session.commit()
-            return True, "Perfil do instrutor atualizado com sucesso!"
-        except IntegrityError:
-            db.session.rollback()
-            return False, "Erro de integridade de dados. Verifique se a matrícula já existe."
+            return True, "Instrutor excluído com sucesso!"
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Erro inesperado ao atualizar instrutor: {e}")
-            return False, f"Erro inesperado ao atualizar instrutor: {str(e)}"
+            current_app.logger.error(f"Erro ao excluir instrutor: {e}")
+            return False, f"Erro ao excluir instrutor: {str(e)}"

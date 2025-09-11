@@ -32,16 +32,11 @@ def adicionar_disciplina():
 @login_required
 def listar_disciplinas():
     pelotao_filtrado = request.args.get('pelotao')
-    disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
+    disciplinas = DisciplinaService.get_all_disciplinas_com_associacoes(pelotao_filtrado)
     disciplinas_com_instrutores = []
     if pelotao_filtrado:
         for disciplina in disciplinas:
-            associacao = db.session.execute(
-                select(DisciplinaTurma).where(
-                    DisciplinaTurma.disciplina_id == disciplina.id,
-                    DisciplinaTurma.pelotao == pelotao_filtrado
-                )
-            ).scalar_one_or_none()
+            associacao = next((a for a in disciplina.associacoes_turmas if a.pelotao == pelotao_filtrado), None)
             disciplinas_com_instrutores.append((disciplina, associacao))
     else:
         for disciplina in disciplinas:
@@ -56,29 +51,7 @@ def listar_disciplinas():
 @login_required
 @admin_or_programmer_required
 def editar_disciplina(disciplina_id):
-    disciplina = db.session.get(Disciplina, disciplina_id)
-    if not disciplina:
-        flash("Disciplina não encontrada.", 'danger')
-        return redirect(url_for('disciplina.listar_disciplinas'))
-    
-    if request.method == 'POST':
-        carga_horaria_str = request.form.get('carga_horaria')
-        if carga_horaria_str and carga_horaria_str.isdigit():
-            disciplina.carga_horaria_prevista = int(carga_horaria_str)
-            db.session.commit()
-            flash(f'Carga horária da disciplina "{disciplina.materia}" atualizada com sucesso!', 'success')
-        else:
-            flash('Valor inválido para carga horária.', 'danger')
-        return redirect(url_for('disciplina.listar_disciplinas'))
-
-    return render_template('editar_disciplina.html', disciplina=disciplina)
-
-@disciplina_bp.route('/editar-nome/<int:disciplina_id>', methods=['GET', 'POST'])
-@login_required
-@admin_or_programmer_required
-def editar_nome_disciplina(disciplina_id):
-    """Rota para editar apenas o nome e carga horária da disciplina"""
-    disciplina = db.session.get(Disciplina, disciplina_id)
+    disciplina = DisciplinaService.get_disciplina_by_id(disciplina_id)
     if not disciplina:
         flash("Disciplina não encontrada.", 'danger')
         return redirect(url_for('disciplina.listar_disciplinas'))
@@ -86,57 +59,26 @@ def editar_nome_disciplina(disciplina_id):
     if request.method == 'POST':
         success, message = DisciplinaService.update_disciplina(disciplina_id, request.form.to_dict())
         if success:
-            flash(message, 'success')
-            return redirect(url_for('disciplina.listar_disciplinas'))
+            try:
+                db.session.commit()
+                flash(message, 'success')
+                return redirect(url_for('disciplina.listar_disciplinas'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Erro ao salvar as alterações: {e}", 'danger')
         else:
             flash(message, 'danger')
-            return render_template('editar_nome_disciplina.html', disciplina=disciplina, form_data=request.form)
     
-    return render_template('editar_nome_disciplina.html', disciplina=disciplina)
+    # For GET requests, pass the model object directly
+    return render_template('editar_disciplina.html', disciplina=disciplina)
 
 @disciplina_bp.route('/excluir/<int:disciplina_id>', methods=['POST'])
 @login_required
 @admin_or_programmer_required
 def excluir_disciplina(disciplina_id):
-    """Excluir disciplina e todos os dados relacionados"""
-    disciplina = db.session.get(Disciplina, disciplina_id)
-    if not disciplina:
-        flash("Disciplina não encontrada.", 'danger')
-        return redirect(url_for('disciplina.listar_disciplinas'))
-    
-    try:
-        disciplina_nome = disciplina.materia
-        
-        # 1. Remover associações disciplina-turma
-        associacoes = db.session.scalars(
-            select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina_id)
-        ).all()
-        for associacao in associacoes:
-            db.session.delete(associacao)
-        
-        # 2. Remover aulas agendadas
-        aulas = db.session.scalars(
-            select(Horario).where(Horario.disciplina_id == disciplina_id)
-        ).all()
-        for aula in aulas:
-            db.session.delete(aula)
-        
-        # 3. Remover histórico de disciplinas dos alunos
-        historicos = db.session.scalars(
-            select(HistoricoDisciplina).where(HistoricoDisciplina.disciplina_id == disciplina_id)
-        ).all()
-        for historico in historicos:
-            db.session.delete(historico)
-        
-        # 4. Finalmente, remover a disciplina
-        db.session.delete(disciplina)
-        
-        db.session.commit()
-        
-        flash(f'Disciplina "{disciplina_nome}" e todos os dados relacionados foram excluídos com sucesso!', 'success')
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erro ao excluir disciplina: {str(e)}', 'danger')
-    
+    success, message = DisciplinaService.delete_disciplina(disciplina_id)
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
     return redirect(url_for('disciplina.listar_disciplinas'))

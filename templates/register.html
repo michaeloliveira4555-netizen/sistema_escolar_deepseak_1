@@ -14,6 +14,7 @@
         <p style="font-size: 0.9rem; opacity: 0.8; margin-top: -15px; margin-bottom: 20px;">Complete seus dados para ativar seu acesso.</p>
 
         <form method="POST" action="{{ url_for('auth.register') }}">
+            {{ csrf_token() }}
 
             <div class="form-group">
                 <label for="role">Eu sou:</label>

@@ -14,6 +14,7 @@
     </div>
     
     <form method="POST" action="{{ url_for('disciplina.adicionar_disciplina') }}" style="padding: 1rem 0;">
+        {{ csrf_token() }}
         <div class="form-group">
             <label for="materia">Nome da Matéria</label>
             <input type="text" id="materia" name="materia" class="form-control" 

@@ -79,6 +79,7 @@
     <div class="modal-content">
         <h3>Selecione a turma para excluir</h3>
         <form id="deleteForm" method="POST" onsubmit="return confirm('ATENÇÃO: Excluir esta turma irá desvincular todos os alunos e remover todos os vínculos de disciplinas e cargos associados a ela. Esta ação não pode ser desfeita. Deseja continuar?');">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="turmaDeleteSelect">Turma</label>
                 <select id="turmaDeleteSelect" class="form-control" name="turma_id" required>

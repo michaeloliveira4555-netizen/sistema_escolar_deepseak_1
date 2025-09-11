@@ -4,6 +4,7 @@ from weasyprint import HTML
 from datetime import datetime
 from ..services.relatorio_service import RelatorioService
 from utils.decorators import admin_or_programmer_required
+from ..services.site_config_service import SiteConfigService
 import locale
 
 # Configura o locale para Português do Brasil para traduzir o mês
@@ -32,9 +33,7 @@ def horas_aula_instrutor():
         data_inicio_str = request.form.get('data_inicio')
         data_fim_str = request.form.get('data_fim')
         chefe_ensino_nome = request.form.get('chefe_ensino_nome', '')
-        chefe_ensino_cargo = request.form.get('chefe_ensino_cargo', 'Chefe da Seção de Ensino')
         comandante_nome = request.form.get('comandante_nome', '')
-        comandante_cargo = request.form.get('comandante_cargo', 'Comandante da EsFAS-SM')
         action = request.form.get('action')
 
         try:
@@ -47,7 +46,11 @@ def horas_aula_instrutor():
         dados_relatorio = RelatorioService.get_horas_aula_por_instrutor(data_inicio, data_fim)
 
         data_geracao = datetime.now().strftime("%d de %B de %Y")
-        cidade_estado = "Santa Maria - RS"
+        
+        # Usar configurações do SiteConfigService
+        chefe_ensino_cargo = SiteConfigService.get_config('report_chefe_ensino_cargo', 'Chefe da Seção de Ensino')
+        comandante_cargo = SiteConfigService.get_config('report_comandante_cargo', 'Comandante da EsFAS-SM')
+        cidade_estado = SiteConfigService.get_config('report_cidade_estado', 'Santa Maria - RS')
 
         rendered_html = render_template('relatorios/pdf_template.html',
                                         dados=dados_relatorio,
@@ -64,7 +67,6 @@ def horas_aula_instrutor():
             return rendered_html
 
         if action == 'download':
-            # A orientação da página agora é controlada diretamente no template
             pdf = HTML(string=rendered_html).write_pdf()
             return Response(pdf, mimetype='application/pdf', headers={
                 'Content-Disposition': 'attachment; filename=relatorio_horas_aula.pdf'

@@ -7,6 +7,7 @@ from ..services.aluno_service import AlunoService
 from ..models.user import User
 from ..models.turma import Turma
 from utils.decorators import admin_or_programmer_required, aluno_profile_required
+from utils.validators import validate_email, validate_password_strength
 
 aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 
@@ -49,48 +50,60 @@ def cadastro_aluno_admin():
         turma_id = request.form.get('turma_id')
         foto_perfil = request.files.get('foto_perfil')
 
+        turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+
         if not all([email, password, password2, matricula, opm, nome_completo]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
-            turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
             return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
 
         if password != password2:
             flash('As senhas não coincidem.', 'danger')
-            turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+            return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
+
+        if not validate_email(email):
+            flash('Formato de e-mail inválido.', 'danger')
+            return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
+
+        is_strong, message = validate_password_strength(password)
+        if not is_strong:
+            flash(message, 'danger')
             return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
 
         user_exists_id_func = db.session.execute(db.select(User).filter_by(id_func=matricula)).scalar_one_or_none()
         if user_exists_id_func:
             flash('Esta matrícula (Id Funcional) já está em uso.', 'danger')
-            turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
             return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
 
-        new_user = User(
-            id_func=matricula,
-            username=matricula,
-            nome_completo=nome_completo,
-            email=email,
-            role=role,
-            is_active=True
-        )
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.commit()
+        try:
+            new_user = User(
+                id_func=matricula,
+                username=matricula,
+                nome_completo=nome_completo,
+                email=email,
+                role=role,
+                is_active=True
+            )
+            new_user.set_password(password)
+            db.session.add(new_user)
+            db.session.flush() # Usa flush para obter o ID do novo usuário sem fazer commit
 
-        # Passa o form_data sem a função atual
-        form_data_service = request.form.to_dict()
-        form_data_service.pop('funcao_atual', None)
+            # Passa o form_data sem a função atual
+            form_data_service = request.form.to_dict()
+            form_data_service.pop('funcao_atual', None)
 
-        success, message = AlunoService.save_aluno(new_user.id, form_data_service, foto_perfil)
+            success, message = AlunoService.save_aluno(new_user.id, form_data_service, foto_perfil)
 
-        if success:
-            flash('Aluno cadastrado com sucesso!', 'success')
-            return redirect(url_for('aluno.listar_alunos'))
-        else:
-            db.session.delete(new_user)
-            db.session.commit()
-            flash(f"Erro ao cadastrar perfil do aluno: {message}", 'error')
-            turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+            if success:
+                db.session.commit() # Commit final se tudo deu certo
+                flash('Aluno cadastrado com sucesso!', 'success')
+                return redirect(url_for('aluno.listar_alunos'))
+            else:
+                db.session.rollback() # Desfaz tudo se save_aluno falhar
+                flash(f"Erro ao cadastrar perfil do aluno: {message}", 'error')
+                return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ocorreu um erro inesperado: {e}", 'danger')
             return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
 
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()

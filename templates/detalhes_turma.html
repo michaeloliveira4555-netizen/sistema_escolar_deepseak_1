@@ -48,6 +48,7 @@
             <h3>Cargos da Turma</h3>
         </div>
         <form method="POST" action="{{ url_for('turma.salvar_cargos_turma', turma_id=turma.id) }}">
+            {{ csrf_token() }}
             <div class="cargos-grid">
                 {% for cargo in cargos_lista %}
                 <div class="form-group">

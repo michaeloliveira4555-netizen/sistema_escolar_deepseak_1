@@ -12,6 +12,7 @@
     <div class="auth-card" style="max-width: 600px;">
         <h2>Dados Pessoais</h2>
         <form method="POST" action="{{ url_for('user.meu_perfil') }}">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="id_func">Identidade Funcional / Matrícula</label>
                 <input type="text" id="id_func" name="id_func" class="form-control" value="{{ current_user.id_func }}" readonly>

@@ -93,8 +93,7 @@
                 
                 <form method="POST" action="{{ url_for('assets.delete_asset', asset_id=asset.id) }}" 
                       style="display: inline;" onsubmit="return confirm('Tem certeza que deseja deletar este asset?')">
-                    <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
-                </form>
+                    {{ csrf_token() }}
             </div>
         </div>
         {% endfor %}
@@ -427,6 +426,7 @@ document.addEventListener('click', function(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         })
         .then(response => response.json())

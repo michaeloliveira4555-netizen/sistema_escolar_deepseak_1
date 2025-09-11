@@ -15,6 +15,7 @@
             {% endif %}
         </h2>
         <form method="POST" enctype="multipart/form-data">
+            {{ csrf_token() }}
             
             <div class="form-group text-center">
                 <img src="{{ url_for('static', filename='uploads/profile_pics/' + (aluno.foto_perfil or 'default.png')) }}" alt="Foto de Perfil" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem;">

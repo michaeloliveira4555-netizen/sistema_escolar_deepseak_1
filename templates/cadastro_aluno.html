@@ -12,6 +12,7 @@
         <hr style="margin-bottom: 25px;">
 
         <form method="POST" action="{{ url_for('aluno.cadastro_aluno') }}">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="opm">Sua OPM (Organização Policial Militar):</label>
                 <input type="text" id="opm" name="opm" class="form-control" required>

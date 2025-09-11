@@ -7,6 +7,7 @@
     <div class="auth-card">
         <h2>{% if is_admin_flow %}Cadastrar Novo Instrutor{% else %}Completar Perfil de Instrutor{% endif %}</h2>
         <form method="POST" action="{% if is_admin_flow %}{{ url_for('instrutor.cadastro_instrutor_admin') }}{% else %}{{ url_for('instrutor.cadastro_instrutor') }}{% endif %}">
+            {{ csrf_token() }}
             
             {% if is_admin_flow %}
                 <div class="form-group">

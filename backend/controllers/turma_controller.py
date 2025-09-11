@@ -10,6 +10,7 @@ from ..models.instrutor import Instrutor
 from ..models.disciplina import Disciplina
 from ..models.turma_cargo import TurmaCargo
 from utils.decorators import admin_or_programmer_required
+from ..services.turma_service import TurmaService
 
 turma_bp = Blueprint('turma', __name__, url_prefix='/turma')
 
@@ -91,35 +92,13 @@ def salvar_cargos_turma(turma_id):
 @admin_or_programmer_required
 def cadastrar_turma():
     if request.method == 'POST':
-        nome_turma = request.form.get('nome')
-        ano = request.form.get('ano')
-        alunos_ids = request.form.getlist('alunos_ids')
-
-        if not nome_turma or not ano:
-            flash('Nome da turma e ano são obrigatórios.', 'danger')
+        success, message = TurmaService.create_turma(request.form)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('turma.listar_turmas'))
+        else:
+            flash(message, 'danger')
             return redirect(url_for('turma.cadastrar_turma'))
-
-        turma_existente = db.session.execute(
-            select(Turma).filter_by(nome=nome_turma)
-        ).scalar_one_or_none()
-
-        if turma_existente:
-            flash(f'Uma turma com o nome "{nome_turma}" já existe.', 'danger')
-            return redirect(url_for('turma.cadastrar_turma'))
-
-        nova_turma = Turma(nome=nome_turma, ano=int(ano))
-        db.session.add(nova_turma)
-        db.session.commit()
-
-        if alunos_ids:
-            for aluno_id in alunos_ids:
-                aluno = db.session.get(Aluno, int(aluno_id))
-                if aluno:
-                    aluno.turma_id = nova_turma.id
-            db.session.commit()
-
-        flash('Turma cadastrada com sucesso!', 'success')
-        return redirect(url_for('turma.listar_turmas'))
 
     alunos_sem_turma = db.session.scalars(
         select(Aluno).where(or_(Aluno.turma_id == None, Aluno.turma_id == 0))
@@ -178,22 +157,9 @@ def editar_turma(turma_id):
 @login_required
 @admin_or_programmer_required
 def excluir_turma(turma_id):
-    turma = db.session.get(Turma, turma_id)
-    if not turma:
-        flash('Turma não encontrada.', 'danger')
-        return redirect(url_for('turma.listar_turmas'))
-
-    try:
-        nome_turma_excluida = turma.nome
-        for aluno in turma.alunos:
-            aluno.turma_id = None
-        db.session.query(TurmaCargo).filter_by(turma_id=turma_id).delete()
-        db.session.query(DisciplinaTurma).filter_by(pelotao=turma.nome).delete()
-        db.session.delete(turma)
-        db.session.commit()
-        flash(f'Turma "{nome_turma_excluida}" e todos os seus vínculos foram excluídos com sucesso!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erro ao excluir a turma: {str(e)}', 'danger')
-
+    success, message = TurmaService.delete_turma(turma_id)
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
     return redirect(url_for('turma.listar_turmas'))

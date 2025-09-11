@@ -21,6 +21,17 @@ def register():
             flash('Por favor, selecione sua função (Aluno ou Instrutor).', 'danger')
             return render_template('register.html', form_data=request.form)
 
+        # Validação do e-mail
+        if not validate_email(email):
+            flash('Formato de e-mail inválido.', 'danger')
+            return render_template('register.html', form_data=request.form)
+
+        # Validação da senha
+        is_strong, message = validate_password_strength(password)
+        if not is_strong:
+            flash(message, 'danger')
+            return render_template('register.html', form_data=request.form)
+
         user = db.session.execute(
             db.select(User).filter_by(id_func=id_func, role=role)
         ).scalar_one_or_none()

@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from werkzeug.security import generate_password_hash
 
 from ..models.database import db
 from ..models.user import User
@@ -53,41 +52,56 @@ def cadastro_instrutor_admin():
         password2 = request.form.get('password2')
         role = 'instrutor'
 
-        especializacao = request.form.get('especializacao')
-        formacao = request.form.get('formacao')
-
         if not all([nome_completo, matricula, email, password, password2]):
             flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
-            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True)
+            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
 
         if password != password2:
             flash('As senhas não coincidem.', 'danger')
-            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True)
+            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
 
-        new_user = User(
-            id_func=matricula,
-            username=matricula,
-            nome_completo=nome_completo,
-            email=email,
-            role=role,
-            is_active=True
-        )
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.commit()
+        if not validate_email(email):
+            flash('Formato de e-mail inválido.', 'danger')
+            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
 
-        success, message = InstrutorService.save_instrutor(new_user.id, request.form.to_dict())
+        is_strong, message = validate_password_strength(password)
+        if not is_strong:
+            flash(message, 'danger')
+            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
 
-        if success:
-            flash('Instrutor cadastrado com sucesso!', 'success')
-            return redirect(url_for('instrutor.listar_instrutores'))
-        else:
-            db.session.delete(new_user)
-            db.session.commit()
-            flash(f"Erro ao cadastrar perfil do instrutor: {message}", 'error')
-            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True)
+        if User.query.filter_by(id_func=matricula).first():
+            flash('Esta matrícula (Id Funcional) já está em uso.', 'danger')
+            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
 
-    return render_template('cadastro_instrutor.html', form_data={}, is_admin_flow=True)
+        try:
+            new_user = User(
+                id_func=matricula,
+                username=matricula,
+                nome_completo=nome_completo,
+                email=email,
+                role=role,
+                is_active=True
+            )
+            new_user.set_password(password)
+            db.session.add(new_user)
+            db.session.flush()
+
+            success, message = InstrutorService.save_instrutor(new_user.id, request.form.to_dict())
+
+            if success:
+                db.session.commit()
+                flash('Instrutor cadastrado com sucesso!', 'success')
+                return redirect(url_for('instrutor.listar_instrutores'))
+            else:
+                db.session.rollback()
+                flash(f"Erro ao cadastrar perfil do instrutor: {message}", 'error')
+                return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ocorreu um erro inesperado: {e}", 'danger')
+            return render_template('cadastro_instrutor.html', form_data=request.form, is_admin_flow=True, disciplinas=disciplinas)
+
+    return render_template('cadastro_instrutor.html', form_data={}, is_admin_flow=True, disciplinas=disciplinas)
 
 @instrutor_bp.route('/editar/<int:instrutor_id>', methods=['GET', 'POST'])
 @login_required
@@ -114,18 +128,9 @@ def editar_instrutor(instrutor_id):
 @login_required
 @admin_or_programmer_required
 def excluir_instrutor(instrutor_id):
-    instrutor = InstrutorService.get_instrutor_by_id(instrutor_id)
-    if not instrutor:
-        flash("Instrutor não encontrado.", 'danger')
-        return redirect(url_for('instrutor.listar_instrutores'))
-
-    try:
-        user_a_deletar = instrutor.user
-        db.session.delete(user_a_deletar)
-        db.session.commit()
-        flash('Instrutor excluído com sucesso!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erro ao excluir instrutor: {e}', 'danger')
-
+    success, message = InstrutorService.delete_instrutor(instrutor_id)
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
     return redirect(url_for('instrutor.listar_instrutores'))

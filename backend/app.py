@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 
 from backend.config import Config
 from backend.models.database import db
@@ -23,6 +24,7 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     Migrate(app, db)
+    csrf = CSRFProtect(app)
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
@@ -94,6 +96,12 @@ def create_admin():
             print("O usuário 'admin' já existe.")
             return
 
+        admin_password = os.environ.get('ADMIN_PASSWORD')
+        if not admin_password:
+            print("A variável de ambiente ADMIN_PASSWORD não está definida.")
+            print("Por favor, defina a senha antes de criar o administrador.")
+            return
+
         print("Criando o usuário administrador 'admin'...")
         new_admin = User(
             id_func='ADMIN',
@@ -102,7 +110,7 @@ def create_admin():
             role='admin',
             is_active=True
         )
-        new_admin.set_password('@Nk*BC6GAJi8RrT')
+        new_admin.set_password(admin_password)
 
         db.session.add(new_admin)
         db.session.commit()
@@ -119,6 +127,12 @@ def create_programmer():
             print("O usuário 'programador' já existe.")
             return
 
+        prog_password = os.environ.get('PROGRAMMER_PASSWORD')
+        if not prog_password:
+            print("A variável de ambiente PROGRAMMER_PASSWORD não está definida.")
+            print("Por favor, defina a senha antes de criar o programador.")
+            return
+
         print("Criando o usuário programador...")
         new_programmer = User(
             id_func='PROG001',
@@ -127,14 +141,12 @@ def create_programmer():
             role='programador',
             is_active=True
         )
-        new_programmer.set_password('DevPass@2025')
+        new_programmer.set_password(prog_password)
 
         db.session.add(new_programmer)
         db.session.commit()
 
         print("Usuário programador criado com sucesso!")
-        print("Login: programador")
-        print("Senha: DevPass@2025")
 
 @app.cli.command("seed-disciplinas")
 def seed_disciplinas():

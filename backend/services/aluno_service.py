@@ -14,18 +14,22 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from utils.image_utils import allowed_file
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
 def _save_profile_picture(file):
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        ext = filename.rsplit('.', 1)[1].lower()
-        unique_filename = f"{uuid.uuid4()}.{ext}"
+    if file:
+        file.stream.seek(0) # Reset stream position before reading magic bytes
+        if allowed_file(file.filename, file.stream, ALLOWED_EXTENSIONS):
+            filename = secure_filename(file.filename)
+            ext = filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"{uuid.uuid4()}.{ext}"
 
-        upload_folder = os.path.join(current_app.static_folder, 'uploads', 'profile_pics')
-        os.makedirs(upload_folder, exist_ok=True)
-        file_path = os.path.join(upload_folder, unique_filename)
-        file.save(file_path)
+            upload_folder = os.path.join(current_app.static_folder, 'uploads', 'profile_pics')
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, unique_filename)
+            file.save(file_path)
 
-        return unique_filename
+            return unique_filename
     return None
 
 class AlunoService:

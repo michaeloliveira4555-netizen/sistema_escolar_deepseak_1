@@ -13,6 +13,7 @@
         <h2>Login no Sistema</h2>
 
         <form method="POST" action="{{ url_for('auth.login') }}">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="username">Id Func / Usuário:</label>
                 <input type="text" id="username" name="username" placeholder="Digite sua Id Func ou usuário" required>

@@ -14,6 +14,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('turma.editar_turma', turma_id=turma.id) }}">
+        {{ csrf_token() }}
         <div class="form-group">
             <label for="nome">Nome da Turma</label>
             <input type="text" name="nome" class="form-control" value="{{ turma.nome }}" required>

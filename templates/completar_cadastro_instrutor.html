@@ -10,6 +10,7 @@
         <hr style="margin-bottom: 25px;">
 
         <form method="POST" action="{{ url_for('instrutor.completar_cadastro') }}">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="matricula">Matrícula (use a mesma que sua Id Funcional):</label>
                 <input type="text" id="matricula" name="matricula" class="form-control" value="{{ current_user.id_func }}" required>

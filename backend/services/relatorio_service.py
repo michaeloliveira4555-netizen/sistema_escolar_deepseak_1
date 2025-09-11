@@ -3,7 +3,9 @@ from ..models.horario import Horario
 from ..models.semana import Semana
 from ..models.instrutor import Instrutor
 from ..models.disciplina import Disciplina
+from ..models.user import User
 from sqlalchemy import select, func, and_
+from sqlalchemy.orm import joinedload
 from collections import defaultdict
 
 class RelatorioService:
@@ -13,7 +15,6 @@ class RelatorioService:
         Busca e totaliza as horas-aula por instrutor e disciplina
         dentro de um período específico.
         """
-        # Encontra as semanas que se sobrepõem com o período
         semanas_no_periodo = db.session.scalars(
             select(Semana.id).where(
                 and_(
@@ -26,7 +27,6 @@ class RelatorioService:
         if not semanas_no_periodo:
             return []
 
-        # Busca as aulas confirmadas nas semanas encontradas
         aulas = db.session.execute(
             select(
                 Horario.instrutor_id,
@@ -41,7 +41,17 @@ class RelatorioService:
             )
         ).all()
 
-        # Estrutura para agrupar dados por instrutor
+        # Pré-carrega instrutores e disciplinas para evitar N+1
+        instrutor_ids = [aula.instrutor_id for aula in aulas]
+        disciplina_ids = [aula.disciplina_id for aula in aulas]
+
+        instrutores_map = {inst.id: inst for inst in db.session.scalars(
+            select(Instrutor).options(joinedload(Instrutor.user)).where(Instrutor.id.in_(instrutor_ids))
+        ).all()}
+        disciplinas_map = {disc.id: disc for disc in db.session.scalars(
+            select(Disciplina).where(Disciplina.id.in_(disciplina_ids))
+        ).all()}
+
         instrutores_dados = defaultdict(lambda: {
             'info': None,
             'disciplinas': [],
@@ -49,23 +59,25 @@ class RelatorioService:
         })
 
         for aula in aulas:
-            instrutor_id = aula.instrutor_id
-            instrutor = db.session.get(Instrutor, instrutor_id)
+            instrutor = instrutores_map.get(aula.instrutor_id)
+            disciplina = disciplinas_map.get(aula.disciplina_id)
 
             if instrutor:
-                instrutores_dados[instrutor_id]['info'] = instrutor
-                
-                disciplina = db.session.get(Disciplina, aula.disciplina_id)
+                instrutores_dados[instrutor.id]['info'] = instrutor
                 
                 disciplina_info = {
                     'nome': disciplina.materia if disciplina else "Disciplina não encontrada",
                     'horas': aula.total_horas
                 }
                 
-                instrutores_dados[instrutor_id]['disciplinas'].append(disciplina_info)
-                instrutores_dados[instrutor_id]['total_geral'] += aula.total_horas
+                instrutores_dados[instrutor.id]['disciplinas'].append(disciplina_info)
+                instrutores_dados[instrutor.id]['total_geral'] += aula.total_horas
         
         # Converte o dicionário para uma lista ordenada por nome do instrutor
-        resultado_final = sorted(instrutores_dados.values(), key=lambda x: x['info'].user.nome_completo or "")
+        # Garante que instrutor.user exista antes de acessar nome_completo
+        resultado_final = sorted(
+            [data for data in instrutores_dados.values() if data['info'] and data['info'].user],
+            key=lambda x: x['info'].user.nome_completo or ""
+        )
         
         return resultado_final

@@ -7,6 +7,7 @@
     <div class="auth-card">
         <h2>Editar Perfil do Instrutor: {{ instrutor.user.username }}</h2>
         <form method="POST" action="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="matricula">Matrícula:</label>
                 <input type="text" id="matricula" name="matricula" value="{{ instrutor.matricula }}" required>
