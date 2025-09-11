@@ -20,7 +20,7 @@
     <div class="horario-selectors">
         <div class="pelotao-pills">
             {% for turma in todas_as_turmas %}
-                <a href="{{ url_for('horario.index', pelotao=turma.nome, semana_id=semana_selecionada.id) }}" 
+                <a href="{{ url_for('horario.index', pelotao=turma.nome, semana_id=semana_selecionada.id) }}"
                    class="btn btn-sm {% if turma.nome == pelotao_selecionado %}btn-primary{% else %}btn-secondary{% endif %}">
                     {{ turma.nome }}
                 </a>
@@ -35,6 +35,11 @@
                     </option>
                 {% endfor %}
             </select>
+            {% if current_user.role in ['admin', 'programador'] %}
+            <a href="{{ url_for('semana.gerenciar_semanas') }}" class="btn btn-sm btn-info">
+                + Nova Semana
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -74,17 +79,17 @@
                 <tr class="periodo-row {% if is_extra %}periodo-extra{% endif %}"
                     {% if has_content.value %}data-has-content="true"{% endif %}
                     {% if is_extra and not has_content.value %}style="display: none;"{% endif %}>
-                    
+
                     <td class="cell-tempo">
                         <strong>{{ tempos[row_idx][0] }}</strong>
                         <span>{{ tempos[row_idx][1] }}</span>
                     </td>
-                    
+
                     {% for col_idx in range(5) %}
                         {% set aula = horario_matrix[row_idx][col_idx] %}
                         {% if aula != 'SKIP' %}
                             <td class="schedule-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
-                                <div class="slot-content 
+                                <div class="slot-content
                                     {% if aula.is_disposicao %}disposicao{% endif %}
                                     {% if aula.status == 'pendente' %}pendente{% endif %}">
                                     <div class="disciplina-title">{{ aula.materia }}</div>
@@ -130,7 +135,7 @@
                             {% endif %}
                         {% endfor %}
                     {% endif %}
-                
+
                 <tr class="periodo-row {% if is_extra %}periodo-extra{% endif %}"
                     {% if has_content.value %}data-has-content="true"{% endif %}
                     {% if is_extra and not has_content.value %}style="display: none;"{% endif %}>
@@ -143,7 +148,7 @@
                         {% set aula = horario_matrix[row_idx][col_idx] %}
                         {% if aula != 'SKIP' %}
                             <td class="schedule-slot weekend-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}">
-                                <div class="slot-content 
+                                <div class="slot-content
                                     {% if aula.is_disposicao %}disposicao weekend{% else %}weekend{% endif %}
                                     {% if aula.status == 'pendente' %}pendente{% endif %}">
                                     <div class="disciplina-title">{{ aula.materia }}</div>
@@ -166,7 +171,7 @@
 .page-title-with-controls { display: flex; justify-content: space-between; align-items: flex-start; }
 .horario-selectors { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); }
 .pelotao-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-.semana-selector-wrapper { display: flex; align-items: center; gap: 1rem; max-width: 400px; }
+.semana-selector-wrapper { display: flex; align-items: center; gap: 1rem; max-width: 500px; }
 .semana-selector-wrapper label { font-weight: 600; white-space: nowrap; }
 .slot-content.disposicao .disciplina-title { color: #94a3b8; font-style: italic; font-size: 0.75rem; }
 .horario-actions { display: flex; justify-content: center; margin-top: 1.5rem; }
@@ -181,7 +186,7 @@
             const pelotao = "{{ pelotao_selecionado }}";
             window.location.href = `{{ url_for('horario.index') }}?pelotao=${pelotao}&semana_id=${semanaId}`;
         });
-        
+
         const toggleBtn = document.getElementById('weekend-toggle');
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function() {

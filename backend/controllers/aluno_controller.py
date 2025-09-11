@@ -23,7 +23,7 @@ def cadastro_aluno():
             return redirect(url_for('main.dashboard'))
         else:
             flash(message, 'error')
-    
+
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
     return render_template('cadastro_aluno.html', form_data={}, turmas=turmas)
 
@@ -36,8 +36,8 @@ def cadastro_aluno_admin():
         email = request.form.get('email')
         password = request.form.get('password')
         password2 = request.form.get('password2')
-        role = 'aluno' 
-        
+        role = 'aluno'
+
         matricula = request.form.get('matricula')
         opm = request.form.get('opm')
         turma_id = request.form.get('turma_id')
@@ -53,7 +53,7 @@ def cadastro_aluno_admin():
             flash('As senhas não coincidem.', 'danger')
             turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
             return render_template('cadastro_aluno_admin.html', form_data=request.form, turmas=turmas)
-        
+
         user_exists_id_func = db.session.execute(db.select(User).filter_by(id_func=matricula)).scalar_one_or_none()
         if user_exists_id_func:
             flash('Esta matrícula (Id Funcional) já está em uso.', 'danger')
@@ -62,9 +62,9 @@ def cadastro_aluno_admin():
 
         new_user = User(
             id_func=matricula,
-            username=matricula, 
+            username=matricula,
             nome_completo=nome_completo,
-            email=email, 
+            email=email,
             role=role,
             is_active=True
         )
@@ -92,9 +92,9 @@ def cadastro_aluno_admin():
 def listar_alunos():
     turma_filtrada = request.args.get('turma', None)
     alunos = AlunoService.get_all_alunos(turma_filtrada)
-    
+
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
-    
+
     return render_template('listar_alunos.html', alunos=alunos, turmas=turmas, turma_filtrada=turma_filtrada)
 
 @aluno_bp.route('/meu-perfil', methods=['GET', 'POST'])
@@ -103,7 +103,7 @@ def editar_meu_perfil():
     if not current_user.aluno_profile:
         flash('Perfil de aluno não encontrado.', 'danger')
         return redirect(url_for('main.dashboard'))
-    
+
     aluno_id = current_user.aluno_profile.id
     aluno = AlunoService.get_aluno_by_id(aluno_id)
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
@@ -111,7 +111,7 @@ def editar_meu_perfil():
     if request.method == 'POST':
         form_data = request.form.to_dict()
         foto_perfil = request.files.get('foto_perfil')
-        
+
         form_data['matricula'] = aluno.matricula
         form_data['opm'] = aluno.opm
         form_data['turma_id'] = aluno.turma_id
@@ -123,7 +123,7 @@ def editar_meu_perfil():
         else:
             flash(message, 'error')
             return render_template('editar_aluno.html', aluno=aluno, turmas=turmas, form_data=request.form, self_edit=True)
-            
+
     return render_template('editar_aluno.html', aluno=aluno, turmas=turmas, form_data=aluno, self_edit=True)
 
 @aluno_bp.route('/editar/<int:aluno_id>', methods=['GET', 'POST'])
@@ -147,5 +147,16 @@ def editar_aluno(aluno_id):
         else:
             flash(message, 'error')
             return render_template('editar_aluno.html', aluno=aluno, turmas=turmas, form_data=request.form)
-            
+
     return render_template('editar_aluno.html', aluno=aluno, turmas=turmas, form_data=aluno)
+
+@aluno_bp.route('/excluir/<int:aluno_id>', methods=['POST'])
+@login_required
+@admin_or_programmer_required
+def excluir_aluno(aluno_id):
+    success, message = AlunoService.delete_aluno(aluno_id)
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    return redirect(url_for('aluno.listar_alunos'))

@@ -61,60 +61,17 @@ def editar_disciplina(disciplina_id):
         flash("Disciplina não encontrada.", 'danger')
         return redirect(url_for('disciplina.listar_disciplinas'))
     
-    disciplinas_com_dois_instrutores = ["AMT I", "AMT II", "Atendimento Pré-Hospitalar Tático"]
-    
     if request.method == 'POST':
         carga_horaria_str = request.form.get('carga_horaria')
         if carga_horaria_str and carga_horaria_str.isdigit():
             disciplina.carga_horaria_prevista = int(carga_horaria_str)
-        
-        atribuicoes_existentes = db.session.scalars(
-            db.select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina.id)
-        ).all()
-        atribuicoes_map = {atr.pelotao: atr for atr in atribuicoes_existentes}
-
-        for i in range(1, 9):
-            pelotao_nome = f'{i}° Pelotão'
-            instrutor_id_1_str = request.form.get(f'pelotao_{i}_instrutor_1')
-            instrutor_id_2_str = request.form.get(f'pelotao_{i}_instrutor_2')
-
-            instrutor_id_1 = int(instrutor_id_1_str) if instrutor_id_1_str and instrutor_id_1_str.isdigit() else None
-            instrutor_id_2 = int(instrutor_id_2_str) if instrutor_id_2_str and instrutor_id_2_str.isdigit() else None
-
-            associacao_existente = atribuicoes_map.get(pelotao_nome)
-
-            if associacao_existente:
-                # Se a associação já existe, apenas atualiza os instrutores
-                associacao_existente.instrutor_id_1 = instrutor_id_1
-                associacao_existente.instrutor_id_2 = instrutor_id_2
-            elif instrutor_id_1 or instrutor_id_2:
-                # Se não existe, mas um instrutor foi selecionado, cria a nova associação
-                nova_atribuicao = DisciplinaTurma(
-                    pelotao=pelotao_nome,
-                    disciplina_id=disciplina.id,
-                    instrutor_id_1=instrutor_id_1,
-                    instrutor_id_2=instrutor_id_2
-                )
-                db.session.add(nova_atribuicao)
-        
-        db.session.commit()
-        flash(f'Atribuições da disciplina "{disciplina.materia}" atualizadas com sucesso!', 'success')
+            db.session.commit()
+            flash(f'Carga horária da disciplina "{disciplina.materia}" atualizada com sucesso!', 'success')
+        else:
+            flash('Valor inválido para carga horária.', 'danger')
         return redirect(url_for('disciplina.listar_disciplinas'))
 
-    instrutores = db.session.scalars(select(Instrutor).order_by(Instrutor.id)).all()
-    atribuicoes_existentes = db.session.scalars(
-        select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina.id)
-    ).all()
-    
-    atribuicoes = {atr.pelotao: atr for atr in atribuicoes_existentes}
-    
-    return render_template(
-        'editar_disciplina.html', 
-        disciplina=disciplina, 
-        instrutores=instrutores,
-        atribuicoes=atribuicoes,
-        disciplinas_com_dois_instrutores=disciplinas_com_dois_instrutores
-    )
+    return render_template('editar_disciplina.html', disciplina=disciplina)
 
 @disciplina_bp.route('/editar-nome/<int:disciplina_id>', methods=['GET', 'POST'])
 @login_required
@@ -150,15 +107,12 @@ def excluir_disciplina(disciplina_id):
     try:
         disciplina_nome = disciplina.materia
         
-        print(f"=== EXCLUINDO DISCIPLINA: {disciplina_nome} ===")
-        
         # 1. Remover associações disciplina-turma
         associacoes = db.session.scalars(
             select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina_id)
         ).all()
         for associacao in associacoes:
             db.session.delete(associacao)
-        print(f"Removidas {len(associacoes)} associações disciplina-turma")
         
         # 2. Remover aulas agendadas
         aulas = db.session.scalars(
@@ -166,7 +120,6 @@ def excluir_disciplina(disciplina_id):
         ).all()
         for aula in aulas:
             db.session.delete(aula)
-        print(f"Removidas {len(aulas)} aulas agendadas")
         
         # 3. Remover histórico de disciplinas dos alunos
         historicos = db.session.scalars(
@@ -174,20 +127,16 @@ def excluir_disciplina(disciplina_id):
         ).all()
         for historico in historicos:
             db.session.delete(historico)
-        print(f"Removidos {len(historicos)} registros de histórico")
         
         # 4. Finalmente, remover a disciplina
         db.session.delete(disciplina)
         
-        # Commit de todas as operações
         db.session.commit()
         
         flash(f'Disciplina "{disciplina_nome}" e todos os dados relacionados foram excluídos com sucesso!', 'success')
-        print(f"=== DISCIPLINA {disciplina_nome} EXCLUÍDA COM SUCESSO ===")
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERRO ao excluir disciplina: {e}")
         flash(f'Erro ao excluir disciplina: {str(e)}', 'danger')
     
     return redirect(url_for('disciplina.listar_disciplinas'))

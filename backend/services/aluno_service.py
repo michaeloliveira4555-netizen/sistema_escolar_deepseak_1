@@ -19,12 +19,12 @@ def _save_profile_picture(file):
         filename = secure_filename(file.filename)
         ext = filename.rsplit('.', 1)[1].lower()
         unique_filename = f"{uuid.uuid4()}.{ext}"
-        
+
         upload_folder = os.path.join(current_app.static_folder, 'uploads', 'profile_pics')
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, unique_filename)
         file.save(file_path)
-        
+
         return unique_filename
     return None
 
@@ -72,7 +72,7 @@ class AlunoService:
                 if not matricula_existente:
                     nova_matricula = HistoricoDisciplina(aluno_id=novo_aluno.id, disciplina_id=disciplina.id)
                     db.session.add(nova_matricula)
-            
+
             db.session.commit()
             return True, "Perfil de aluno cadastrado e matriculado em todas as disciplinas!"
         except IntegrityError:
@@ -83,17 +83,16 @@ class AlunoService:
             current_app.logger.error(f"Erro inesperado ao cadastrar aluno: {e}")
             return False, f"Erro ao cadastrar aluno: {str(e)}"
 
-    # O restante do arquivo (get_all_alunos, update_aluno, etc.) permanece o mesmo.
     @staticmethod
     def get_all_alunos(nome_turma=None):
         stmt = select(Aluno).join(User)
         stmt = stmt.where(User.role != 'admin')
-        
+
         if nome_turma:
-            stmt = stmt.join(Turma).where(Turma.nome == nome_turma) 
-            
+            stmt = stmt.join(Turma).where(Turma.nome == nome_turma)
+
         stmt = stmt.order_by(User.username)
-        
+
         return db.session.scalars(stmt).all()
 
     @staticmethod
@@ -131,11 +130,11 @@ class AlunoService:
 
             if aluno.user:
                 aluno.user.nome_completo = nome_completo
-            
+
             if foto_perfil:
                 foto_filename = _save_profile_picture(foto_perfil)
                 aluno.foto_perfil = foto_filename
-            
+
             aluno.matricula = matricula
             aluno.opm = opm
             aluno.turma_id = int(turma_id) if turma_id else None
@@ -150,3 +149,21 @@ class AlunoService:
             db.session.rollback()
             current_app.logger.error(f"Erro inesperado ao atualizar aluno: {e}")
             return False, f"Erro ao atualizar aluno: {str(e)}"
+
+    @staticmethod
+    def delete_aluno(aluno_id: int):
+        aluno = db.session.get(Aluno, aluno_id)
+        if not aluno:
+            return False, "Aluno não encontrado."
+
+        try:
+            # A exclusão do usuário irá acionar a exclusão em cascata
+            # do perfil do aluno associado, graças à configuração no modelo User.
+            user_a_deletar = aluno.user
+            db.session.delete(user_a_deletar)
+            db.session.commit()
+            return True, "Aluno excluído com sucesso!"
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao excluir aluno: {e}")
+            return False, f"Erro ao excluir aluno: {str(e)}"

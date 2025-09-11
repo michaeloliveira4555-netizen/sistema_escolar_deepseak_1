@@ -5,7 +5,7 @@
 {% block content %}
 <div class="content-header">
     <h1>Gerenciar Disciplina</h1>
-    <p>Defina a carga horária e atribua instrutores para cada pelotão.</p>
+    <p>Defina a carga horária da disciplina.</p>
 </div>
 
 <div class="table-container" style="max-width: 800px; margin: 0 auto;">
@@ -21,66 +21,10 @@
                    placeholder="Ex: 40" required>
         </div>
         
-        <hr style="margin: 1rem 0 2rem 0;">
-
-        <p class="text-center mb-4">Selecione o instrutor responsável para cada pelotão.</p>
-
-        <div class="form-grid">
-            {% for i in range(1, 9) %}
-            {% set pelotao_nome = i ~ '° Pelotão' %}
-            <div class="form-group-compound">
-                <label><strong>{{ pelotao_nome }}</strong></label>
-                <div class="instructor-fields">
-                    <div class="input-group">
-                        <select name="pelotao_{{ i }}_instrutor_1" class="form-control">
-                            <option value="">-- Instrutor 1 --</option>
-                            {% for instrutor in instrutores %}
-                                <option value="{{ instrutor.id }}" 
-                                        {% if atribuicoes[pelotao_nome] and atribuicoes[pelotao_nome].instrutor_id_1 == instrutor.id %}selected{% endif %}>
-                                    {{ instrutor.user.nome_completo or instrutor.user.username }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    {% if disciplina.materia in disciplinas_com_dois_instrutores %}
-                    <div class="input-group">
-                        <select name="pelotao_{{ i }}_instrutor_2" class="form-control">
-                            <option value="">-- Instrutor 2 (Opcional) --</option>
-                            {% for instrutor in instrutores %}
-                                <option value="{{ instrutor.id }}" 
-                                        {% if atribuicoes[pelotao_nome] and atribuicoes[pelotao_nome].instrutor_id_2 == instrutor.id %}selected{% endif %}>
-                                    {{ instrutor.user.nome_completo or instrutor.user.username }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
         <div class="form-actions">
             <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Salvar Alterações</button>
         </div>
     </form>
 </div>
-
-<style>
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-}
-.form-group-compound .input-group {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-.form-group-compound .input-group select {
-    flex-grow: 1;
-}
-</style>
 {% endblock %}

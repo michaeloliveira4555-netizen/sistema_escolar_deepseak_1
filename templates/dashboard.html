@@ -11,7 +11,7 @@
                 <p class="welcome-subtitle">Bem-vindo de volta ao SiGA EsFAS</p>
             </div>
         </div>
-        
+
         {% if current_user.role in ['admin', 'programador'] and dashboard_data %}
         <div class="quick-stats-bar">
             <div class="stat-compact">
@@ -107,7 +107,7 @@
             </div>
         </div>
 
-        {% if current_user.role == 'aluno' %}
+        {% if current_user.role == 'aluno' and current_user.aluno_profile %}
             <div class="module-card">
                 <div class="card-content">
                     <div class="card-header">
@@ -161,7 +161,7 @@
                 </div>
             </div>
         {% endif %}
-        
+
         {% if current_user.role == 'programador' %}
             <div class="module-card">
                 <div class="card-content">

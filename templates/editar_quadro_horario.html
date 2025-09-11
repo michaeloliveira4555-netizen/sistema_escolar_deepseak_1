@@ -12,7 +12,7 @@
 </div>
 
 <div class="table-wrapper">
-    <table class="horario-table-new editable">
+    <table class="horario-table-new editable" id="weekday-table">
         <thead>
             <tr>
                 <th class="header-tempo">Horário</th>
@@ -31,7 +31,7 @@
                 ("10º", "16:05-16:50"), ("11º", "17:00-17:45"), ("12º", "17:45-18:30"), ("13º", "18:30-19:15"),
                 ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
             ] %}
-            {% set dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta'] %}
+            {% set dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'] %}
 
             {% for row_idx in range(15) %}
             <tr>
@@ -39,15 +39,15 @@
                     <strong>{{ tempos[row_idx][0] }}</strong>
                     <span>{{ tempos[row_idx][1] }}</span>
                 </td>
-                
+
                 {% for col_idx in range(5) %}
                     {% set aula = horario_matrix[row_idx][col_idx] %}
                     {% if aula != 'SKIP' %}
-                        <td class="schedule-slot" 
+                        <td class="schedule-slot"
                             rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}"
-                            data-dia="{{ dias[col_idx] }}" 
+                            data-dia="{{ dias[col_idx] }}"
                             data-periodo="{{ row_idx + 1 }}">
-                            
+
                             {% if aula.is_disposicao %}
                                 <button type="button" class="slot-button disponivel" data-action="add">Adicionar</button>
                             {% else %}
@@ -56,20 +56,18 @@
                                         <div class="disciplina-title">{{ aula.materia }}</div>
                                         <div class="instrutor-name">{{ aula.instrutor }}</div>
                                     </div>
-                                    
+
                                     {% if aula.can_edit %}
-                                    <!-- Usuário pode editar esta aula -->
                                     <div class="slot-actions">
                                         <button class="btn-icon" data-action="edit" data-id="{{ aula.id }}" title="Editar Aula">✏️</button>
                                         <button class="btn-icon" data-action="delete" data-id="{{ aula.id }}" title="Remover Aula">🗑️</button>
                                     </div>
                                     {% else %}
-                                    <!-- Usuário NÃO pode editar esta aula -->
                                     <div class="slot-actions">
                                         <span class="no-permission" title="Você não pode editar esta aula">🔒</span>
                                     </div>
                                     {% endif %}
-                                    
+
                                     {% if aula.status == 'pendente' %}
                                         <span class="status-icon" title="Aguardando confirmação">🕐</span>
                                     {% endif %}
@@ -88,51 +86,21 @@
     <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-secondary">Voltar para Visualização</a>
 </div>
 
-<!-- Modal para agendamento -->
 <style>
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); display: none; align-items: center;
+    justify-content: center; z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
 }
-.modal-overlay.visible {
-    display: flex;
-    opacity: 1;
-}
+.modal-overlay.visible { display: flex; opacity: 1; }
 .modal-content {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 500px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
+    background-color: white; padding: 2rem; border-radius: 12px; width: 100%;
+    max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    transform: scale(0.95); transition: transform 0.3s ease;
 }
-.modal-overlay.visible .modal-content {
-    transform: scale(1);
-}
-
-/* Estilo para indicar falta de permissão */
-.no-permission {
-    color: #94a3b8;
-    font-size: 1rem;
-    cursor: not-allowed;
-}
-
-.slot-content:has(.no-permission) {
-    opacity: 0.7;
-    border-color: #e2e8f0;
-}
+.modal-overlay.visible .modal-content { transform: scale(1); }
+.no-permission { color: #94a3b8; font-size: 1rem; cursor: not-allowed; }
+.slot-content:has(.no-permission) { opacity: 0.7; border-color: #e2e8f0; }
 </style>
 
 <div class="modal-overlay" id="horario-modal-overlay">
@@ -145,12 +113,14 @@
 
             <div class="form-group">
                 <label for="modal-disciplina">Disciplina</label>
-                <select id="modal-disciplina" name="disciplina_id" class="form-control" required>
+                <select id="modal-disciplina" name="disciplina_id" class="form-control" required {% if not is_admin and disciplinas_disponiveis|length == 1 %}disabled{% endif %}>
                     <option value="">Selecione a disciplina</option>
+                    {% for d in disciplinas_disponiveis %}
+                    <option value="{{ d.id }}" {% if not is_admin and disciplinas_disponiveis|length == 1 %}selected{% endif %}>{{ d.nome }}</option>
+                    {% endfor %}
                 </select>
             </div>
 
-            <!-- Campo instrutor - APENAS para administradores -->
             {% if is_admin %}
             <div class="form-group" id="modal-instrutor-group">
                 <label for="modal-instrutor">Instrutor</label>
@@ -159,7 +129,7 @@
                 </select>
             </div>
             {% endif %}
-            
+
             <div class="form-group">
                 <label for="modal-duracao">Duração (períodos)</label>
                 <input type="number" id="modal-duracao" name="duracao" class="form-control" value="1" min="1" max="8">
@@ -179,7 +149,55 @@
 
 <div class="weekend-panel" id="weekend-panel">
     <div class="table-wrapper">
-         <p class="text-center" style="padding: 1rem; font-weight: 600;">Em desenvolvimento.</p>
+        <table class="horario-table-new editable weekend-table" id="weekend-table">
+            <thead>
+                <tr>
+                    <th class="header-tempo">Horário</th>
+                    <th class="header-dia weekend">Sábado</th>
+                    <th class="header-dia weekend">Domingo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row_idx in range(15) %}
+                <tr>
+                    <td class="cell-tempo">
+                        <strong>{{ tempos[row_idx][0] }}</strong>
+                        <span>{{ tempos[row_idx][1] }}</span>
+                    </td>
+                    {% for col_idx in range(5, 7) %}
+                        {% set aula = horario_matrix[row_idx][col_idx] %}
+                        {% if aula != 'SKIP' %}
+                            <td class="schedule-slot weekend-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}" data-dia="{{ dias[col_idx] }}" data-periodo="{{ row_idx + 1 }}">
+                                {% if aula.is_disposicao %}
+                                    <button type="button" class="slot-button disponivel" data-action="add">Adicionar</button>
+                                {% else %}
+                                    <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}">
+                                        <div class="slot-info">
+                                            <div class="disciplina-title">{{ aula.materia }}</div>
+                                            <div class="instrutor-name">{{ aula.instrutor }}</div>
+                                        </div>
+                                        {% if aula.can_edit %}
+                                        <div class="slot-actions">
+                                            <button class="btn-icon" data-action="edit" data-id="{{ aula.id }}" title="Editar Aula">✏️</button>
+                                            <button class="btn-icon" data-action="delete" data-id="{{ aula.id }}" title="Remover Aula">🗑️</button>
+                                        </div>
+                                        {% else %}
+                                        <div class="slot-actions">
+                                            <span class="no-permission" title="Você não pode editar esta aula">🔒</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if aula.status == 'pendente' %}
+                                            <span class="status-icon" title="Aguardando confirmação">🕐</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -204,59 +222,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalDiaInput = document.getElementById('modal-dia');
     const modalPeriodoInput = document.getElementById('modal-periodo');
     const modalCancelBtn = document.getElementById('modal-cancel');
-    const table = document.querySelector('.horario-table-new');
+    const weekdayTable = document.getElementById('weekday-table');
+    const weekendTable = document.getElementById('weekend-table');
     const weekendToggle = document.getElementById('weekend-toggle');
 
-    console.log('=== CONFIGURAÇÃO INICIAL ===');
-    console.log('É admin:', IS_ADMIN);
-    console.log('Instrutor logado ID:', INSTRUTOR_LOGADO_ID);
-    console.log('Disciplinas disponíveis:', DISCIPLINAS_DISPONIVEIS);
-    console.log('Todos instrutores:', TODOS_INSTRUTORES);
-
     function openModal(config) {
-        console.log('Abrindo modal com config:', config);
-        
         modalForm.reset();
         modalHorarioIdInput.value = config.horario_id || '';
         modalDiaInput.value = config.dia || '';
         modalPeriodoInput.value = config.periodo || '';
         modalTitle.textContent = config.horario_id ? 'Editar Aula' : 'Agendar Aula';
 
-        // Limpar e popular disciplinas
-        modalDisciplinaSelect.innerHTML = '<option value="">Selecione a disciplina</option>';
-        
-        DISCIPLINAS_DISPONIVEIS.forEach(d => {
-            let texto = `${d.nome}`;
-            if (d.carga_restante !== undefined) {
-                texto += ` (Restam: ${d.carga_restante}h)`;
-            }
-            
-            const option = document.createElement('option');
-            option.value = d.id;
-            option.textContent = texto;
-            modalDisciplinaSelect.appendChild(option);
-        });
-        
-        // Para administradores, popular lista de instrutores
         if (IS_ADMIN && modalInstrutorSelect) {
             modalInstrutorSelect.innerHTML = '<option value="">Selecione o instrutor</option>';
-            
             TODOS_INSTRUTORES.forEach(inst => {
                 const option = document.createElement('option');
                 option.value = inst.id;
                 option.textContent = inst.nome;
                 modalInstrutorSelect.appendChild(option);
             });
-            
-            console.log(`Carregados ${TODOS_INSTRUTORES.length} instrutores para admin`);
         }
-        
-        // Se estiver editando, carregar dados da aula
+
         if (config.horario_id) {
             fetch(`/horario/get-aula/${config.horario_id}`)
             .then(res => res.json())
             .then(data => {
-                console.log('Dados da aula carregados:', data);
                 if(data.success) {
                     modalDisciplinaSelect.value = data.disciplina_id;
                     if (IS_ADMIN && modalInstrutorSelect) {
@@ -265,24 +255,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     modalDuracaoInput.value = data.duracao;
                 } else {
                     alert('Erro ao carregar dados da aula: ' + data.message);
-                    console.error('Erro:', data.message);
                 }
-            })
-            .catch(error => {
-                console.error('Erro ao carregar aula:', error);
-                alert('Erro ao carregar dados da aula.');
             });
         }
-
         modalOverlay.classList.add('visible');
     }
-    
+
     function closeModal() {
         modalOverlay.classList.remove('visible');
     }
 
-    // Event listeners para a tabela
-    table.addEventListener('click', function(e) {
+    function handleTableClick(e) {
         const target = e.target.closest('button');
         if (!target) return;
 
@@ -308,32 +291,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         alert('Erro: ' + data.message);
                     }
-                })
-                .catch(error => {
-                    console.error('Erro ao remover aula:', error);
-                    alert('Erro ao remover aula.');
                 });
             }
         }
-    });
-    
-    // Submit do formulário
+    }
+
+    weekdayTable.addEventListener('click', handleTableClick);
+    weekendTable.addEventListener('click', handleTableClick);
+
     modalForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // Validação de disciplina
         if (!modalDisciplinaSelect.value) {
             alert('Por favor, selecione uma disciplina.');
             return;
         }
-        
-        // Para admin, validar instrutor
         if (IS_ADMIN && modalInstrutorSelect && !modalInstrutorSelect.value) {
             alert('Por favor, selecione um instrutor.');
             return;
         }
-        
-        // Montar payload
         const payload = {
             pelotao: PELOTAO_SELECIONADO,
             semana_id: SEMANA_ID,
@@ -343,14 +318,9 @@ document.addEventListener('DOMContentLoaded', function() {
             disciplina_id: modalDisciplinaSelect.value,
             duracao: modalDuracaoInput.value
         };
-
-        // Adicionar instrutor apenas se for admin
         if (IS_ADMIN && modalInstrutorSelect) {
             payload.instrutor_id = modalInstrutorSelect.value;
         }
-
-        console.log('Enviando payload:', payload);
-
         fetch('/horario/salvar-aula', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -358,26 +328,18 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => res.json())
         .then(data => {
-            console.log('Resposta do servidor:', data);
             if (data.success) {
                 window.location.reload();
             } else {
                 alert('Erro: ' + data.message);
             }
-        })
-        .catch(error => {
-            console.error('Erro ao salvar aula:', error);
-            alert('Erro ao salvar aula.');
         });
     });
-    
-    // Outros event listeners
+
     if(weekendToggle) {
         weekendToggle.addEventListener('click', () => document.body.classList.toggle('weekend-panel-open'));
     }
-    
     if(modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
-    
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });

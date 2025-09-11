@@ -44,6 +44,7 @@ def create_app(config_class=Config):
     from backend.controllers.horario_controller import horario_bp
     from backend.controllers.semana_controller import semana_bp
     from backend.controllers.turma_controller import turma_bp
+    from backend.controllers.vinculo_controller import vinculo_bp
 
     # Registra os Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -53,10 +54,11 @@ def create_app(config_class=Config):
     app.register_blueprint(historico_bp, url_prefix='/historico')
     app.register_blueprint(assets_bp, url_prefix='/assets')
     app.register_blueprint(customizer_bp, url_prefix='/customizer')
-    app.register_blueprint(main_bp) 
+    app.register_blueprint(main_bp)
     app.register_blueprint(horario_bp)
     app.register_blueprint(semana_bp, url_prefix='/semana')
     app.register_blueprint(turma_bp, url_prefix='/turma')
+    app.register_blueprint(vinculo_bp, url_prefix='/vinculos')
 
     # Context processor para configurações do site
     @app.context_processor
@@ -72,7 +74,7 @@ def create_app(config_class=Config):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         return response
-    
+
     return app
 
 # Cria a instância da aplicação
@@ -83,7 +85,7 @@ app = create_app()
 def create_admin():
     with app.app_context():
         admin_user = db.session.execute(db.select(User).filter_by(id_func='ADMIN')).scalar_one_or_none()
-        
+
         if admin_user:
             print("O usuário 'admin' já existe.")
             return
@@ -100,7 +102,7 @@ def create_admin():
 
         db.session.add(new_admin)
         db.session.commit()
-        
+
         print("Usuário administrador 'admin' criado com sucesso!")
 
 # Comando para criar programador
@@ -108,7 +110,7 @@ def create_admin():
 def create_programmer():
     with app.app_context():
         prog_user = db.session.execute(db.select(User).filter_by(id_func='PROG001')).scalar_one_or_none()
-        
+
         if prog_user:
             print("O usuário 'programador' já existe.")
             return
@@ -125,7 +127,7 @@ def create_programmer():
 
         db.session.add(new_programmer)
         db.session.commit()
-        
+
         print("Usuário programador criado com sucesso!")
         print("Login: programador")
         print("Senha: DevPass@2025")
