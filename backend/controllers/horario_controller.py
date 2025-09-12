@@ -3,6 +3,9 @@ from flask_login import login_required, current_user
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from datetime import date
+from flask_wtf import FlaskForm
+from wtforms import HiddenField, SubmitField
+from wtforms.validators import DataRequired
 
 from ..models.database import db
 from ..models.horario import Horario
@@ -15,6 +18,12 @@ from utils.decorators import admin_or_programmer_required
 from ..services.horario_service import HorarioService
 
 horario_bp = Blueprint('horario', __name__, url_prefix='/horario')
+
+# Forms
+class AprovarHorarioForm(FlaskForm):
+    horario_id = HiddenField('Horário ID', validators=[DataRequired()])
+    action = HiddenField('Ação', validators=[DataRequired()]) # 'aprovar' ou 'rejeitar'
+    submit = SubmitField('Enviar')
 
 @horario_bp.route('/')
 @login_required
@@ -219,9 +228,10 @@ def remover_aula():
 @login_required
 @admin_or_programmer_required
 def aprovar_horarios():
-    if request.method == 'POST':
-        horario_id = request.form.get('horario_id')
-        action = request.form.get('action')
+    form = AprovarHorarioForm()
+    if form.validate_on_submit():
+        horario_id = form.horario_id.data
+        action = form.action.data
         success, message = HorarioService.aprovar_horario(horario_id, action)
         if success:
             flash(message, 'success')
@@ -230,4 +240,4 @@ def aprovar_horarios():
         return redirect(url_for('horario.aprovar_horarios'))
     
     aulas_pendentes = db.session.scalars(select(Horario).where(Horario.status == 'pendente').order_by(Horario.id)).all()
-    return render_template('aprovar_horarios.html', aulas_pendentes=aulas_pendentes)
+    return render_template('aprovar_horarios.html', aulas_pendentes=aulas_pendentes, form=form)

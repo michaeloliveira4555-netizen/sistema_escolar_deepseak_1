@@ -15,7 +15,7 @@
 
     <div class="upload-container">
         <form method="POST" enctype="multipart/form-data" class="upload-form" id="upload-form">
-            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <!-- Área de Drop -->
             <div class="drop-zone" id="drop-zone">

@@ -48,7 +48,7 @@
             <h3>Cargos da Turma</h3>
         </div>
         <form method="POST" action="{{ url_for('turma.salvar_cargos_turma', turma_id=turma.id) }}">
-            {{ csrf_token() }}
+            {{ form.hidden_tag() }}
             <div class="cargos-grid">
                 {% for cargo in cargos_lista %}
                 <div class="form-group">
@@ -66,7 +66,7 @@
             </div>
             <div class="form-actions">
                 <a href="{{ url_for('turma.listar_turmas') }}" class="btn btn-secondary">Voltar</a>
-                <button type="submit" class="btn btn-primary">Salvar Cargos</button>
+                {{ form.submit(class="btn btn-primary") }}
             </div>
         </form>
     </div>

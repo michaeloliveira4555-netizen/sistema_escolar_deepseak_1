@@ -7,50 +7,55 @@
     <div class="auth-card">
         <h2>{% if is_admin_flow %}Cadastrar Novo Instrutor{% else %}Completar Perfil de Instrutor{% endif %}</h2>
         <form method="POST" action="{% if is_admin_flow %}{{ url_for('instrutor.cadastro_instrutor_admin') }}{% else %}{{ url_for('instrutor.cadastro_instrutor') }}{% endif %}">
-            {{ csrf_token() }}
+            {{ form.hidden_tag() }}
             
             {% if is_admin_flow %}
                 <div class="form-group">
-                    <label for="nome_completo">Nome Completo: <span style="color: red;">*</span></label>
-                    <input type="text" id="nome_completo" name="nome_completo" value="{{ form_data.nome_completo if form_data else '' }}" required>
+                    {{ form.nome_completo.label }}
+                    {{ form.nome_completo(class="form-control") }}
                 </div>
                 <div class="form-group">
-                    <label for="matricula">Matrícula (será usada para o login): <span style="color: red;">*</span></label>
-                    <input type="text" id="matricula" name="matricula" value="{{ form_data.matricula if form_data else '' }}" required>
+                    {{ form.matricula.label }}
+                    {{ form.matricula(class="form-control") }}
                 </div>
                 <div class="form-group">
-                    <label for="email">E-mail: <span style="color: red;">*</span></label>
-                    <input type="email" id="email" name="email" value="{{ form_data.email if form_data else '' }}" required>
+                    {{ form.email.label }}
+                    {{ form.email(class="form-control") }}
                 </div>
                 <div class="form-group">
-                    <label for="password">Senha: <span style="color: red;">*</span></label>
-                    <input type="password" id="password" name="password" required>
+                    {{ form.password.label }}
+                    {{ form.password(class="form-control") }}
                 </div>
                 <div class="form-group">
-                    <label for="password2">Confirmar Senha: <span style="color: red;">*</span></label>
-                    <input type="password" id="password2" name="password2" required>
+                    {{ form.password2.label }}
+                    {{ form.password2(class="form-control") }}
                 </div>
                 <hr class="my-4">
                 <h3>Detalhes do Perfil do Instrutor</h3>
             {% endif %}
 
             <div class="form-group">
-                <label for="especializacao">Especialização:</label>
-                <input type="text" class="form-control" id="especializacao" name="especializacao" value="{{ instrutor.especializacao if instrutor else (form_data.especializacao if form_data else '') }}" placeholder="Ex: Direito Penal, Educação Física, etc.">
+                {{ form.especializacao.label }}
+                {{ form.especializacao(class="form-control", placeholder="Ex: Direito Penal, Educação Física, etc.") }}
                 <small class="form-text text-muted">Campo opcional</small>
             </div>
             <div class="form-group">
-                <label for="formacao">Formação:</label>
-                <input type="text" class="form-control" id="formacao" name="formacao" value="{{ instrutor.formacao if instrutor else (form_data.formacao if form_data else '') }}" placeholder="Ex: Bacharel em Direito, Licenciado em Educação Física, etc.">
+                {{ form.formacao.label }}
+                {{ form.formacao(class="form-control", placeholder="Ex: Bacharel em Direito, Licenciado em Educação Física, etc.") }}
                 <small class="form-text text-muted">Campo opcional</small>
             </div>
             <div class="form-group">
-                <label for="telefone">Telefone:</label>
-                <input type="text" class="form-control" id="telefone" name="telefone" value="{{ instrutor.telefone if instrutor else (form_data.telefone if form_data else '') }}" placeholder="(XX) XXXXX-XXXX">
+                {{ form.telefone.label }}
+                {{ form.telefone(class="form-control", placeholder="(XX) XXXXX-XXXX") }}
+                <small class="form-text text-muted">Campo opcional</small>
+            </div>
+            <div class="form-group">
+                {{ form.credor.label }}
+                {{ form.credor(class="form-control", rows="3", placeholder="Informações de pagamento, ex: Banco, Agência, Conta, CPF/CNPJ") }}
                 <small class="form-text text-muted">Campo opcional</small>
             </div>
 
-            <button type="submit" class="btn btn-primary">Salvar Perfil</button>
+            {{ form.submit(class="btn btn-primary") }}
         </form>
     </div>
 </div>

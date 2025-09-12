@@ -1,36 +1,44 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from sqlalchemy import select
+from flask_wtf import FlaskForm
+from wtforms import StringField, IntegerField, SubmitField
+from wtforms.validators import DataRequired, Length, NumberRange
 
 from ..models.database import db
 from ..models.disciplina import Disciplina
-from ..models.instrutor import Instrutor
-from ..models.disciplina_turma import DisciplinaTurma
-from ..models.horario import Horario
-from ..models.historico_disciplina import HistoricoDisciplina
 from ..services.disciplina_service import DisciplinaService
 from utils.decorators import admin_or_programmer_required
 
 disciplina_bp = Blueprint('disciplina', __name__, url_prefix='/disciplina')
 
+# Forms
+class DisciplinaForm(FlaskForm):
+    materia = StringField('Matéria', validators=[DataRequired(), Length(min=3, max=100)])
+    carga_horaria_prevista = IntegerField('Carga Horária Prevista', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Salvar')
+
+class DeleteForm(FlaskForm):
+    pass
+
 @disciplina_bp.route('/adicionar', methods=['GET', 'POST'])
 @login_required
 @admin_or_programmer_required
 def adicionar_disciplina():
-    if request.method == 'POST':
-        success, message = DisciplinaService.save_disciplina(request.form)
+    form = DisciplinaForm()
+    if form.validate_on_submit():
+        success, message = DisciplinaService.save_disciplina(form.data)
         if success:
             flash(message, 'success')
             return redirect(url_for('disciplina.listar_disciplinas'))
         else:
             flash(message, 'danger')
-            return render_template('adicionar_disciplina.html', form_data=request.form)
-    
-    return render_template('adicionar_disciplina.html')
+    return render_template('adicionar_disciplina.html', form=form)
 
 @disciplina_bp.route('/listar')
 @login_required
 def listar_disciplinas():
+    delete_form = DeleteForm()
     pelotao_filtrado = request.args.get('pelotao')
     disciplinas = DisciplinaService.get_all_disciplinas_com_associacoes(pelotao_filtrado)
     disciplinas_com_instrutores = []
@@ -44,7 +52,8 @@ def listar_disciplinas():
     return render_template(
         'listar_disciplinas.html', 
         disciplinas_com_instrutores=disciplinas_com_instrutores, 
-        pelotao_filtrado=pelotao_filtrado
+        pelotao_filtrado=pelotao_filtrado,
+        delete_form=delete_form
     )
 
 @disciplina_bp.route('/editar/<int:disciplina_id>', methods=['GET', 'POST'])
@@ -56,29 +65,28 @@ def editar_disciplina(disciplina_id):
         flash("Disciplina não encontrada.", 'danger')
         return redirect(url_for('disciplina.listar_disciplinas'))
     
-    if request.method == 'POST':
-        success, message = DisciplinaService.update_disciplina(disciplina_id, request.form.to_dict())
+    form = DisciplinaForm(obj=disciplina)
+    if form.validate_on_submit():
+        success, message = DisciplinaService.update_disciplina(disciplina_id, form.data)
         if success:
-            try:
-                db.session.commit()
-                flash(message, 'success')
-                return redirect(url_for('disciplina.listar_disciplinas'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f"Erro ao salvar as alterações: {e}", 'danger')
+            flash(message, 'success')
+            return redirect(url_for('disciplina.listar_disciplinas'))
         else:
             flash(message, 'danger')
-    
-    # For GET requests, pass the model object directly
-    return render_template('editar_disciplina.html', disciplina=disciplina)
+
+    return render_template('editar_disciplina.html', form=form, disciplina=disciplina)
 
 @disciplina_bp.route('/excluir/<int:disciplina_id>', methods=['POST'])
 @login_required
 @admin_or_programmer_required
 def excluir_disciplina(disciplina_id):
-    success, message = DisciplinaService.delete_disciplina(disciplina_id)
-    if success:
-        flash(message, 'success')
+    form = DeleteForm()
+    if form.validate_on_submit():
+        success, message = DisciplinaService.delete_disciplina(disciplina_id)
+        if success:
+            flash(message, 'success')
+        else:
+            flash(message, 'danger')
     else:
-        flash(message, 'danger')
+        flash('Falha na validação do token CSRF.', 'danger')
     return redirect(url_for('disciplina.listar_disciplinas'))

@@ -67,6 +67,7 @@
                             <div class="btn-group">
                                 <a href="{{ url_for('vinculo.editar_vinculo', vinculo_id=vinculo.id) }}" class="btn btn-sm btn-warning">Editar</a>
                                 <form method="POST" action="{{ url_for('vinculo.excluir_vinculo', vinculo_id=vinculo.id) }}" onsubmit="return confirm('Tem certeza que deseja deletar este vínculo?');" style="display: inline;">
+                                    {{ delete_form.hidden_tag() }}
                                     <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
                                 </form>
                             </div>

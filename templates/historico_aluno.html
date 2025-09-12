@@ -50,6 +50,25 @@
     {% endfor %}
 </div>
 
+<div class="content-header" style="margin-top: 2rem;">
+    <h2>Histórico de Atividades</h2>
+    <p>Registros de atualizações do perfil, mudanças de função e outras atividades.</p>
+</div>
+<div class="timeline">
+    {% if historico_atividades %}
+        {% for evento in historico_atividades %}
+        <div class="timeline-item">
+            <div class="timeline-time">{{ evento.data_inicio.strftime('%d/%m/%Y %H:%M') if evento.data_inicio else '' }}</div>
+            <div class="timeline-content">
+                <strong>{{ evento.tipo }}</strong>
+                <p>{{ evento.descricao }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: var(--color-text-muted);">Nenhuma atividade registrada até o momento.</p>
+    {% endif %}
+</div>
 
 <style>
 .disciplinas-grid {

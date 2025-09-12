@@ -10,28 +10,28 @@
         <hr style="margin-bottom: 25px;">
 
         <form method="POST" action="{{ url_for('instrutor.completar_cadastro') }}">
-            {{ csrf_token() }}
+            {{ form.hidden_tag() }}
             <div class="form-group">
-                <label for="matricula">Matrícula (use a mesma que sua Id Funcional):</label>
-                <input type="text" id="matricula" name="matricula" class="form-control" value="{{ current_user.id_func }}" required>
+                {{ form.especializacao.label }}
+                {{ form.especializacao(class="form-control", placeholder="Ex: Direito Penal, Educação Física") }}
             </div>
 
             <div class="form-group">
-                <label for="especializacao">Especialização:</label>
-                <input type="text" id="especializacao" name="especializacao" class="form-control" placeholder="Ex: Direito Penal, Educação Física">
+                {{ form.formacao.label }}
+                {{ form.formacao(class="form-control", placeholder="Ex: Bacharel em Direito") }}
             </div>
 
             <div class="form-group">
-                <label for="formacao">Formação:</label>
-                <input type="text" id="formacao" name="formacao" class="form-control" placeholder="Ex: Bacharel em Direito">
+                {{ form.telefone.label }}
+                {{ form.telefone(class="form-control", placeholder="(XX) XXXXX-XXXX") }}
             </div>
 
             <div class="form-group">
-                <label for="telefone">Telefone (Opcional):</label>
-                <input type="text" id="telefone" name="telefone" class="form-control" placeholder="(XX) XXXXX-XXXX">
+                {{ form.credor.label }}
+                {{ form.credor(class="form-control", rows="3", placeholder="Informações de pagamento, ex: Banco, Agência, Conta, CPF/CNPJ") }}
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Salvar Perfil</button>
+            {{ form.submit(class="btn btn-primary", style="margin-top: 20px; width: 100%;") }}
         </form>
     </div>
 </div>

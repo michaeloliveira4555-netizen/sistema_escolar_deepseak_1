@@ -12,25 +12,27 @@
     <div class="table-header">
         <h3>Adicionar Nova Semana</h3>
         <form method="POST" action="{{ url_for('semana.adicionar_proxima_semana') }}" style="margin: 0;">
-            <button type="submit" class="btn btn-sm btn-success">Adicionar Próxima Semana</button>
+            {{ next_form.hidden_tag() }}
+            {{ next_form.submit_next(class="btn btn-sm btn-success") }}
         </form>
     </div>
     <form method="POST" action="{{ url_for('semana.adicionar_semana') }}" style="padding: 1rem 0;">
+        {{ add_form.hidden_tag() }}
         <div class="form-grid">
             <div class="form-group">
-                <label for="nome">Nome da Semana</label>
-                <input type="text" id="nome" name="nome" class="form-control" placeholder="Ex: Semana 1, Semana de Provas" required>
+                {{ add_form.nome.label }}
+                {{ add_form.nome(class="form-control", placeholder="Ex: Semana 1, Semana de Provas") }}
             </div>
             <div class="form-group">
-                <label for="data_inicio">Data de Início</label>
-                <input type="date" id="data_inicio" name="data_inicio" class="form-control" required>
+                {{ add_form.data_inicio.label }}
+                {{ add_form.data_inicio(class="form-control") }}
             </div>
             <div class="form-group">
-                <label for="data_fim">Data de Fim</label>
-                <input type="date" id="data_fim" name="data_fim" class="form-control" required>
+                {{ add_form.data_fim.label }}
+                {{ add_form.data_fim(class="form-control") }}
             </div>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Adicionar Semana Manualmente</button>
+        {{ add_form.submit_add(class="btn btn-primary", style="width: 100%; margin-top: 1rem;") }}
     </form>
 </div>
 
@@ -57,7 +59,8 @@
                     <td class="text-right actions-group">
                         <a href="{{ url_for('semana.editar_semana', semana_id=semana.id) }}" class="btn btn-sm btn-warning">Editar</a>
                         <form method="POST" action="{{ url_for('semana.deletar_semana', semana_id=semana.id) }}" onsubmit="return confirm('Tem certeza que deseja deletar esta semana?');">
-                            <button type="submit" class="btn btn-sm btn-danger">Deletar</button>
+                            {{ delete_form.hidden_tag() }}
+                            {{ delete_form.submit_delete(class="btn btn-sm btn-danger") }}
                         </form>
                     </td>
                 </tr>

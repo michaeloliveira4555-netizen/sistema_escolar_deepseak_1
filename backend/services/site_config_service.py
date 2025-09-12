@@ -1,4 +1,6 @@
 from sqlalchemy import select
+from backend.models.database import db
+from backend.models.site_config import SiteConfig
 from flask import current_app
 import re
 
@@ -81,8 +83,7 @@ class SiteConfigService:
         elif expected_type == 'color':
             # Validar formato de cor hexadecimal (ex: #RRGGBB ou #RGB)
             import re
-            if value and not re.match(r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
-, value):
+            if value and not re.match(r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$', value):
                 raise ValueError(f"Valor inválido para configuração de cor: {value}. Esperado formato hexadecimal (#RRGGBB).")
         elif expected_type == 'text':
             # Para texto, podemos adicionar alguma sanitização básica se necessário,

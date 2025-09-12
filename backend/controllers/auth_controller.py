@@ -1,17 +1,26 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_user, logout_user, login_required
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired
 
-from ..app import db
+from ..app import db, limiter
 from ..models.user import User
 from utils.validators import validate_email, validate_password_strength
 
 auth_bp = Blueprint('auth', __name__)
 
+# Define o formulário de login
+class LoginForm(FlaskForm):
+    username = StringField('Id Func / Usuário', validators=[DataRequired()])
+    password = PasswordField('Senha', validators=[DataRequired()])
+    submit = SubmitField('Entrar')
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         id_func = request.form.get('id_func')
-        nome_completo = request.form.get('nome_completo')
+        nome_completo = request.form.get('nome_tempo')
         email = request.form.get('email')
         password = request.form.get('password')
         password2 = request.form.get('password2')
@@ -68,10 +77,12 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
-    if request.method == 'POST':
-        login_identifier = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()
+    if form.validate_on_submit():
+        login_identifier = form.username.data
+        password = form.password.data
 
         user = db.session.execute(db.select(User).filter_by(id_func=login_identifier)).scalar_one_or_none()
 
@@ -96,7 +107,7 @@ def login():
         else:
             flash('Id Func/Usuário ou senha inválidos.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 
 @auth_bp.route('/logout')

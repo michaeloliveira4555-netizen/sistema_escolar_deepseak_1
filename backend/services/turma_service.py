@@ -11,7 +11,14 @@ class TurmaService:
     def create_turma(data):
         nome_turma = data.get('nome')
         ano = data.get('ano')
-        alunos_ids = data.getlist('alunos_ids')
+        # Normaliza alunos_ids sem usar getlist (funciona com dict ou ImmutableMultiDict)
+        raw_alunos_ids = data.get('alunos_ids')
+        if isinstance(raw_alunos_ids, (list, tuple)):
+            alunos_ids = list(raw_alunos_ids)
+        elif raw_alunos_ids is None:
+            alunos_ids = []
+        else:
+            alunos_ids = [raw_alunos_ids]
 
         if not nome_turma or not ano:
             return False, 'Nome da turma e ano são obrigatórios.'

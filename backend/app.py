@@ -1,18 +1,25 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_babel import Babel
 
 from backend.config import Config
 from backend.models.database import db
 from backend.models.user import User
-# Importações dos novos modelos para que o Flask-Migrate os reconheça
+# Importações dos novos modelos para que o Flask-Migra os reconheça
 from backend.models.semana import Semana
 from backend.models.horario import Horario
 from backend.models.disciplina_turma import DisciplinaTurma
 from backend.models.turma import Turma
 from backend.models.turma_cargo import TurmaCargo
+from backend.services.asset_service import AssetService
+
+# Crie o limiter como uma variável global
+limiter = Limiter(key_func=get_remote_address)
 
 def create_app(config_class=Config):
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -22,6 +29,7 @@ def create_app(config_class=Config):
     app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
     app.config.from_object(config_class)
 
+    babel = Babel(app)
     db.init_app(app)
     Migrate(app, db)
     csrf = CSRFProtect(app)
@@ -30,9 +38,19 @@ def create_app(config_class=Config):
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
 
+    # Configure o limiter com a app
+    limiter.init_app(app)
+    limiter.default_limits = ["200 per day", "50 per hour"]
+    limiter.storage_uri = "redis://localhost:6379"  
+    limiter.storage_options = {"socket_connect_timeout": 30}
+    limiter.strategy = "fixed-window"
+
     @login_manager.user_loader
     def load_user(user_id):
         return db.session.get(User, int(user_id))
+
+    # Initialize AssetService UPLOAD_FOLDER
+    AssetService.initialize_upload_folder(app)
 
     # Importa os Blueprints
     from backend.controllers.auth_controller import auth_bp
@@ -80,6 +98,16 @@ def create_app(config_class=Config):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         return response
+
+    # Error Handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return render_template('404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return render_template('500.html'), 500
 
     return app
 
@@ -148,33 +176,6 @@ def create_programmer():
 
         print("Usuário programador criado com sucesso!")
 
-@app.cli.command("seed-disciplinas")
-def seed_disciplinas():
-    """Adiciona a lista de disciplinas padrão ao banco de dados."""
-    from backend.models.disciplina import Disciplina
-
-    lista_disciplinas = [
-        "Educação Física", "Sistemas de Correição: Atribuição do Escrivão PJM",
-        "A Transversalidade do D. Penal e Processual Penal no Atnd. De Oc.",
-        "Legislação Especial Aplicada a Função Policial Militar", "Policiamento de Trânsito Aplicado a Função",
-        "Gestão e Supervisão pela Qualidade do Serviço", "Sistemas Informatizados da BM e SSPO",
-        "Saúde Mental do Policial Militar e Psicologia da Ativ. Pol.", "Direito Administrativo Aplicado a função Policial Militar",
-        "Gerenciamento de Crise e Desastres", "Ordem Unida", "AMT I", "AMT II",
-        "Atendimento Pré-Hospitalar Tático", "A disposição do C Al /S Ens"
-    ]
-    print("Verificando e adicionando disciplinas...")
-    count = 0
-    for nome_materia in lista_disciplinas:
-        disciplina_existe = db.session.execute(db.select(Disciplina).filter_by(materia=nome_materia)).scalar_one_or_none()
-        if not disciplina_existe:
-            nova_disciplina = Disciplina(materia=nome_materia, carga_horaria_prevista=0)
-            db.session.add(nova_disciplina)
-            count += 1
-    if count > 0:
-        db.session.commit()
-        print(f"{count} nova(s) disciplina(s) adicionada(s) com sucesso!")
-    else:
-        print("Todas as disciplinas padrão já existem no banco de dados.")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.environ.get('FLASK_ENV') == 'development')

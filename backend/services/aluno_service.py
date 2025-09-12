@@ -112,47 +112,69 @@ class AlunoService:
         nome_completo = data.get('nome_completo')
         matricula = data.get('matricula')
         opm = data.get('opm')
-        turma_id = data.get('turma_id')
+        turma_id_val = data.get('turma_id')
         nova_funcao_atual = data.get('funcao_atual')
 
-        if not all([nome_completo, matricula, opm, turma_id]):
+        if not all([nome_completo, matricula, opm]) or turma_id_val in (None, ''):
             return False, "Nome, Matrícula, OPM e Turma são campos obrigatórios."
 
         try:
-            old_funcao = aluno.funcao_atual if aluno.funcao_atual else ''
-            new_funcao = nova_funcao_atual if nova_funcao_atual else ''
+            # Conversão segura do ID da turma para inteiro (aceita int ou str)
+            try:
+                nova_turma_id = int(turma_id_val) if turma_id_val not in (None, '') else None
+            except (ValueError, TypeError):
+                nova_turma_id = None
 
+            # Lógica de histórico refatorada
+            alteracoes = []
+            if aluno.user and aluno.user.nome_completo != nome_completo:
+                alteracoes.append(f"Nome alterado de '{aluno.user.nome_completo or 'N/A'}' para '{nome_completo or 'N/A'}'")
+            if aluno.matricula != matricula:
+                alteracoes.append(f"Matrícula alterada de '{aluno.matricula or 'N/A'}' para '{matricula or 'N/A'}'")
+            if aluno.opm != opm:
+                alteracoes.append(f"OPM alterada de '{aluno.opm or 'N/A'}' para '{opm or 'N/A'}'")
+            if aluno.turma_id != nova_turma_id:
+                turma_antiga = db.session.get(Turma, aluno.turma_id) if aluno.turma_id else None
+                nova_turma = db.session.get(Turma, nova_turma_id) if nova_turma_id else None
+                alteracoes.append(f"Turma alterada de '{turma_antiga.nome if turma_antiga else 'N/A'}' para '{nova_turma.nome if nova_turma else 'N/A'}'")
+            
+            old_funcao = aluno.funcao_atual or ''
+            new_funcao = nova_funcao_atual or ''
             if old_funcao != new_funcao:
-                descricao_log = f"Função alterada de '{old_funcao or 'N/A'}' para '{new_funcao or 'N/A'}'"
+                alteracoes.append(f"Função alterada de '{old_funcao or 'N/A'}' para '{new_funcao or 'N/A'}'")
+
+            if alteracoes:
                 log_historico = HistoricoAluno(
                     aluno_id=aluno.id,
-                    tipo="Função Alterada",
-                    descricao=descricao_log,
+                    tipo="Perfil Atualizado",
+                    descricao="; ".join(alteracoes),
                     data_inicio=datetime.utcnow()
                 )
                 db.session.add(log_historico)
 
+            # Atualiza os dados do aluno
             if aluno.user:
                 aluno.user.nome_completo = nome_completo
-
-            if foto_perfil:
-                foto_filename = _save_profile_picture(foto_perfil)
-                aluno.foto_perfil = foto_filename
-
             aluno.matricula = matricula
             aluno.opm = opm
-            aluno.turma_id = int(turma_id) if turma_id else None
+            aluno.turma_id = nova_turma_id
             aluno.funcao_atual = nova_funcao_atual
+
+            if foto_perfil and hasattr(foto_perfil, 'filename') and foto_perfil.filename != '':
+                foto_filename = _save_profile_picture(foto_perfil)
+                if foto_filename:
+                    aluno.foto_perfil = foto_filename
 
             db.session.commit()
             return True, "Perfil do aluno atualizado com sucesso!"
+
         except IntegrityError:
             db.session.rollback()
             return False, "Erro de integridade dos dados. Verifique se a matrícula já está em uso."
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Erro inesperado ao atualizar aluno: {e}")
-            return False, f"Erro ao atualizar aluno: {str(e)}"
+            return False, f"Ocorreu um erro inesperado ao atualizar o perfil. Detalhes: {str(e)}"
 
     @staticmethod
     def delete_aluno(aluno_id: int):

@@ -9,3 +9,4 @@ class Config:
     # AJUSTADO AQUI: O banco de dados será criado dentro da pasta 'backend'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'escola.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    BABEL_DEFAULT_LOCALE = 'pt_BR'

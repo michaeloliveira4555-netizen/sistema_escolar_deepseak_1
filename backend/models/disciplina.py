@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if t.TYPE_CHECKING:
     from .historico_disciplina import HistoricoDisciplina
+    from .disciplina_turma import DisciplinaTurma # Importa DisciplinaTurma
 
 
 class Disciplina(db.Model):
@@ -17,6 +18,7 @@ class Disciplina(db.Model):
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     
     historico_disciplinas: Mapped[list["HistoricoDisciplina"]] = relationship(back_populates="disciplina")
+    associacoes_turmas: Mapped[list["DisciplinaTurma"]] = relationship(back_populates="disciplina_associada")
     
     def __init__(self, materia: str, carga_horaria_prevista: int, **kw: t.Any) -> None:
         super().__init__(materia=materia, carga_horaria_prevista=carga_horaria_prevista, **kw)

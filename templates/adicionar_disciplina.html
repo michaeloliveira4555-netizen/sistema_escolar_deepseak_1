@@ -14,21 +14,19 @@
     </div>
     
     <form method="POST" action="{{ url_for('disciplina.adicionar_disciplina') }}" style="padding: 1rem 0;">
-        {{ csrf_token() }}
+        {{ form.hidden_tag() }}
         <div class="form-group">
-            <label for="materia">Nome da Matéria</label>
-            <input type="text" id="materia" name="materia" class="form-control" 
-                   placeholder="Ex: Legislação Aplicada" required>
+            {{ form.materia.label }}
+            {{ form.materia(class="form-control", placeholder="Ex: Legislação Aplicada") }}
         </div>
         <div class="form-group">
-            <label for="carga_horaria_prevista">Carga Horária Padrão (em horas)</label>
-            <input type="number" id="carga_horaria_prevista" name="carga_horaria_prevista" class="form-control" 
-                   placeholder="Ex: 40" required min="1">
+            {{ form.carga_horaria_prevista.label }}
+            {{ form.carga_horaria_prevista(class="form-control", placeholder="Ex: 40") }}
         </div>
         
         <div class="form-actions">
             <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar Disciplina</button>
+            {{ form.submit(class="btn btn-primary") }}
         </div>
     </form>
 </div>

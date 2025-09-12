@@ -93,7 +93,7 @@
                 
                 <form method="POST" action="{{ url_for('assets.delete_asset', asset_id=asset.id) }}" 
                       style="display: inline;" onsubmit="return confirm('Tem certeza que deseja deletar este asset?')">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             </div>
         </div>
         {% endfor %}

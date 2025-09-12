@@ -38,13 +38,13 @@
                         <td data-label="Instrutor">{{ aula.instrutor.user.nome_completo or aula.instrutor.user.username }}</td>
                         <td data-label="Ações" class="text-right">
                             <form method="POST" action="{{ url_for('horario.aprovar_horarios') }}" style="display: inline-block;">
-                                {{ csrf_token() }}
+                                {{ form.hidden_tag() }}
                                 <input type="hidden" name="horario_id" value="{{ aula.id }}">
                                 <input type="hidden" name="action" value="aprovar">
                                 <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
                             </form>
                             <form method="POST" action="{{ url_for('horario.aprovar_horarios') }}" style="display: inline-block;">
-                                {{ csrf_token() }}
+                                {{ form.hidden_tag() }}
                                 <input type="hidden" name="horario_id" value="{{ aula.id }}">
                                 <input type="hidden" name="action" value="negar">
                                 <button type="submit" class="btn btn-sm btn-danger">Negar</button>

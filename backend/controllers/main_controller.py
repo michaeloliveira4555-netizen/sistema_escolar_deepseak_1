@@ -16,7 +16,6 @@ def index():
 
 @main_bp.route('/dashboard')
 @login_required
-@aluno_profile_required # <-- DECORADOR APLICADO
 def dashboard():
     dashboard_data = {}
     return render_template('dashboard.html', dashboard_data=dashboard_data)

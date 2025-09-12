@@ -8,9 +8,12 @@ from ..models.image_asset import ImageAsset
 from utils.image_utils import allowed_file, generate_unique_filename, optimize_image
 
 class AssetService:
-    UPLOAD_FOLDER = os.path.join(current_app.root_path, '..', 'static', 'uploads')
     ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']
     MAX_FILE_SIZE = 5 * 1024 * 1024 # 5 MB
+
+    @staticmethod
+    def initialize_upload_folder(app):
+        AssetService.UPLOAD_FOLDER = os.path.join(app.root_path, '..', 'static', 'uploads')
 
     @staticmethod
     def get_all_assets():
