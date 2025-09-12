@@ -19,7 +19,7 @@
         </h3>
         {% if current_user.role in ['admin', 'programador'] %}
         <div class="header-actions">
-            <a href="{{ url_for('main.pre_cadastro') }}" class="btn btn-info">
+            <a href="{{ url_for('main.pre_cadastro', role='aluno') }}" class="btn btn-info">
                 <span>+</span> Inserir Pré-Cadastro
             </a>
             <a href="{{ url_for('auth.register') }}" class="btn btn-primary">

@@ -2,7 +2,10 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 from .database import db
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if t.TYPE_CHECKING:
+    from .user import User
 
 class SiteConfig(db.Model):
     __tablename__ = 'site_configs'
@@ -15,6 +18,9 @@ class SiteConfig(db.Model):
     category: Mapped[str] = mapped_column(db.String(50), default='general')  # 'general', 'dashboard', 'sidebar'
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by: Mapped[t.Optional[int]] = mapped_column(db.ForeignKey('users.id'))
+
+    # Relacionamento
+    updated_by_user: Mapped[t.Optional['User']] = relationship(back_populates='site_configs_updated')
 
     def __init__(self, config_key: str, config_value: t.Optional[str] = None, 
                  config_type: str = 'text', description: t.Optional[str] = None,

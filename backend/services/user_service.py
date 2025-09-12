@@ -1,5 +1,9 @@
 from flask import current_app
 from utils.validators import validate_password_strength
+from ..models.database import db
+from ..models.user import User
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
 class UserService:
     @staticmethod

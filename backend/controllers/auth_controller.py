@@ -7,6 +7,7 @@ from wtforms.validators import DataRequired
 from ..app import db, limiter
 from ..models.user import User
 from utils.validators import validate_email, validate_password_strength
+from ..services.password_reset_service import PasswordResetService
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -20,7 +21,7 @@ class LoginForm(FlaskForm):
 def register():
     if request.method == 'POST':
         id_func = request.form.get('id_func')
-        nome_completo = request.form.get('nome_tempo')
+        nome_completo = request.form.get('nome_completo')
         email = request.form.get('email')
         password = request.form.get('password')
         password2 = request.form.get('password2')
@@ -116,3 +117,39 @@ def logout():
     logout_user()
     flash('Você foi desconectado com sucesso.', 'info')
     return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/set-new-with-token', methods=['GET', 'POST'])
+def set_new_with_token():
+    if request.method == 'POST':
+        id_func = request.form.get('id_func', '').strip()
+        raw_token = request.form.get('token', '').strip()
+        password = request.form.get('password', '')
+        password2 = request.form.get('password2', '')
+
+        if not id_func or not raw_token or not password or not password2:
+            flash('Preencha todos os campos.', 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        if password != password2:
+            flash('As senhas não coincidem.', 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        is_strong, message = validate_password_strength(password)
+        if not is_strong:
+            flash(message, 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        user = PasswordResetService.consume_with_user_and_raw_token(id_func, raw_token)
+        if not user:
+            flash('Token inválido, expirado ou dados incorretos.', 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        # Aplica a nova senha
+        user.set_password(password)
+        user.must_change_password = False
+        db.session.commit()
+        flash('Senha redefinida com sucesso. Faça o login com a nova senha.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('set_new_with_token.html', form_data={})

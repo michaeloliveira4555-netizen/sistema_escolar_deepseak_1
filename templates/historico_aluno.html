@@ -12,7 +12,7 @@
     {% for registro in historico_disciplinas %}
     <div class="disciplina-card">
         <form method="POST" action="{{ url_for('historico.avaliar_aluno_disciplina', historico_id=registro.id) }}">
-            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <h4>{{ registro.disciplina.materia }}</h4>
             <div class="notas-container">
                 <div class="form-group">

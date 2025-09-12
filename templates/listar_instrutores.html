@@ -13,7 +13,7 @@
         <h3>Instrutores Cadastrados</h3>
         {% if current_user.is_authenticated and current_user.role in ['admin', 'programador'] %}
             <div class="header-actions">
-                <a href="{{ url_for('main.pre_cadastro') }}" class="btn btn-info">
+                <a href="{{ url_for('main.pre_cadastro', role='instrutor') }}" class="btn btn-info">
                     <span>+</span> Inserir Pré-Cadastro
                 </a>
                 <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-primary">
@@ -33,7 +33,9 @@
                         <th>Especialização</th>
                         <th>Telefone</th>
                         <th>Email</th>
+                        {% if current_user.role in ['admin', 'programador'] %}
                         <th class="text-right">Ações</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -44,6 +46,7 @@
                         <td data-label="Especialização">{{ instrutor.especializacao }}</td>
                         <td data-label="Telefone">{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
                         <td data-label="Email">{{ instrutor.user.email }}</td>
+                        {% if current_user.role in ['admin', 'programador'] %}
                         <td data-label="Ações" class="text-right">
                             <div class="btn-group">
                                 <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-warning btn-sm">Editar</a>
@@ -53,6 +56,7 @@
                                 </form>
                             </div>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>

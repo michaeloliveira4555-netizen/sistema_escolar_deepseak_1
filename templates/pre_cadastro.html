@@ -13,8 +13,10 @@
         <h3>Novo Pré-Cadastro</h3>
     </div>
     
-    <form method="POST" action="{{ url_for('main.pre_cadastro') }}" style="padding: 1rem 0;">
+    <form method="POST" action="{{ url_for('main.pre_cadastro', role=role_predefinido) }}" style="padding: 1rem 0;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% if not role_predefinido %}
         <div class="form-group">
             <label for="role">Função do Usuário</label>
             <select id="role" name="role" class="form-control" required>
@@ -22,11 +24,15 @@
                 <option value="instrutor">Instrutor</option>
             </select>
         </div>
+        {% else %}
+        <input type="hidden" name="role" value="{{ role_predefinido }}">
+        {% endif %}
+
         <div class="form-group">
             <label for="id_func">Identidade Funcional (Id Func)</label>
             <input type="text" id="id_func" name="id_func" class="form-control" 
-                   pattern="[0-9]*" inputmode="numeric" 
-                   placeholder="Digite apenas números" required>
+                   placeholder="Digite números; para várias IDs, separe com uma barra (ex: 123/456/789)" required>
+            <small class="form-text text-muted">Para cadastrar várias matrículas, separe-as usando uma barra.</small>
         </div>
         
         <div class="form-actions">
