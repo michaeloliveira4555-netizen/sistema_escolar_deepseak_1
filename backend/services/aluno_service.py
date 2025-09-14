@@ -42,8 +42,16 @@ class AlunoService:
             return False, "Este usuário já possui um perfil de aluno cadastrado."
 
         matricula = data.get('matricula')
+        if not matricula:
+            user = db.session.get(User, user_id)
+            if not user:
+                return False, "Usuário não encontrado."
+            matricula = user.id_func
+
         opm = data.get('opm')
         turma_id = data.get('turma_id')
+        if turma_id == 0:
+            turma_id = None
         funcao_atual = data.get('funcao_atual')
 
         if not all([matricula, opm]):
@@ -113,6 +121,8 @@ class AlunoService:
         matricula = data.get('matricula')
         opm = data.get('opm')
         turma_id_val = data.get('turma_id')
+        if turma_id_val == 0:
+            turma_id_val = None
         nova_funcao_atual = data.get('funcao_atual')
 
         if not all([nome_completo, matricula, opm]) or turma_id_val in (None, ''):

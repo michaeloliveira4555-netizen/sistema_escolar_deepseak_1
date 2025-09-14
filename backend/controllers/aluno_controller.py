@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
+
 from sqlalchemy import select
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
@@ -12,10 +13,21 @@ from ..models.user import User
 from ..models.turma import Turma
 from utils.decorators import admin_or_programmer_required
 
+
 aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
+
+
+class AlunoProfileForm(FlaskForm):
+    foto_perfil = FileField('Foto de Perfil', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Apenas imagens!')])
+    nome_completo = StringField('Nome Completo', validators=[DataRequired()])
+    opm = StringField('OPM', validators=[DataRequired()])
+    turma_id = SelectField('Turma / Pelotão', coerce=int, validators=[Optional()])
+    submit = SubmitField('Salvar Perfil')
+
 
 class DeleteForm(FlaskForm):
     pass
+
 
 class EditAlunoForm(FlaskForm):
     foto_perfil = FileField('Alterar Foto de Perfil', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Apenas imagens!')])
@@ -24,16 +36,38 @@ class EditAlunoForm(FlaskForm):
     opm = StringField('OPM', validators=[DataRequired()])
     turma_id = SelectField('Turma / Pelotão', coerce=int, validators=[DataRequired()])
     funcao_atual = SelectField('Função Atual', choices=[
-        ('', '-- Nenhuma função --'), ('P1', 'P1'), ('P2', 'P2'), ('P3', 'P3'), ('P4', 'P4'), ('P5', 'P5'), 
-        ('Aux Disc', 'Aux Disc'), ('Aux Cia', 'Aux Cia'), ('Aux Pel', 'Aux Pel'), ('C1', 'C1'), ('C2', 'C2'), 
-        ('C3', 'C3'), ('C4', 'C4'), ('C5', 'C5'), ('Formatura', 'Formatura'), ('Obras', 'Obras'), 
-        ('Atletismo', 'Atletismo'), ('Jubileu', 'Jubileu'), ('Dia da Criança', 'Dia da Criança'), 
-        ('Seminário', 'Seminário'), ('Chefe de Turma', 'Chefe de Turma'), ('Correio', 'Correio'), 
-        ('Cmt 1° GPM', 'Cmt 1° GPM'), ('Cmt 2° GPM', 'Cmt 2° GPM'), ('Cmt 3° GPM', 'Cmt 3° GPM'), 
-        ('Socorrista 1', 'Socorrista 1'), ('Socorrista 2', 'Socorrista 2'), ('Motorista 1', 'Motorista 1'), 
+        ('', '-- Nenhuma função --'), ('P1', 'P1'), ('P2', 'P2'), ('P3', 'P3'), ('P4', 'P4'), ('P5', 'P5'),
+        ('Aux Disc', 'Aux Disc'), ('Aux Cia', 'Aux Cia'), ('Aux Pel', 'Aux Pel'), ('C1', 'C1'), ('C2', 'C2'),
+        ('C3', 'C3'), ('C4', 'C4'), ('C5', 'C5'), ('Formatura', 'Formatura'), ('Obras', 'Obras'),
+        ('Atletismo', 'Atletismo'), ('Jubileu', 'Jubileu'), ('Dia da Criança', 'Dia da Criança'),
+        ('Seminário', 'Seminário'), ('Chefe de Turma', 'Chefe de Turma'), ('Correio', 'Correio'),
+        ('Cmt 1° GPM', 'Cmt 1° GPM'), ('Cmt 2° GPM', 'Cmt 2° GPM'), ('Cmt 3° GPM', 'Cmt 3° GPM'),
+        ('Socorrista 1', 'Socorrista 1'), ('Socorrista 2', 'Socorrista 2'), ('Motorista 1', 'Motorista 1'),
         ('Motorista 2', 'Motorista 2'), ('Telefonista 1', 'Telefonista 1'), ('Telefonista 2', 'Telefonista 2')
     ], validators=[Optional()])
     submit = SubmitField('Atualizar Perfil')
+
+
+@aluno_bp.route('/completar-cadastro', methods=['GET', 'POST'])
+@login_required
+def completar_cadastro():
+    if current_user.aluno_profile:
+        return redirect(url_for('main.dashboard'))
+    form = AlunoProfileForm()
+    turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+    form.turma_id.choices = [(0, '-- Nenhuma / Não definida --')] + [(t.id, t.nome) for t in turmas]
+
+    if form.validate_on_submit():
+        form_data = form.data
+        foto_perfil = form.foto_perfil.data
+        success, message = AlunoService.save_aluno(current_user.id, form_data, foto_perfil)
+        if success:
+            flash("Perfil de aluno completado com sucesso!", 'success')
+            return redirect(url_for('main.dashboard'))
+        else:
+            flash(message, 'danger')
+    return render_template('cadastro_aluno.html', form=form, turmas=turmas)
+
 
 @aluno_bp.route('/listar')
 @login_required
