@@ -14,7 +14,7 @@ class HorarioService:
     @staticmethod
     def can_edit_horario(horario_id):
         """Verifica se o usuário atual pode editar/deletar um horário específico"""
-        if current_user.role in ['admin', 'programador']:
+        if current_user.role in ['super_admin', 'programador']:
             return True
 
         if current_user.role == 'instrutor' and current_user.instrutor_profile:
@@ -62,7 +62,7 @@ class HorarioService:
     @staticmethod
     def save_aula(data):
         horario_id = data.get('horario_id')
-        is_admin = current_user.role in ['admin', 'programador']
+        is_admin = current_user.role in ['admin_escola', 'programador']
 
         # --- Input Validation --- #
         pelotao = data.get('pelotao')

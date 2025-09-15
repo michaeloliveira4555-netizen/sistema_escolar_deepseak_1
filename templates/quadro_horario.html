@@ -9,7 +9,7 @@
             <h1>Quadro Horário</h1>
             <p>Selecione um pelotão e uma semana para visualizar o horário correspondente.</p>
         </div>
-        {% if current_user.role in ['admin', 'programador', 'instrutor'] and pelotao_selecionado and semana_selecionada %}
+        {% if current_user.role in ['super_admin', 'programador'] %}
         <div class="controls-group">
             <a href="{{ url_for('horario.editar_horario_grid', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-primary">
                 Editar Quadro Horário
@@ -39,7 +39,7 @@
                     <option>Nenhuma semana cadastrada</option>
                 {% endif %}
             </select>
-            {% if current_user.role in ['admin', 'programador'] %}
+            {% if current_user.role in ['admin_escola', 'programador'] %}
             <a href="{{ url_for('semana.gerenciar_semanas') }}" class="btn btn-sm btn-info">
                 + Nova Semana
             </a>

@@ -19,7 +19,7 @@
                 <thead>
                     <tr>
                         <th>Nome Completo</th>
-                        {% if current_user.role in ['admin', 'programador'] %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}
                         <th>Id Func.</th>
                         {% endif %}
                     </tr>
@@ -28,7 +28,7 @@
                     {% for aluno in turma.alunos | sort(attribute='user.nome_completo') %}
                     <tr>
                         <td>{{ aluno.user.nome_completo or aluno.user.username }}</td>
-                        {% if current_user.role in ['admin', 'programador'] %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}
                         <td>{{ aluno.user.id_func }}</td>
                         {% endif %}
                     </tr>
@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    {% if current_user.role in ['admin', 'programador'] %}
+    {% if current_user.role in ['super_admin', 'programador'] %}
     <div class="details-section">
         <div class="section-header">
             <h3>Cargos da Turma</h3>

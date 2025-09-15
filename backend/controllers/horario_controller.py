@@ -131,7 +131,7 @@ def editar_horario_grid(pelotao, semana_id):
         flash("Semana não encontrada.", "danger")
         return redirect(url_for('horario.index'))
 
-    is_admin = current_user.role in ['admin', 'programador']
+    is_admin = current_user.role in ['super_admin', 'programador']
     instrutor_id = current_user.instrutor_profile.id if hasattr(current_user, 'instrutor_profile') and current_user.instrutor_profile else None
 
     if not is_admin and not instrutor_id:

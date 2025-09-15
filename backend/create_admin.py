@@ -13,32 +13,32 @@ from werkzeug.security import generate_password_hash # type: ignore
 # Cria e inicializa o aplicativo Flask
 app = create_app()
 
-def create_admin_user():
-    """Cria o usuário administrador se ele não existir."""
+def create_super_admin_user():
+    """Cria o usuário super administrador se ele não existir."""
     with app.app_context():
-        print("Verificando se o usuário admin já existe...")
+        print("Verificando se o usuário super_admin já existe...")
         
-        # Tenta encontrar o usuário 'admin'
-        admin_user = db.session.execute(db.select(User).filter_by(username='admin')).scalar_one_or_none()
+        # Tenta encontrar o usuário 'super_admin'
+        super_admin_user = db.session.execute(db.select(User).filter_by(username='super_admin')).scalar_one_or_none()
 
-        if not admin_user:
-            print("Usuário 'admin' não encontrado. Criando agora...")
+        if not super_admin_user:
+            print("Usuário 'super_admin' não encontrado. Criando agora...")
             
             # Crie o novo usuário
-            admin_user = User(
-                username='admin',
-                email='admin@esfas.com.br',
-                password_hash=generate_password_hash('@Nk*BC6GAJi8RrT'),
-                role='admin'
+            super_admin_user = User(
+                username='super_admin',
+                email='super_admin@esfas.com.br',
+                password_hash=generate_password_hash('@Nk*BC6GAJi8RrT'), # Manter a senha padrão por enquanto
+                role='super_admin'
             )
             
             # Adiciona e salva o usuário no banco de dados
-            db.session.add(admin_user)
+            db.session.add(super_admin_user)
             db.session.commit()
-            print("Usuário administrador 'admin' criado com sucesso!")
+            print("Usuário super administrador 'super_admin' criado com sucesso!")
             print("A senha é: @Nk*BC6GAJi8RrT")
         else:
-            print("O usuário 'admin' já existe no banco de dados. Nenhuma ação necessária.")
+            print("O usuário 'super_admin' já existe no banco de dados. Nenhuma ação necessária.")
 
 if __name__ == '__main__':
-    create_admin_user()
+    create_super_admin_user()

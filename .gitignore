@@ -15,6 +15,7 @@ instance/
 
 # Arquivos de variáveis de ambiente (IMPORTANTE PARA SEGURANÇA)
 .env
+.flaskenv
 
 # Arquivos de configuração do editor
 .vscode/

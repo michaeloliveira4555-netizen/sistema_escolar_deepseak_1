@@ -5,6 +5,9 @@ from ..models.user import User
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
+from ..models.user_school import UserSchool # Importar UserSchool
+
+
 class UserService:
     @staticmethod
     def pre_register_user(data):
@@ -87,7 +90,7 @@ class UserService:
             return False, f"Erro inesperado ao atualizar perfil: {str(e)}"
 
     @staticmethod
-    def batch_pre_register_users(id_funcs, role):
+    def batch_pre_register_users(id_funcs, role, school_id=None):
         new_users_count = 0
         existing_users_count = 0
         
@@ -97,7 +100,7 @@ class UserService:
                 continue
 
             user_exists = db.session.execute(
-                select(User).filter_by(id_func=id_func, role=role)
+                select(User).filter_by(id_func=id_func)
             ).scalar_one_or_none()
 
             if user_exists:
@@ -105,6 +108,12 @@ class UserService:
             else:
                 new_user = User(id_func=id_func, role=role, is_active=False)
                 db.session.add(new_user)
+                
+                if school_id:
+                    db.session.flush() # Garante que new_user.id esteja disponível
+                    user_school_association = UserSchool(user_id=new_user.id, school_id=school_id, role=role)
+                    db.session.add(user_school_association)
+
                 new_users_count += 1
         
         try:
@@ -118,3 +127,46 @@ class UserService:
             db.session.rollback()
             current_app.logger.error(f"Erro inesperado ao pré-cadastrar usuários em lote: {e}")
             return False, 0, 0
+
+    @staticmethod
+    def assign_school_role(user_id, school_id, role):
+        """Atribui um papel a um usuário em uma escola específica."""
+        try:
+            # Verifica se a associação já existe
+            existing_association = db.session.execute(
+                select(UserSchool).filter_by(user_id=user_id, school_id=school_id)
+            ).scalar_one_or_none()
+
+            if existing_association:
+                # Se já existe, apenas atualiza o papel
+                existing_association.role = role
+            else:
+                # Se não existe, cria uma nova associação
+                new_association = UserSchool(user_id=user_id, school_id=school_id, role=role)
+                db.session.add(new_association)
+            
+            db.session.commit()
+            return True, "Papel atribuído com sucesso."
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao atribuir papel de escola: {e}")
+            return False, f"Erro ao atribuir papel: {e}"
+
+    @staticmethod
+    def remove_school_role(user_id, school_id):
+        """Remove o vínculo de um usuário com uma escola."""
+        try:
+            association = db.session.execute(
+                select(UserSchool).filter_by(user_id=user_id, school_id=school_id)
+            ).scalar_one_or_none()
+
+            if association:
+                db.session.delete(association)
+                db.session.commit()
+                return True, "Vínculo com a escola removido com sucesso."
+            else:
+                return False, "Vínculo não encontrado."
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao remover vínculo de escola: {e}")
+            return False, f"Erro ao remover vínculo: {e}"

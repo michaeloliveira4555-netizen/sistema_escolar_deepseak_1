@@ -44,7 +44,7 @@ class InstrutorService:
     @staticmethod
     def get_all_instrutores():
         stmt = select(Instrutor).join(User)
-        stmt = stmt.where(User.role != 'admin')
+        stmt = stmt.where(User.role != 'super_admin')
         stmt = stmt.order_by(User.username)
         return db.session.scalars(stmt).all()
 

@@ -88,12 +88,25 @@ class AlunoService:
             return False, f"Erro ao cadastrar aluno: {str(e)}"
 
     @staticmethod
-    def get_all_alunos(nome_turma=None):
-        stmt = select(Aluno).join(User)
-        stmt = stmt.where(User.role != 'admin')
+    def get_all_alunos(user, nome_turma=None):
+        # Start statement
+        stmt = select(Aluno).join(User).join(Turma)
 
+        # Filter based on user role
+        if user.role not in ['super_admin', 'programador']:
+            # This is a school admin or other role, filter by their school
+            user_school_ids = [us.school_id for us in user.user_schools]
+            if not user_school_ids:
+                # If user is not associated with any school, return empty list
+                return []
+            stmt = stmt.where(Turma.school_id.in_(user_school_ids))
+        else:
+            # Global admin/programmer can see all non-global-admin users
+            stmt = stmt.where(User.role != 'super_admin')
+
+        # Optional filter by class name
         if nome_turma:
-            stmt = stmt.join(Turma).where(Turma.nome == nome_turma)
+            stmt = stmt.where(Turma.nome == nome_turma)
 
         stmt = stmt.order_by(User.username)
 

@@ -67,6 +67,8 @@ def create_app(config_class=Config):
     from backend.controllers.vinculo_controller import vinculo_bp
     from backend.controllers.user_controller import user_bp
     from backend.controllers.relatorios_controller import relatorios_bp # <-- 1. IMPORTAR O NOVO BLUEPRINT
+    from backend.controllers.super_admin_controller import super_admin_bp
+    from backend.controllers.admin_controller import admin_escola_bp
 
     # Registra os Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -83,6 +85,8 @@ def create_app(config_class=Config):
     app.register_blueprint(vinculo_bp, url_prefix='/vinculos')
     app.register_blueprint(user_bp)
     app.register_blueprint(relatorios_bp) # <-- 2. REGISTRAR O NOVO BLUEPRINT
+    app.register_blueprint(super_admin_bp)
+    app.register_blueprint(admin_escola_bp, url_prefix='/admin-escola')
 
     # Context processor para configurações do site
     @app.context_processor
@@ -114,36 +118,36 @@ def create_app(config_class=Config):
 # Cria a instância da aplicação
 app = create_app()
 
-# Comando para criar admin
-@app.cli.command("create-admin")
-def create_admin():
+# Comando para criar super admin
+@app.cli.command("create-super-admin")
+def create_super_admin():
     with app.app_context():
-        admin_user = db.session.execute(db.select(User).filter_by(id_func='ADMIN')).scalar_one_or_none()
+        super_admin_user = db.session.execute(db.select(User).filter_by(id_func='SUPER_ADMIN')).scalar_one_or_none()
 
-        if admin_user:
-            print("O usuário 'admin' já existe.")
+        if super_admin_user:
+            print("O usuário 'super_admin' já existe.")
             return
 
-        admin_password = os.environ.get('ADMIN_PASSWORD')
-        if not admin_password:
-            print("A variável de ambiente ADMIN_PASSWORD não está definida.")
-            print("Por favor, defina a senha antes de criar o administrador.")
+        super_admin_password = os.environ.get('SUPER_ADMIN_PASSWORD')
+        if not super_admin_password:
+            print("A variável de ambiente SUPER_ADMIN_PASSWORD não está definida.")
+            print("Por favor, defina a senha antes de criar o super administrador.")
             return
 
-        print("Criando o usuário administrador 'admin'...")
-        new_admin = User(
-            id_func='ADMIN',
-            username='admin',
-            email='admin@escola.com.br',
-            role='admin',
+        print("Criando o usuário super administrador 'super_admin'...")
+        new_super_admin = User(
+            id_func='SUPER_ADMIN',
+            username='super_admin',
+            email='super_admin@escola.com.br',
+            role='super_admin',
             is_active=True
         )
-        new_admin.set_password(admin_password)
+        new_super_admin.set_password(super_admin_password)
 
-        db.session.add(new_admin)
+        db.session.add(new_super_admin)
         db.session.commit()
 
-        print("Usuário administrador 'admin' criado com sucesso!")
+        print("Usuário super administrador 'super_admin' criado com sucesso!")
 
 # Comando para criar programador
 @app.cli.command("create-programmer")

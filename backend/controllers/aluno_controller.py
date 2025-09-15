@@ -41,7 +41,7 @@ class EditAlunoForm(FlaskForm):
 def listar_alunos():
     delete_form = DeleteForm()
     turma_filtrada = request.args.get('turma', None)
-    alunos = AlunoService.get_all_alunos(turma_filtrada)
+    alunos = AlunoService.get_all_alunos(current_user, turma_filtrada)
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
     return render_template('listar_alunos.html', alunos=alunos, turmas=turmas, turma_filtrada=turma_filtrada, delete_form=delete_form)
 

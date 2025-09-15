@@ -21,4 +21,4 @@ class AuthService:
 
     @staticmethod
     def is_admin():
-        return current_user.is_authenticated and getattr(current_user, 'role', None) == 'admin'
+        return current_user.is_authenticated and getattr(current_user, 'role', None) == 'super_admin'

@@ -75,7 +75,7 @@
                 <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if 'turma.' in request.endpoint %}active{% endif %}">
                     <div class="nav-icon">🏫</div> Turmas
                 </a>
-                {% if current_user.role in ['admin', 'programador'] %}
+                {% if current_user.role in ['super_admin', 'programador'] %}
                 <a href="{{ url_for('vinculo.gerenciar_vinculos') }}" class="nav-link {% if 'vinculo.' in request.endpoint %}active{% endif %}">
                     <div class="nav-icon">🔗</div> Vínculos
                 </a>
@@ -84,7 +84,7 @@
                     <div class="nav-icon">📅</div> Quadro Horário
                 </a>
 
-                {% if current_user.role in ['admin', 'programador'] %}
+                {% if current_user.role in ['super_admin', 'programador'] %}
                     <a href="{{ url_for('horario.aprovar_horarios') }}" class="nav-link {% if request.endpoint == 'horario.aprovar_horarios' %}active{% endif %}">
                         <div class="nav-icon">👍</div> Aprovar Aulas
                     </a>

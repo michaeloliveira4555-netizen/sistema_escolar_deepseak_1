@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Escolas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Gerenciar Escolas</h1>
+
+    {# Formulário de Criação #}
+    <div class="card mb-4">
+        <div class="card-header">
+            Adicionar Nova Escola
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('super_admin.manage_schools') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-group">
+                    <label for="school_name">Nome da Escola</label>
+                    <input type="text" class="form-control" id="school_name" name="school_name" required>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Criar Escola</button>
+            </form>
+        </div>
+    </div>
+
+    {# Tabela de Escolas Existentes #}
+    <div class="card">
+        <div class="card-header">
+            Escolas Cadastradas
+        </div>
+        <div class="card-body">
+            {% if schools %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Ativa</th>
+                            <th scope="col">Criada em</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for school in schools %}
+                        <tr>
+                            <th scope="row">{{ school.id }}</th>
+                            <td>{{ school.nome }}</td>
+                            <td>{{ 'Sim' if school.is_active else 'Não' }}</td>
+                            <td>{{ school.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-center">Nenhuma escola cadastrada ainda.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

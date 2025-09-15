@@ -12,7 +12,7 @@
             </div>
         </div>
 
-        {% if current_user.role in ['admin', 'programador'] and dashboard_data %}
+        {% if current_user.role in ['admin_escola', 'programador'] and dashboard_data %}
         <div class="quick-stats-bar">
             <div class="stat-compact">
                 <span class="stat-icon">👥</span>
@@ -56,7 +56,7 @@
                 <p class="card-description">Consulte os alunos matriculados.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                 <p class="card-description">Consulte o corpo docente da escola.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -86,7 +86,7 @@
                 <p class="card-description">Consulte as disciplinas e seus instrutores.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -101,7 +101,7 @@
                 <p class="card-description">Visualize a composição das turmas.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('turma.listar_turmas') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -134,7 +134,7 @@
             </div>
         {% endif %}
 
-        {% if current_user.role in ['admin', 'programador'] %}
+        {% if current_user.role in ['super_admin', 'programador'] %}
             <div class="module-card">
                 <div class="card-content">
                     <div class="card-header">

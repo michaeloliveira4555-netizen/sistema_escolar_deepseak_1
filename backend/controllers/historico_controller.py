@@ -14,7 +14,7 @@ historico_bp = Blueprint('historico', __name__, url_prefix='/historico')
 def historico_aluno(aluno_id):
     # Verificação de permissão atualizada para incluir 'programador'
     user_role = getattr(current_user, 'role', None)
-    is_authorized = user_role in ['admin', 'programador']
+    is_authorized = user_role in ['super_admin', 'programador']
     
     # Verifica se o usuário logado é o próprio aluno
     is_own_profile = hasattr(current_user, 'aluno_profile') and current_user.aluno_profile and current_user.aluno_profile.id == aluno_id
@@ -57,7 +57,7 @@ def matricular_aluno_em_disciplina(aluno_id):
 def avaliar_aluno_disciplina(historico_id):
     # Verificação de permissão atualizada para incluir 'programador'
     user_role = getattr(current_user, 'role', None)
-    is_authorized = user_role in ['admin', 'programador', 'instrutor']
+    is_authorized = user_role in ['super_admin', 'programador', 'instrutor']
     
     if not is_authorized:
         flash("Você não tem permissão para realizar esta ação.", 'danger')
