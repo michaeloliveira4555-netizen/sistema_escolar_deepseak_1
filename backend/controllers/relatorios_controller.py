@@ -3,6 +3,7 @@ from flask_login import login_required
 from weasyprint import HTML
 from datetime import datetime
 from ..services.relatorio_service import RelatorioService
+from ..services.instrutor_service import InstrutorService
 from utils.decorators import admin_or_programmer_required
 import locale
 
@@ -22,19 +23,29 @@ relatorios_bp = Blueprint('relatorios', __name__, url_prefix='/relatorios')
 @login_required
 @admin_or_programmer_required
 def index():
+    """Página que exibe os tipos de relatório disponíveis."""
     return render_template('relatorios/index.html')
 
-@relatorios_bp.route('/horas_aula', methods=['GET', 'POST'])
+@relatorios_bp.route('/gerar', methods=['GET', 'POST'])
 @login_required
 @admin_or_programmer_required
-def horas_aula_instrutor():
+def gerar_relatorio_horas_aula():
+    """Formulário e lógica para gerar os relatórios de horas-aula."""
+    
+    report_type = request.args.get('tipo', 'mensal')
+    todos_instrutores = None
+
+    if report_type == 'por_instrutor':
+        todos_instrutores = InstrutorService.get_all_instrutores()
+
     if request.method == 'POST':
         data_inicio_str = request.form.get('data_inicio')
         data_fim_str = request.form.get('data_fim')
-        chefe_ensino_nome = request.form.get('chefe_ensino_nome', '')
-        chefe_ensino_cargo = request.form.get('chefe_ensino_cargo', 'Chefe da Seção de Ensino')
+        
+        curso_nome = request.form.get('curso_nome', '')
         comandante_nome = request.form.get('comandante_nome', '')
-        comandante_cargo = request.form.get('comandante_cargo', 'Comandante da EsFAS-SM')
+        auxiliar_nome = request.form.get('auxiliar_nome', '')
+        
         action = request.form.get('action')
 
         try:
@@ -42,32 +53,46 @@ def horas_aula_instrutor():
             data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
         except ValueError:
             flash('Formato de data inválido. Use AAAA-MM-DD.', 'danger')
-            return render_template('relatorios/horas_aula_form.html')
+            return render_template('relatorios/horas_aula_form.html', tipo_relatorio=report_type.replace("_", " ").title(), todos_instrutores=todos_instrutores)
 
-        dados_relatorio = RelatorioService.get_horas_aula_por_instrutor(data_inicio, data_fim)
+        is_rr_filter = report_type == 'efetivo_rr'
+        instrutor_ids_filter = None
+        if report_type == 'por_instrutor':
+            instrutor_ids_filter = [int(id) for id in request.form.getlist('instrutor_ids')]
+            if not instrutor_ids_filter:
+                flash('Por favor, selecione pelo menos um instrutor para este tipo de relatório.', 'warning')
+                return render_template('relatorios/horas_aula_form.html', tipo_relatorio=report_type.replace("_", " ").title(), todos_instrutores=todos_instrutores)
 
-        data_geracao = datetime.now().strftime("%d de %B de %Y")
-        cidade_estado = "Santa Maria - RS"
+        dados_relatorio = RelatorioService.get_horas_aula_por_instrutor(
+            data_inicio, data_fim, is_rr_filter, instrutor_ids_filter
+        )
 
+        # String de Mês e Ano formatada corretamente
+        nome_mes_ano = data_inicio.strftime("%B de %Y").capitalize()
+        
+        titulo_curso = f"NOME DO CURSO: {curso_nome}"
+        if report_type == 'efetivo_rr':
+            titulo_curso += " (EFETIVO RR)"
+        
         rendered_html = render_template('relatorios/pdf_template.html',
                                         dados=dados_relatorio,
                                         data_inicio=data_inicio,
                                         data_fim=data_fim,
-                                        chefe_ensino_nome=chefe_ensino_nome,
-                                        chefe_ensino_cargo=chefe_ensino_cargo,
+                                        titulo_curso=titulo_curso,
+                                        nome_mes_ano=nome_mes_ano, # Variável atualizada
                                         comandante_nome=comandante_nome,
-                                        comandante_cargo=comandante_cargo,
-                                        data_geracao=data_geracao,
-                                        cidade_estado=cidade_estado)
+                                        auxiliar_nome=auxiliar_nome,
+                                        valor_hora_aula=55.19)
 
         if action == 'preview':
             return rendered_html
 
         if action == 'download':
-            # A orientação da página agora é controlada diretamente no template
             pdf = HTML(string=rendered_html).write_pdf()
             return Response(pdf, mimetype='application/pdf', headers={
-                'Content-Disposition': 'attachment; filename=relatorio_horas_aula.pdf'
+                'Content-Disposition': f'attachment; filename=relatorio_{report_type}.pdf'
             })
 
-    return render_template('relatorios/horas_aula_form.html')
+    return render_template('relatorios/horas_aula_form.html', 
+                           tipo_relatorio=report_type.replace("_", " ").title(), 
+                           todos_instrutores=todos_instrutores)

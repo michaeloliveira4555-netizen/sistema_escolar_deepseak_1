@@ -57,6 +57,18 @@
             </div>
 
             <div class="form-group">
+                <label>Efetivo da Reserva Remunerada?</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="is_rr" value="sim"> Sim
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="is_rr" value="nao" checked> Não
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="especializacao">Especialização:</label>
                 <input type="text" class="form-control" id="especializacao" name="especializacao" value="{{ form_data.get('especializacao', '') }}" placeholder="Ex: Direito Penal, Educação Física, etc.">
             </div>
@@ -73,6 +85,20 @@
         </form>
     </div>
 </div>
+
+<style>
+.radio-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from sqlalchemy import select
 
@@ -21,7 +21,9 @@ def adicionar_disciplina():
         success, message = DisciplinaService.save_disciplina(request.form)
         if success:
             flash(message, 'success')
-            return redirect(url_for('disciplina.listar_disciplinas'))
+            # Redireciona para o ciclo da disciplina recém-criada
+            ciclo = request.form.get('ciclo', 1)
+            return redirect(url_for('disciplina.listar_disciplinas', ciclo=ciclo))
         else:
             flash(message, 'danger')
             return render_template('adicionar_disciplina.html', form_data=request.form)
@@ -31,8 +33,17 @@ def adicionar_disciplina():
 @disciplina_bp.route('/listar')
 @login_required
 def listar_disciplinas():
+    # Obtém o ciclo da URL ou da sessão do usuário, com padrão 1
+    ciclo_selecionado = request.args.get('ciclo', session.get('ultimo_ciclo_visualizado', 1), type=int)
+    session['ultimo_ciclo_visualizado'] = ciclo_selecionado # Salva a escolha do usuário
+
     pelotao_filtrado = request.args.get('pelotao')
-    disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
+    
+    # Filtra as disciplinas pelo ciclo selecionado
+    disciplinas = db.session.scalars(
+        select(Disciplina).where(Disciplina.ciclo == ciclo_selecionado).order_by(Disciplina.materia)
+    ).all()
+    
     disciplinas_com_instrutores = []
     if pelotao_filtrado:
         for disciplina in disciplinas:
@@ -46,11 +57,25 @@ def listar_disciplinas():
     else:
         for disciplina in disciplinas:
             disciplinas_com_instrutores.append((disciplina, None))
+            
     return render_template(
         'listar_disciplinas.html', 
         disciplinas_com_instrutores=disciplinas_com_instrutores, 
-        pelotao_filtrado=pelotao_filtrado
+        pelotao_filtrado=pelotao_filtrado,
+        ciclos=[1, 2, 3],
+        ciclo_selecionado=ciclo_selecionado
     )
+
+# Rota de API para buscar disciplinas por ciclo (usado na tela de vínculos)
+@disciplina_bp.route('/api/por-ciclo/<int:ciclo_id>')
+@login_required
+@admin_or_programmer_required
+def api_disciplinas_por_ciclo(ciclo_id):
+    disciplinas = db.session.scalars(
+        select(Disciplina).where(Disciplina.ciclo == ciclo_id).order_by(Disciplina.materia)
+    ).all()
+    return jsonify([{'id': d.id, 'materia': d.materia} for d in disciplinas])
+
 
 @disciplina_bp.route('/editar/<int:disciplina_id>', methods=['GET', 'POST'])
 @login_required
@@ -69,7 +94,7 @@ def editar_disciplina(disciplina_id):
             flash(f'Carga horária da disciplina "{disciplina.materia}" atualizada com sucesso!', 'success')
         else:
             flash('Valor inválido para carga horária.', 'danger')
-        return redirect(url_for('disciplina.listar_disciplinas'))
+        return redirect(url_for('disciplina.listar_disciplinas', ciclo=disciplina.ciclo))
 
     return render_template('editar_disciplina.html', disciplina=disciplina)
 
@@ -87,7 +112,7 @@ def editar_nome_disciplina(disciplina_id):
         success, message = DisciplinaService.update_disciplina(disciplina_id, request.form.to_dict())
         if success:
             flash(message, 'success')
-            return redirect(url_for('disciplina.listar_disciplinas'))
+            return redirect(url_for('disciplina.listar_disciplinas', ciclo=disciplina.ciclo))
         else:
             flash(message, 'danger')
             return render_template('editar_nome_disciplina.html', disciplina=disciplina, form_data=request.form)
@@ -105,30 +130,14 @@ def excluir_disciplina(disciplina_id):
         return redirect(url_for('disciplina.listar_disciplinas'))
     
     try:
+        ciclo_redirect = disciplina.ciclo
         disciplina_nome = disciplina.materia
         
-        # 1. Remover associações disciplina-turma
-        associacoes = db.session.scalars(
-            select(DisciplinaTurma).where(DisciplinaTurma.disciplina_id == disciplina_id)
-        ).all()
-        for associacao in associacoes:
-            db.session.delete(associacao)
+        # Remover associações, aulas e históricos
+        db.session.query(DisciplinaTurma).filter_by(disciplina_id=disciplina_id).delete()
+        db.session.query(Horario).filter_by(disciplina_id=disciplina_id).delete()
+        db.session.query(HistoricoDisciplina).filter_by(disciplina_id=disciplina_id).delete()
         
-        # 2. Remover aulas agendadas
-        aulas = db.session.scalars(
-            select(Horario).where(Horario.disciplina_id == disciplina_id)
-        ).all()
-        for aula in aulas:
-            db.session.delete(aula)
-        
-        # 3. Remover histórico de disciplinas dos alunos
-        historicos = db.session.scalars(
-            select(HistoricoDisciplina).where(HistoricoDisciplina.disciplina_id == disciplina_id)
-        ).all()
-        for historico in historicos:
-            db.session.delete(historico)
-        
-        # 4. Finalmente, remover a disciplina
         db.session.delete(disciplina)
         
         db.session.commit()
@@ -139,4 +148,4 @@ def excluir_disciplina(disciplina_id):
         db.session.rollback()
         flash(f'Erro ao excluir disciplina: {str(e)}', 'danger')
     
-    return redirect(url_for('disciplina.listar_disciplinas'))
+    return redirect(url_for('disciplina.listar_disciplinas', ciclo=ciclo_redirect))

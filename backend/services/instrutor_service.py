@@ -19,6 +19,10 @@ class InstrutorService:
         telefone_raw = data.get('telefone')
         especializacao = data.get('especializacao', '')
         formacao = data.get('formacao', '')
+        is_rr_str = data.get('is_rr')
+
+        if not telefone_raw:
+            return False, "Telefone é um campo obrigatório."
 
         # Lógica para Posto/Graduação
         posto_graduacao_select = data.get('posto_graduacao_select')
@@ -33,8 +37,10 @@ class InstrutorService:
         if not matricula:
             return False, "Matrícula é um campo obrigatório."
 
-        if telefone and not validate_telefone(telefone):
+        if not validate_telefone(telefone):
             return False, "Telefone inválido."
+            
+        is_rr = True if is_rr_str == 'sim' else False
 
         try:
             novo_instrutor = Instrutor(
@@ -43,7 +49,8 @@ class InstrutorService:
                 especializacao=especializacao,
                 formacao=formacao,
                 posto_graduacao=posto_graduacao,
-                telefone=telefone
+                telefone=telefone,
+                is_rr=is_rr
             )
             db.session.add(novo_instrutor)
             db.session.commit()
@@ -77,7 +84,11 @@ class InstrutorService:
         telefone_raw = data.get('telefone')
         especializacao = data.get('especializacao', '')
         formacao = data.get('formacao', '')
-        posto_graduacao = data.get('posto_graduacao') # Para edição direta no perfil
+        posto_graduacao = data.get('posto_graduacao')
+        is_rr_str = data.get('is_rr')
+
+        if not telefone_raw:
+            return False, "Telefone é um campo obrigatório."
 
         matricula = ''.join(filter(str.isdigit, matricula_raw)) if matricula_raw else None
         telefone = ''.join(filter(str.isdigit, telefone_raw)) if telefone_raw else None
@@ -87,8 +98,10 @@ class InstrutorService:
 
         if not matricula.isdigit():
             return False, "Matrícula deve conter apenas números."
-        if telefone and not validate_telefone(telefone):
+        if not validate_telefone(telefone):
             return False, "Telefone inválido."
+
+        is_rr = True if is_rr_str == 'sim' else False
 
         try:
             instrutor.matricula = matricula
@@ -96,6 +109,7 @@ class InstrutorService:
             instrutor.formacao = formacao
             instrutor.posto_graduacao = posto_graduacao
             instrutor.telefone = telefone
+            instrutor.is_rr = is_rr
 
             db.session.commit()
             return True, "Perfil do instrutor atualizado com sucesso!"

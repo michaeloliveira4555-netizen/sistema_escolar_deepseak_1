@@ -21,8 +21,6 @@ class Aluno(db.Model):
     funcao_atual: Mapped[t.Optional[str]] = mapped_column(db.String(50))
     foto_perfil: Mapped[str] = mapped_column(db.String(255), default='default.png')
     
-    # --- CORREÇÃO NESTA LINHA ---
-    # Trocamos "Mapted" por "Mapped"
     telefone: Mapped[t.Optional[str]] = mapped_column(db.String(20))
     
     data_nascimento: Mapped[t.Optional[date]] = mapped_column(db.Date)
@@ -33,8 +31,9 @@ class Aluno(db.Model):
     user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'), unique=True)
     user: Mapped["User"] = relationship(back_populates="aluno_profile")
 
-    historico: Mapped[list["HistoricoAluno"]] = relationship(back_populates="aluno")
-    historico_disciplinas: Mapped[list["HistoricoDisciplina"]] = relationship(back_populates="aluno")
+    # CORREÇÃO APLICADA AQUI: Adicionado cascade="all, delete-orphan"
+    historico: Mapped[list["HistoricoAluno"]] = relationship(back_populates="aluno", cascade="all, delete-orphan")
+    historico_disciplinas: Mapped[list["HistoricoDisciplina"]] = relationship(back_populates="aluno", cascade="all, delete-orphan")
 
     def __init__(self, user_id: int, matricula: str, opm: str, 
                  id_aluno: t.Optional[str] = None, num_aluno: t.Optional[str] = None,

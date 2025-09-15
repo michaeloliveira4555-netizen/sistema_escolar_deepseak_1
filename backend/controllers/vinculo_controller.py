@@ -16,31 +16,24 @@ vinculo_bp = Blueprint('vinculo', __name__, url_prefix='/vinculos')
 @login_required
 @admin_or_programmer_required
 def gerenciar_vinculos():
-    # Pega os parâmetros de filtro da URL
     turma_filtrada = request.args.get('turma', '')
     disciplina_filtrada_id = request.args.get('disciplina_id', '')
 
-    # Começa a query base, buscando apenas vínculos que têm um instrutor
     query = db.select(DisciplinaTurma).options(
         joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
         joinedload(DisciplinaTurma.disciplina)
     ).filter(DisciplinaTurma.instrutor_id_1.isnot(None))
 
-    # Aplica o filtro de turma, se um foi selecionado
     if turma_filtrada:
         query = query.filter(DisciplinaTurma.pelotao == turma_filtrada)
 
-    # Aplica o filtro de disciplina, se uma foi selecionada
     if disciplina_filtrada_id:
         query = query.filter(DisciplinaTurma.disciplina_id == int(disciplina_filtrada_id))
 
-    # Ordena os resultados
     query = query.order_by(DisciplinaTurma.pelotao, DisciplinaTurma.disciplina_id)
 
-    # Executa a query
     vinculos = db.session.scalars(query).all()
 
-    # Busca todas as turmas e disciplinas para popular os filtros no template
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
     disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
 
@@ -52,7 +45,6 @@ def gerenciar_vinculos():
         turma_filtrada=turma_filtrada,
         disciplina_filtrada_id=int(disciplina_filtrada_id) if disciplina_filtrada_id else None
     )
-
 
 @vinculo_bp.route('/adicionar', methods=['GET', 'POST'])
 @login_required
@@ -72,18 +64,15 @@ def adicionar_vinculo():
             flash('Turma não encontrada.', 'danger')
             return redirect(url_for('vinculo.adicionar_vinculo'))
 
-        # Verifica se já existe um vínculo para esta disciplina nesta turma
         vinculo_existente = DisciplinaTurma.query.filter_by(
             disciplina_id=int(disciplina_id),
             pelotao=turma.nome
         ).first()
 
         if vinculo_existente:
-            # Se já existe, atualiza o instrutor
             vinculo_existente.instrutor_id_1 = int(instrutor_id)
-            flash('Vínculo atualizado com sucesso, pois já havia uma disciplina nesta turma!', 'info')
+            flash('Vínculo atualizado com sucesso!', 'info')
         else:
-            # Se não existe, cria um novo
             novo_vinculo = DisciplinaTurma(
                 instrutor_id_1=int(instrutor_id),
                 pelotao=turma.nome,
@@ -95,11 +84,9 @@ def adicionar_vinculo():
         db.session.commit()
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
-    instrutores = db.session.scalars(select(Instrutor)).all()
-    turmas = db.session.scalars(select(Turma)).all()
-    disciplinas = db.session.scalars(select(Disciplina)).all()
-    return render_template('adicionar_vinculo.html', instrutores=instrutores, turmas=turmas, disciplinas=disciplinas)
-
+    instrutores = db.session.scalars(select(Instrutor).order_by(Instrutor.id)).all()
+    turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+    return render_template('adicionar_vinculo.html', instrutores=instrutores, turmas=turmas, ciclos=[1, 2, 3])
 
 @vinculo_bp.route('/editar/<int:vinculo_id>', methods=['GET', 'POST'])
 @login_required
@@ -134,8 +121,8 @@ def editar_vinculo(vinculo_id):
 
     instrutores = db.session.scalars(select(Instrutor)).all()
     turmas = db.session.scalars(select(Turma)).all()
-    disciplinas = db.session.scalars(select(Disciplina)).all()
-    return render_template('editar_vinculo.html', vinculo=vinculo, instrutores=instrutores, turmas=turmas, disciplinas=disciplinas)
+    disciplina_atual = db.session.get(Disciplina, vinculo.disciplina_id)
+    return render_template('editar_vinculo.html', vinculo=vinculo, instrutores=instrutores, turmas=turmas, ciclos=[1, 2, 3], ciclo_atual=disciplina_atual.ciclo)
 
 @vinculo_bp.route('/excluir/<int:vinculo_id>', methods=['POST'])
 @login_required
@@ -143,9 +130,11 @@ def editar_vinculo(vinculo_id):
 def excluir_vinculo(vinculo_id):
     vinculo = db.session.get(DisciplinaTurma, vinculo_id)
     if vinculo:
-        db.session.delete(vinculo)
+        # Em vez de deletar, apenas remove o instrutor para manter a associação
+        vinculo.instrutor_id_1 = None
+        vinculo.instrutor_id_2 = None
         db.session.commit()
-        flash('Vínculo excluído com sucesso!', 'success')
+        flash('Vínculo de instrutor removido com sucesso!', 'success')
     else:
         flash('Vínculo não encontrado.', 'danger')
     return redirect(url_for('vinculo.gerenciar_vinculos'))

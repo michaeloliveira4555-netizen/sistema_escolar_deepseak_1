@@ -23,6 +23,7 @@
                         <th>Dia</th>
                         <th>Período</th>
                         <th>Disciplina</th>
+                        <th>Ciclo</th>
                         <th>Instrutor</th>
                         <th class="text-right">Ações</th>
                     </tr>
@@ -35,6 +36,7 @@
                         <td data-label="Dia">{{ aula.dia_semana }}</td>
                         <td data-label="Período">{{ aula.periodo }}º</td>
                         <td data-label="Disciplina">{{ aula.disciplina.materia }}</td>
+                        <td data-label="Ciclo">{{ aula.disciplina.ciclo }}</td>
                         <td data-label="Instrutor">{{ aula.instrutor.user.nome_completo or aula.instrutor.user.username }}</td>
                         <td data-label="Ações" class="text-right">
                             <form method="POST" action="{{ url_for('horario.aprovar_horarios') }}" style="display: inline-block;">
