@@ -11,32 +11,13 @@
 <div class="table-container">
     <div class="table-header">
         <h3>
-            {% if pelotao_filtrado %}
-                Instrutores do {{ pelotao_filtrado }}
-            {% else %}
-                Visão Geral das Disciplinas
-            {% endif %}
+            Visão Geral das Disciplinas
         </h3>
         {% if current_user.role in ['super_admin', 'programador'] %}
         <a href="{{ url_for('disciplina.adicionar_disciplina') }}" class="btn btn-primary">
             <span>+</span> Adicionar Nova Disciplina
         </a>
         {% endif %}
-    </div>
-
-    <div class="table-filters">
-        <strong>Visualizar Pelotão:</strong>
-        <div class="filter-buttons">
-            {% for i in range(1, 9) %}
-            <a href="{{ url_for('disciplina.listar_disciplinas', pelotao=i ~ '° Pelotão') }}" 
-               class="btn btn-sm {% if pelotao_filtrado and pelotao_filtrado == i ~ '° Pelotão' %}btn-primary{% else %}btn-secondary{% endif %}">
-                {{ i }}º Pelotão
-            </a>
-            {% endfor %}
-            {% if pelotao_filtrado %}
-            <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn btn-sm btn-danger">Limpar Filtro</a>
-            {% endif %}
-        </div>
     </div>
 
     <div class="table-responsive">
@@ -75,7 +56,6 @@
                         <td data-label="Ações" class="text-right">
                             <div class="btn-group">
                                 <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Gerenciar</a>
-                                <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-info">Editar</a>
                                 <form method="POST" action="{{ url_for('disciplina.excluir_disciplina', disciplina_id=disciplina.id) }}" style="display: inline;" onsubmit="return confirm('⚠️ ATENÇÃO: Excluir esta disciplina irá:\n\n• Remover todas as associações com instrutores\n• Remover todas as aulas agendadas\n• Remover do histórico de todos os alunos\n\nEsta ação NÃO PODE ser desfeita!\n\nTem certeza que deseja continuar?');">
                                     {{ delete_form.hidden_tag() }}
                                     <button type="submit" class="btn btn-sm btn-danger">Excluir</button>

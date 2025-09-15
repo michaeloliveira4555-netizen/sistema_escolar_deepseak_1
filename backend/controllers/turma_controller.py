@@ -62,9 +62,6 @@ def detalhes_turma(turma_id):
             cargos_atuais[cargo] = None
 
     form = TurmaCargoForm()
-    alunos_da_turma = db.session.scalars(select(Aluno).where(Aluno.turma_id == turma_id)).all()
-    form.alunos_ids.choices = [(a.id, a.user.nome_completo) for a in alunos_da_turma]
-
     return render_template(
         'detalhes_turma.html',
         turma=turma,
@@ -83,8 +80,6 @@ def salvar_cargos_turma(turma_id):
         return redirect(url_for('turma.listar_turmas'))
 
     form = TurmaCargoForm()
-    alunos_da_turma = db.session.scalars(select(Aluno).where(Aluno.turma_id == turma_id)).all()
-    form.alunos_ids.choices = [(a.id, a.user.nome_completo) for a in alunos_da_turma]
 
     if form.validate_on_submit():
         try:

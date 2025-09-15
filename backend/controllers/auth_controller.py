@@ -96,7 +96,7 @@ def login():
             # Se for um aluno sem perfil, redireciona para completar
             if user.role == 'aluno' and not user.aluno_profile:
                 flash('Por favor, complete seu perfil de aluno para continuar.', 'info')
-                return redirect(url_for('aluno.cadastro_aluno'))
+                return redirect(url_for('aluno.completar_cadastro'))
             # SE FOR UM INSTRUTOR SEM PERFIL, REDIRECIONA PARA COMPLETAR
             elif user.role == 'instrutor' and not user.instrutor_profile:
                 flash('Por favor, complete seu perfil de instrutor para continuar.', 'info')

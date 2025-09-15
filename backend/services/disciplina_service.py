@@ -54,35 +54,35 @@ class DisciplinaService:
 
         try:
             carga_horaria_int = int(carga_horaria)
+
+            if db.session.execute(select(Disciplina).where(Disciplina.materia == nome_materia)).scalar_one_or_none():
+                return False, "Uma disciplina com este nome já existe."
+
+            nova_disciplina = Disciplina(
+                materia=nome_materia,
+                carga_horaria_prevista=carga_horaria_int
+            )
+            db.session.add(nova_disciplina)
+            db.session.flush()
+
+            todos_os_alunos = db.session.scalars(select(Aluno)).all()
+            for aluno in todos_os_alunos:
+                nova_matricula = HistoricoDisciplina(aluno_id=aluno.id, disciplina_id=nova_disciplina.id)
+                db.session.add(nova_matricula)
+
+            turmas = db.session.scalars(select(Turma)).all()
+            for turma in turmas:
+                associacao = DisciplinaTurma(pelotao=turma.nome, disciplina_id=nova_disciplina.id)
+                db.session.add(associacao)
+
+            db.session.commit()
+            return True, "Disciplina cadastrada e associada a todos os alunos e turmas!"
         except (ValueError, TypeError):
             return False, "Carga horária deve ser um número inteiro."
-
-        if db.session.execute(select(Disciplina).where(Disciplina.materia == nome_materia)).scalar_one_or_none():
-            return False, "Uma disciplina com este nome já existe."
-
-        nova_disciplina = Disciplina(
-            materia=nome_materia,
-            carga_horaria_prevista=carga_horaria_int
-        )
-        db.session.add(nova_disciplina)
-        db.session.flush()  # Para obter o ID da nova disciplina
-
-        # Matricula todos os alunos na nova disciplina
-        todos_os_alunos = db.session.scalars(select(Aluno)).all()
-        for aluno in todos_os_alunos:
-            nova_matricula = HistoricoDisciplina(aluno_id=aluno.id, disciplina_id=nova_disciplina.id)
-            db.session.add(nova_matricula)
-        
-        # Cria associações para todas as turmas
-        turmas = db.session.scalars(select(Turma)).all()
-        for turma in turmas:
-            associacao = DisciplinaTurma(
-                pelotao=turma.nome,
-                disciplina_id=nova_disciplina.id,
-            )
-            db.session.add(associacao)
-
-        return True, "Disciplina cadastrada e associada a todos os alunos e turmas!"
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao salvar disciplina: {e}")
+            return False, f"Ocorreu um erro ao salvar a disciplina: {str(e)}"
 
     @staticmethod
     def get_all_disciplinas():
@@ -114,13 +114,20 @@ class DisciplinaService:
 
         try:
             carga_horaria_int = int(carga_horaria)
+
+            if nome_materia != disciplina.materia and db.session.execute(select(Disciplina).filter(Disciplina.materia == nome_materia)).scalar_one_or_none():
+                return False, "Uma disciplina com este nome já existe."
+
+            disciplina.materia = nome_materia
+            disciplina.carga_horaria_prevista = carga_horaria_int
+            db.session.commit()
+            return True, "Disciplina atualizada com sucesso!"
         except (ValueError, TypeError):
             return False, "Carga horária deve ser um número inteiro."
-
-        disciplina.materia = nome_materia
-        disciplina.carga_horaria_prevista = carga_horaria_int
-            
-        return True, "Disciplina atualizada com sucesso!"
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao atualizar disciplina: {e}")
+            return False, f"Ocorreu um erro ao atualizar a disciplina: {str(e)}"
 
     @staticmethod
     def delete_disciplina(disciplina_id: int):
