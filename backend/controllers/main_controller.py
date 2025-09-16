@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from ..models.user import User
-from ..app import db
+from ..models.database import db
 # IMPORTAÇÃO DO NOVO DECORADOR
 from utils.decorators import aluno_profile_required, admin_or_programmer_required
 from ..services.user_service import UserService

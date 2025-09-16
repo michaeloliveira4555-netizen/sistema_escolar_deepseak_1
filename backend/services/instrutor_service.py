@@ -8,43 +8,43 @@ from utils.validators import validate_telefone
 
 class InstrutorService:
     def save_instrutor(user_id, data):
-    existing_instrutor = db.session.execute(
-        select(Instrutor).where(Instrutor.user_id == user_id)
-    ).scalar_one_or_none()
-    if existing_instrutor:
-        return False, "Este usuário já possui um perfil de instrutor cadastrado."
+        existing_instrutor = db.session.execute(
+            select(Instrutor).where(Instrutor.user_id == user_id)
+        ).scalar_one_or_none()
+        if existing_instrutor:
+            return False, "Este usuário já possui um perfil de instrutor cadastrado."
 
-    matricula_raw = data.get('matricula')
-    if not matricula_raw:
-        user = db.session.get(User, user_id)
-        if not user:
-            return False, "Usuário não encontrado."
-        matricula_raw = user.id_func
+        matricula_raw = data.get('matricula')
+        if not matricula_raw:
+            user = db.session.get(User, user_id)
+            if not user:
+                return False, "Usuário não encontrado."
+            matricula_raw = user.id_func
 
-    telefone_raw = data.get('telefone')
-    especializacao = data.get('especializacao', '') # Aceita campo vazio
-    formacao = data.get('formacao', '') # Aceita campo vazio
+        telefone_raw = data.get('telefone')
+        especializacao = data.get('especializacao', '') # Aceita campo vazio
+        formacao = data.get('formacao', '') # Aceita campo vazio
 
-    matricula = ''.join(filter(str.isdigit, str(matricula_raw))) if matricula_raw else None
-    telefone = ''.join(filter(str.isdigit, str(telefone_raw))) if telefone_raw else None
+        matricula = ''.join(filter(str.isdigit, str(matricula_raw))) if matricula_raw else None
+        telefone = ''.join(filter(str.isdigit, str(telefone_raw))) if telefone_raw else None
 
-    if not matricula:
-        return False, "Matrícula é um campo obrigatório."
-    
-    if not matricula.isdigit():
-        return False, "Matrícula deve conter apenas números."
-    if telefone and not validate_telefone(telefone):
-        return False, "Telefone inválido."
+        if not matricula:
+            return False, "Matrícula é um campo obrigatório."
+        
+        if not matricula.isdigit():
+            return False, "Matrícula deve conter apenas números."
+        if telefone and not validate_telefone(telefone):
+            return False, "Telefone inválido."
 
-    novo_instrutor = Instrutor(
-        user_id=user_id,
-        matricula=matricula,
-        especializacao=especializacao,
-        formacao=formacao,
-        telefone=telefone
-    )
-    db.session.add(novo_instrutor)
-    return True, "Perfil de instrutor cadastrado com sucesso!"
+        novo_instrutor = Instrutor(
+            user_id=user_id,
+            matricula=matricula,
+            especializacao=especializacao,
+            formacao=formacao,
+            telefone=telefone
+        )
+        db.session.add(novo_instrutor)
+        return True, "Perfil de instrutor cadastrado com sucesso!"
 
     @staticmethod
     def get_all_instrutores():

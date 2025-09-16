@@ -26,16 +26,22 @@ def dashboard():
         selected_school = db.session.get(School, selected_school_id)
         if selected_school:
             # Buscar admin_escola
-            admin_escola_users = db.session.query(User).join(UserSchool).
-                filter(UserSchool.school_id == selected_school.id, UserSchool.role == 'admin_escola').all()
+            admin_escola_users = (db.session.query(User)
+                                  .join(UserSchool)
+                                  .filter(UserSchool.school_id == selected_school.id, UserSchool.role == 'admin_escola')
+                                  .all())
             
             # Buscar alunos
-            alunos = db.session.query(User).join(UserSchool).
-                filter(UserSchool.school_id == selected_school.id, UserSchool.role == 'aluno').all()
+            alunos = (db.session.query(User)
+                      .join(UserSchool)
+                      .filter(UserSchool.school_id == selected_school.id, UserSchool.role == 'aluno')
+                      .all())
             
             # Buscar instrutores
-            instrutores = db.session.query(User).join(UserSchool).
-                filter(UserSchool.school_id == selected_school.id, UserSchool.role == 'instrutor').all()
+            instrutores = (db.session.query(User)
+                           .join(UserSchool)
+                           .filter(UserSchool.school_id == selected_school.id, UserSchool.role == 'instrutor')
+                           .all())
 
     return render_template(
         'super_admin/dashboard.html',

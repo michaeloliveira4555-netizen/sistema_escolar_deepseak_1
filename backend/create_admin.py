@@ -26,6 +26,7 @@ def create_super_admin_user():
             
             # Crie o novo usuário
             super_admin_user = User(
+                id_func='SUPER_ADMIN',
                 username='super_admin',
                 email='super_admin@esfas.com.br',
                 password_hash=generate_password_hash('@Nk*BC6GAJi8RrT'), # Manter a senha padrão por enquanto

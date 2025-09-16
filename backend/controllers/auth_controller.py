@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
 
-from ..app import db, limiter
+from ..models.database import db
 from ..models.user import User
 from utils.validators import validate_email, validate_password_strength
 from ..services.password_reset_service import PasswordResetService
@@ -78,7 +78,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+
 def login():
     form = LoginForm()
     if form.validate_on_submit():
