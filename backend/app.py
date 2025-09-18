@@ -3,9 +3,9 @@ from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_babel import Babel
+
+from backend.extensions import limiter
 
 from backend.config import Config
 from backend.models.database import db
@@ -18,8 +18,7 @@ from backend.models.turma import Turma
 from backend.models.turma_cargo import TurmaCargo
 from backend.services.asset_service import AssetService
 
-# Crie o limiter como uma variável global
-limiter = Limiter(key_func=get_remote_address)
+
 
 def create_app(config_class=Config):
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -122,32 +121,36 @@ app = create_app()
 @app.cli.command("create-super-admin")
 def create_super_admin():
     with app.app_context():
-        super_admin_user = db.session.execute(db.select(User).filter_by(id_func='SUPER_ADMIN')).scalar_one_or_none()
-
-        if super_admin_user:
-            print("O usuário 'super_admin' já existe.")
-            return
-
         super_admin_password = os.environ.get('SUPER_ADMIN_PASSWORD')
         if not super_admin_password:
             print("A variável de ambiente SUPER_ADMIN_PASSWORD não está definida.")
             print("Por favor, defina a senha antes de criar o super administrador.")
             return
 
-        print("Criando o usuário super administrador 'super_admin'...")
-        new_super_admin = User(
-            id_func='SUPER_ADMIN',
-            username='super_admin',
-            email='super_admin@escola.com.br',
-            role='super_admin',
-            is_active=True
-        )
-        new_super_admin.set_password(super_admin_password)
+        user = db.session.execute(db.select(User).filter_by(username='super_admin')).scalar_one_or_none()
 
-        db.session.add(new_super_admin)
-        db.session.commit()
-
-        print("Usuário super administrador 'super_admin' criado com sucesso!")
+        if user:
+            if not user.is_active:
+                print("Usuário 'super_admin' encontrado, mas está inativo. Ativando e atualizando a senha...")
+                user.is_active = True
+                user.set_password(super_admin_password)
+                db.session.commit()
+                print("Usuário 'super_admin' ativado e senha atualizada com sucesso!")
+            else:
+                print("Usuário 'super_admin' já existe e está ativo.")
+        else:
+            print("Criando o usuário super administrador 'super_admin'...")
+            new_super_admin = User(
+                id_func='SUPER_ADMIN',
+                username='super_admin',
+                email='super_admin@escola.com.br',
+                role='super_admin',
+                is_active=True
+            )
+            new_super_admin.set_password(super_admin_password)
+            db.session.add(new_super_admin)
+            db.session.commit()
+            print("Usuário super administrador 'super_admin' criado com sucesso!")
 
 # Comando para criar programador
 @app.cli.command("create-programmer")

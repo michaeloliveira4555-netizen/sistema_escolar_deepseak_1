@@ -93,6 +93,10 @@ def login():
         if user and user.is_active and user.check_password(password):
             login_user(user)
 
+            # Redirecionamento baseado na função do usuário
+            if user.role == 'super_admin' or user.role == 'programador':
+                return redirect(url_for('super_admin.dashboard'))
+            
             # Se for um aluno sem perfil, redireciona para completar
             if user.role == 'aluno' and not user.aluno_profile:
                 flash('Por favor, complete seu perfil de aluno para continuar.', 'info')

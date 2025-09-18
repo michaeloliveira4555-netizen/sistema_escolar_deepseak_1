@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from ..models.user import User
+from ..models.school import School
 from ..models.database import db
-# IMPORTAÇÃO DO NOVO DECORADOR
+from ..services.dashboard_service import DashboardService
 from utils.decorators import aluno_profile_required, admin_or_programmer_required
 from ..services.user_service import UserService
 
@@ -17,8 +18,35 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    dashboard_data = {}
-    return render_template('dashboard.html', dashboard_data=dashboard_data)
+    viewing_school = None
+    school_id_to_load = None
+
+    # 1. Verifica se o Super Admin está no modo "Visualizar como"
+    view_as_school_id = request.args.get('view_as_school', type=int)
+    if current_user.role in ['super_admin', 'programador'] and view_as_school_id:
+        school_id_to_load = view_as_school_id
+        viewing_school = db.session.get(School, school_id_to_load)
+        if not viewing_school:
+            flash("Escola selecionada para visualização não encontrada.", "danger")
+            return redirect(url_for('super_admin.dashboard'))
+    else:
+        # 2. Para usuários normais, encontra a primeira escola associada
+        if current_user.schools:
+            school_id_to_load = current_user.schools[0].id
+        else:
+            # Se o usuário não tem escola (ex: super_admin sem modo de visualização),
+            # school_id_to_load permanece None, mostrando dados globais.
+            pass
+
+    dashboard_data = DashboardService.get_dashboard_data(school_id=school_id_to_load)
+    
+    # Define qual escola está em contexto para exibição no template
+    school_in_context = viewing_school or (current_user.schools[0] if current_user.schools else None)
+
+    return render_template('dashboard.html', 
+                           dashboard_data=dashboard_data, 
+                           viewing_school=viewing_school,
+                           school_in_context=school_in_context)
 
 @main_bp.route('/pre-cadastro', methods=['GET', 'POST'])
 @login_required
@@ -27,14 +55,11 @@ def pre_cadastro():
     role_arg = request.args.get('role')
 
     if request.method == 'POST':
-        # Constrói um dicionário mutável a partir do form
         form_data = request.form.to_dict()
-        # Injeta a role da querystring caso não tenha vindo no form (quando chamada por contexto)
         if role_arg and not form_data.get('role'):
             form_data['role'] = role_arg
 
         id_func_raw = form_data.get('id_func', '').strip()
-        # Suporte a múltiplas IDs separadas por '/'
         if '/' in id_func_raw:
             partes = [p.strip() for p in id_func_raw.split('/') if p.strip()]
             ids_numericos = [p for p in partes if p.isdigit()]
@@ -57,5 +82,4 @@ def pre_cadastro():
                 flash(message, 'danger')
             return redirect(url_for('main.pre_cadastro', role=role_arg) if role_arg else url_for('main.pre_cadastro'))
 
-    # GET: passa role_predefinido para o template para controlar a UI
     return render_template('pre_cadastro.html', role_predefinido=role_arg)
