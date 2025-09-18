@@ -23,6 +23,40 @@
         </div>
     </div>
 
+    {# Formulário de Criação de Administrador #}
+    <div class="card mb-4">
+        <div class="card-header">
+            Adicionar Novo Administrador de Escola
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('super_admin.create_administrator') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-group mb-3">
+                    <label for="nome_completo">Nome Completo</label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="email">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="id_func">ID Funcional (Matrícula)</label>
+                    <input type="text" class="form-control" id="id_func" name="id_func" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="school_id">Escola</label>
+                    <select class="form-select" id="school_id" name="school_id" required>
+                        <option value="">-- Selecione a Escola --</option>
+                        {% for school in schools %}
+                            <option value="{{ school.id }}">{{ school.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Criar Administrador</button>
+            </form>
+        </div>
+    </div>
+
     {# Tabela de Escolas Existentes #}
     <div class="card">
         <div class="card-header">
