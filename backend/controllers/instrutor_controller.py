@@ -53,6 +53,7 @@ def completar_cadastro():
     form = InstrutorProfileForm()
     if form.validate_on_submit():
         success, message = InstrutorService.save_instrutor(current_user.id, form.data)
+
         if success:
             flash("Perfil de instrutor completado com sucesso!", 'success')
             return redirect(url_for('main.dashboard'))
@@ -64,6 +65,7 @@ def completar_cadastro():
 @login_required
 @admin_or_programmer_required
 def cadastro_instrutor_admin():
+
     form = InstrutorAdminForm()
     if form.validate_on_submit():
         is_strong, message = validate_password_strength(form.password.data)

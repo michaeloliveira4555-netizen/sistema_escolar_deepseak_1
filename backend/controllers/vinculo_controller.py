@@ -29,6 +29,7 @@ class DeleteForm(FlaskForm):
 @login_required
 @admin_or_programmer_required
 def gerenciar_vinculos():
+
     delete_form = DeleteForm()
     turma_filtrada = request.args.get('turma', '')
     disciplina_filtrada_id = request.args.get('disciplina_id', '')
@@ -40,10 +41,12 @@ def gerenciar_vinculos():
 
     if turma_filtrada:
         query = query.filter(DisciplinaTurma.pelotao == turma_filtrada)
+
     if disciplina_filtrada_id:
         query = query.filter(DisciplinaTurma.disciplina_id == int(disciplina_filtrada_id))
 
     query = query.order_by(DisciplinaTurma.pelotao, DisciplinaTurma.disciplina_id)
+
     vinculos = db.session.scalars(query).all()
 
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()

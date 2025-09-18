@@ -2,134 +2,161 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Relatório de Horas-Aula</title>
+    <title>Mapa de Gratificação Magistério</title>
     <style>
         @page {
-            size: A4 landscape; /* FORÇA O MODO PAISAGEM */
-            margin: 1.5cm;
+            size: A4 landscape;
+            margin: 1cm 1.5cm;
         }
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 10pt; /* FONTE REDUZIDA */
-            line-height: 1.4;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 1.5cm;
-            line-height: 1.2;
-        }
-        .header p {
-            margin: 0;
-            font-weight: bold;
-            font-size: 11pt; /* Fonte do cabeçalho reduzida */
-        }
-        h1 {
-            font-size: 12pt; /* Fonte do título reduzida */
-            text-transform: uppercase;
-            margin: 0;
+            font-size: 9pt;
+            line-height: 1.3;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 0.8cm;
         }
         th, td {
             border: 1px solid black;
-            padding: 5px; /* Padding reduzido */
-            text-align: left;
-            vertical-align: top;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        .assinaturas {
-            margin-top: 2cm;
+            padding: 4px;
             text-align: center;
+            vertical-align: middle;
         }
-        .assinatura {
-            display: inline-block;
-            width: 48%;
-            margin-top: 1.5cm;
+        .header-table {
+            border: none;
+            margin-bottom: 0.5cm;
         }
-        .assinatura p {
+        .header-table td {
+            border: none;
+            vertical-align: top;
+            padding: 0;
+        }
+        .coluna-esquerda {
+            width: 30%;
+            border: 1px solid black;
+            padding: 0.2cm !important;
+        }
+        .coluna-central {
+            width: 45%;
+            text-align: center;
+            padding: 0 0.5cm !important;
+        }
+        .coluna-direita {
+            width: 25%;
+            padding: 0.2cm !important;
+        }
+        .main-table th {
+             background-color: #E0E0E0;
+        }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .assinaturas {
+            margin-top: 1cm;
+        }
+        .assinaturas td {
+            border: none;
+            text-align: center;
+            width: 50%;
+            padding-top: 1.5cm;
+        }
+        .assinatura-linha {
             border-top: 1px solid black;
             padding-top: 5px;
-            margin: 0;
-            font-size: 10pt; /* Fonte da assinatura reduzida */
         }
-        .footer {
-            text-align: right;
-            margin-top: 1.5cm;
-            font-size: 9pt; /* Fonte do rodapé reduzida */
+        .total-geral-row td {
+            font-weight: bold;
+            background-color: #E0E0E0;
         }
+        p { margin: 2px 0; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <p>ESTADO DO RIO GRANDE DO SUL</p>
-        <p>SECRETARIA DA SEGURANÇA PÚBLICA</p>
-        <p>BRIGADA MILITAR</p>
-        <p>DEPARTAMENTO DE ENSINO</p>
-        <p>ESCOLA DE FORMAÇÃO E APERFEIÇOAMENTO DE SARGENTOS</p>
-    </div>
 
-    <h1 style="text-align: center; margin-bottom: 1cm;">RELATÓRIO DE HORAS-AULA POR INSTRUTOR</h1>
+    <table class="header-table">
+        <tr>
+            <td class="coluna-esquerda">
+                <p>Em {{ data_inicio.strftime('%d/%m/%Y') }}</p>
+                <br><br><br>
+                <p style="text-align: center;"><strong>{{ comandante_nome or 'NOME DO COMANDANTE' }}</strong></p>
+                <p style="text-align: center;">Comandante da EsFAS</p>
+            </td>
+            <td class="coluna-central">
+                <h3 style="margin: 0; font-size: 11pt;">MAPA DE GRATIFICAÇÃO MAGISTÉRIO</h3>
+                <p><strong>OPM:</strong> Escola de Formação e Aperfeiçoamento de Sargentos</p>
+                <p><strong>Telefone:</strong> (55) 3220-6462</p>
+                <p>Horas aulas a pagar dos Meses de <strong>{{ nome_mes_ano }}</strong></p>
+                <p><strong>{{ titulo_curso }}</strong></p>
+            </td>
+            <td class="coluna-direita">
+                <p><strong>LANÇAR NO RHE</strong></p>
+                <p>____/_____/_____</p>
+                <br><br>
+                <p>____________________</p>
+                <p>Ch da SEÇÃO ADM DE</p>
+            </td>
+        </tr>
+    </table>
 
-    <p><strong>Período de Referência:</strong> {{ data_inicio.strftime('%d/%m/%Y') }} a {{ data_fim.strftime('%d/%m/%Y') }}</p>
-
-    {% for instrutor_data in dados %}
-    <table>
+    <table class="main-table">
         <thead>
             <tr>
-                <th colspan="2">INSTRUTOR</th>
+                <th>Posto /graduação</th>
+                <th>Id. Func.</th>
+                <th style="width: 25%;">Nome completo do servidor</th>
+                <th style="width: 25%;">Disciplina</th>
+                <th>CH total</th>
+                <th>CH paga anteriormente no acumulado dos mapas</th>
+                <th>CH a pagar</th>
+                <th>Valor em R$ CH a Pagar</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td style="width: 25%;"><strong>Id. Func (Matrícula):</strong></td>
-                <td>{{ instrutor_data.info.matricula }}</td>
-            </tr>
-            <tr>
-                <td><strong>Nome Completo:</strong></td>
-                <td>{{ instrutor_data.info.user.nome_completo }}</td>
-            </tr>
-            <tr>
-                <td><strong>Credor:</strong></td>
-                <td>{{ instrutor_data.info.credor or 'Não informado' }}</td>
-            </tr>
-            <tr>
-                <td colspan="2" style="background-color: #f2f2f2; text-align: center;"><strong>DISCIPLINAS MINISTRADAS</strong></td>
-            </tr>
-            <tr>
-                <td><strong>Disciplina</strong></td>
-                <td style="text-align: center;"><strong>Total de Horas-Aula</strong></td>
-            </tr>
-            {% for disciplina in instrutor_data.disciplinas %}
-            <tr>
-                <td>{{ disciplina.nome }}</td>
-                <td style="text-align: center;">{{ disciplina.horas }}</td>
-            </tr>
+            {% set total_geral_ch_a_pagar = namespace(valor=0) %}
+            {% set total_geral_valor_a_pagar = namespace(valor=0) %}
+            
+            {% for instrutor_data in dados %}
+                {% for disciplina in instrutor_data.disciplinas %}
+                    <tr>
+                        <td>{{ instrutor_data.info.posto_graduacao or 'N/D' }}</td>
+                        <td>{{ instrutor_data.info.user.id_func }}</td>
+                        <td class="text-left">{{ instrutor_data.info.user.nome_completo }}</td>
+                        <td class="text-left">{{ disciplina.nome }}</td>
+                        <td>{{ disciplina.ch_total }}</td>
+                        <td>{{ disciplina.ch_paga_anteriormente }}</td>
+                        <td>{{ disciplina.ch_a_pagar }}</td>
+                        <td>
+                            {% set valor_a_pagar = disciplina.ch_a_pagar * valor_hora_aula %}
+                            R$ {{ "%.2f"|format(valor_a_pagar)|replace('.', ',') }}
+                        </td>
+                    </tr>
+                    {% set total_geral_ch_a_pagar.valor = total_geral_ch_a_pagar.valor + disciplina.ch_a_pagar %}
+                    {% set total_geral_valor_a_pagar.valor = total_geral_valor_a_pagar.valor + valor_a_pagar %}
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8">Nenhum dado encontrado para o período selecionado.</td>
+                </tr>
             {% endfor %}
-            <tr>
-                <td style="text-align: right;"><strong>TOTAL GERAL DO INSTRUTOR</strong></td>
-                <td style="text-align: center; font-weight: bold;">{{ instrutor_data.total_geral }}</td>
+
+            <tr class="total-geral-row">
+                <td colspan="6" class="text-right"><strong>CARGA HORÁRIA TOTAL</strong></td>
+                <td><strong>{{ total_geral_ch_a_pagar.valor }}</strong></td>
+                <td><strong>R$ {{ "%.2f"|format(total_geral_valor_a_pagar.valor)|replace('.', ',') }}</strong></td>
             </tr>
         </tbody>
     </table>
-    <br> {% endfor %}
 
-    <div class="footer">
-        <p>{{ cidade_estado }}, {{ data_geracao }}.</p>
-    </div>
+    <table class="assinaturas">
+        <tr>
+            <td>
+                <p class="assinatura-linha">{{ auxiliar_nome or '____________________________________' }}<br>Auxiliar da Seção de Ensino</p>
+            </td>
+            <td>
+                <p class="assinatura-linha">{{ comandante_nome or '____________________________________' }}<br>Comandante da EsFAS</p>
+            </td>
+        </tr>
+    </table>
 
-    <div class="assinaturas">
-        <div class="assinatura">
-            <p>{{ chefe_ensino_nome or '____________________________________' }}<br>{{ chefe_ensino_cargo }}</p>
-        </div>
-        <div class="assinatura">
-            <p>{{ comandante_nome or '____________________________________' }}<br>{{ comandante_cargo }}</p>
-        </div>
-    </div>
 </body>
 </html>

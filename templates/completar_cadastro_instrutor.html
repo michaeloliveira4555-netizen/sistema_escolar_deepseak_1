@@ -12,8 +12,40 @@
         <form method="POST" action="{{ url_for('instrutor.completar_cadastro') }}">
             {{ form.hidden_tag() }}
             <div class="form-group">
-                {{ form.especializacao.label }}
-                {{ form.especializacao(class="form-control", placeholder="Ex: Direito Penal, Educação Física") }}
+                <label for="matricula">Matrícula (use a mesma que sua Id Funcional):</label>
+                <input type="text" id="matricula" name="matricula" class="form-control" value="{{ current_user.id_func }}" readonly required>
+            </div>
+
+            <div class="form-group">
+                <label for="posto_graduacao_select">Posto/Graduação:</label>
+                <select id="posto_graduacao_select" name="posto_graduacao_select" class="form-control">
+                    <option value="Sd PM">Sd PM</option>
+                    <option value="2º Sgt PM">2º Sgt PM</option>
+                    <option value="1º Sgt PM">1º Sgt PM</option>
+                    <option value="1º Ten PM">1º Ten PM</option>
+                    <option value="Cap PM">Cap PM</option>
+                    <option value="Maj PM">Maj PM</option>
+                    <option value="Ten Cel PM">Ten Cel PM</option>
+                    <option value="Cel PM">Cel PM</option>
+                    <option value="Outro">Outro (especificar)</option>
+                </select>
+            </div>
+            <div class="form-group" id="posto_graduacao_outro_div" style="display: none;">
+                <label for="posto_graduacao_outro">Especifique o Posto/Graduação:</label>
+                <input type="text" id="posto_graduacao_outro" name="posto_graduacao_outro" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label>Você é da Reserva Remunerada?</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="is_rr" value="sim"> Sim
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="is_rr" value="nao" checked> Não
+                    </label>
+                </div>
+
             </div>
 
             <div class="form-group">
@@ -27,12 +59,32 @@
             </div>
 
             <div class="form-group">
-                {{ form.credor.label }}
-                {{ form.credor(class="form-control", rows="3", placeholder="Informações de pagamento, ex: Banco, Agência, Conta, CPF/CNPJ") }}
+                <label for="telefone">Telefone: <span style="color: red;">*</span></label>
+                <input type="text" id="telefone" name="telefone" class="form-control" placeholder="(XX) XXXXX-XXXX" required>
             </div>
 
-            {{ form.submit(class="btn btn-primary", style="margin-top: 20px; width: 100%;") }}
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Salvar Perfil e Acessar</button>
         </form>
     </div>
 </div>
+
+<style>
+.radio-group { display: flex; gap: 1.5rem; margin-top: 0.5rem; }
+.radio-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const postoSelect = document.getElementById('posto_graduacao_select');
+    const outroDiv = document.getElementById('posto_graduacao_outro_div');
+
+    postoSelect.addEventListener('change', function() {
+        if (this.value === 'Outro') {
+            outroDiv.style.display = 'block';
+        } else {
+            outroDiv.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}

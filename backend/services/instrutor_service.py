@@ -22,19 +22,30 @@ class InstrutorService:
             matricula_raw = user.id_func
 
         telefone_raw = data.get('telefone')
-        especializacao = data.get('especializacao', '') # Aceita campo vazio
-        formacao = data.get('formacao', '') # Aceita campo vazio
+        especializacao = data.get('especializacao', '')
+        formacao = data.get('formacao', '')
+        is_rr_str = data.get('is_rr')
+
+        if not telefone_raw:
+            return False, "Telefone é um campo obrigatório."
+
+        # Lógica para Posto/Graduação
+        posto_graduacao_select = data.get('posto_graduacao_select')
+        if posto_graduacao_select == 'Outro':
+            posto_graduacao = data.get('posto_graduacao_outro', '')
+        else:
+            posto_graduacao = posto_graduacao_select
 
         matricula = ''.join(filter(str.isdigit, str(matricula_raw))) if matricula_raw else None
         telefone = ''.join(filter(str.isdigit, str(telefone_raw))) if telefone_raw else None
 
         if not matricula:
             return False, "Matrícula é um campo obrigatório."
-        
-        if not matricula.isdigit():
-            return False, "Matrícula deve conter apenas números."
-        if telefone and not validate_telefone(telefone):
+
+        if not validate_telefone(telefone):
             return False, "Telefone inválido."
+            
+        is_rr = True if is_rr_str == 'sim' else False
 
         novo_instrutor = Instrutor(
             user_id=user_id,
@@ -71,18 +82,23 @@ class InstrutorService:
             matricula_raw = user.id_func
 
         telefone_raw = data.get('telefone')
-        especializacao = data.get('especializacao', '') # Aceita campo vazio
-        formacao = data.get('formacao', '') # Aceita campo vazio
+        especializacao = data.get('especializacao', '')
+        formacao = data.get('formacao', '')
+        posto_graduacao = data.get('posto_graduacao')
+        is_rr_str = data.get('is_rr')
+
+        if not telefone_raw:
+            return False, "Telefone é um campo obrigatório."
 
         matricula = ''.join(filter(str.isdigit, str(matricula_raw))) if matricula_raw else None
         telefone = ''.join(filter(str.isdigit, str(telefone_raw))) if telefone_raw else None
 
         if not matricula:
             return False, "Matrícula é um campo obrigatório."
-        
+
         if not matricula.isdigit():
             return False, "Matrícula deve conter apenas números."
-        if telefone and not validate_telefone(telefone):
+        if not validate_telefone(telefone):
             return False, "Telefone inválido."
 
         instrutor.matricula = matricula

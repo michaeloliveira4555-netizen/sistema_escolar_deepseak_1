@@ -23,7 +23,6 @@
                     <option value="instrutor">Instrutor</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label for="id_func">Sua Identidade Funcional (Id Func):</label>
                 <input type="text" id="id_func" name="id_func" class="form-control"
@@ -31,35 +30,35 @@
                        placeholder="Digite sua Id Func (apenas números)"
                        value="{{ form_data.get('id_func', '') }}" required>
             </div>
-
             <div class="form-group">
                 <label for="nome_completo">Seu Nome Completo:</label>
                 <input type="text" id="nome_completo" name="nome_completo" class="form-control"
                        placeholder="Digite seu nome completo"
                        value="{{ form_data.get('nome_completo', '') }}" required>
             </div>
-
+            <div class="form-group">
+                <label for="nome_de_guerra">Seu Nome de Guerra:</label>
+                <input type="text" id="nome_de_guerra" name="nome_de_guerra" class="form-control"
+                       placeholder="Digite seu nome de guerra"
+                       value="{{ form_data.get('nome_de_guerra', '') }}" required>
+            </div>
             <div class="form-group">
                 <label for="email">Seu E-mail (Ex: nome.sobrenome@bm.rs.gov.br):</label>
                 <input type="email" id="email" name="email" class="form-control" placeholder="Digite seu e-mail completo" value="{{ form_data.get('email', '') }}" required>
             </div>
-
             <div class="form-group">
                 <label for="password_visible">Crie uma Senha:</label>
                 <input type="password" id="password_visible" name="new_password" class="form-control" autocomplete="new-password" required>
                 <input type="hidden" id="password" name="password">
             </div>
-
             <div class="password-rules">
                 <small>A senha deve conter pelo menos 8 caracteres, incluindo uma letra maiúscula, uma minúscula, um número e um caractere especial (!@#$%).</small>
             </div>
-
             <div class="form-group">
                 <label for="password2_visible">Confirme a Senha:</label>
                 <input type="password" id="password2_visible" name="new_password2" class="form-control" autocomplete="new-password" required>
                 <input type="hidden" id="password2" name="password2">
             </div>
-
             <button type="submit" class="btn btn-primary">Ativar Conta</button>
         </form>
         <script>

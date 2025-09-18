@@ -6,21 +6,25 @@
 <div class="auth-container">
     <div class="auth-card">
         <h2>{% if is_admin_flow %}Cadastrar Novo Instrutor{% else %}Completar Perfil de Instrutor{% endif %}</h2>
-        <form method="POST" action="{% if is_admin_flow %}{{ url_for('instrutor.cadastro_instrutor_admin') }}{% else %}{{ url_for('instrutor.cadastro_instrutor') }}{% endif %}">
-            {{ form.hidden_tag() }}
+
+        <form method="POST" action="{% if is_admin_flow %}{{ url_for('instrutor.cadastro_instrutor_admin') }}{% else %}{{ url_for('instrutor.completar_cadastro') }}{% endif %}">
             
             {% if is_admin_flow %}
                 <div class="form-group">
-                    {{ form.nome_completo.label }}
-                    {{ form.nome_completo(class="form-control") }}
+                    <label for="nome_completo">Nome Completo: <span style="color: red;">*</span></label>
+                    <input type="text" id="nome_completo" name="nome_completo" value="{{ form_data.get('nome_completo', '') }}" required>
                 </div>
                 <div class="form-group">
-                    {{ form.matricula.label }}
-                    {{ form.matricula(class="form-control") }}
+                    <label for="nome_de_guerra">Nome de Guerra: <span style="color: red;">*</span></label>
+                    <input type="text" id="nome_de_guerra" name="nome_de_guerra" value="{{ form_data.get('nome_de_guerra', '') }}" required>
                 </div>
                 <div class="form-group">
-                    {{ form.email.label }}
-                    {{ form.email(class="form-control") }}
+                    <label for="matricula">Matrícula (será usada para o login): <span style="color: red;">*</span></label>
+                    <input type="text" id="matricula" name="matricula" value="{{ form_data.get('matricula', '') }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">E-mail: <span style="color: red;">*</span></label>
+                    <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}" required>
                 </div>
                 <div class="form-group">
                     {{ form.password.label }}
@@ -35,24 +39,47 @@
             {% endif %}
 
             <div class="form-group">
-                {{ form.especializacao.label }}
-                {{ form.especializacao(class="form-control", placeholder="Ex: Direito Penal, Educação Física, etc.") }}
-                <small class="form-text text-muted">Campo opcional</small>
+                <label for="posto_graduacao_select">Posto/Graduação:</label>
+                <select id="posto_graduacao_select" name="posto_graduacao_select" class="form-control">
+                    <option value="Sd PM">Sd PM</option>
+                    <option value="2º Sgt PM">2º Sgt PM</option>
+                    <option value="1º Sgt PM">1º Sgt PM</option>
+                    <option value="1º Ten PM">1º Ten PM</option>
+                    <option value="Cap PM">Cap PM</option>
+                    <option value="Maj PM">Maj PM</option>
+                    <option value="Ten Cel PM">Ten Cel PM</option>
+                    <option value="Cel PM">Cel PM</option>
+                    <option value="Outro">Outro (especificar)</option>
+                </select>
+            </div>
+            <div class="form-group" id="posto_graduacao_outro_div" style="display: none;">
+                <label for="posto_graduacao_outro">Especifique o Posto/Graduação:</label>
+                <input type="text" id="posto_graduacao_outro" name="posto_graduacao_outro" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Efetivo da Reserva Remunerada?</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="is_rr" value="sim"> Sim
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="is_rr" value="nao" checked> Não
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="especializacao">Especialização:</label>
+                <input type="text" class="form-control" id="especializacao" name="especializacao" value="{{ form_data.get('especializacao', '') }}" placeholder="Ex: Direito Penal, Educação Física, etc.">
             </div>
             <div class="form-group">
-                {{ form.formacao.label }}
-                {{ form.formacao(class="form-control", placeholder="Ex: Bacharel em Direito, Licenciado em Educação Física, etc.") }}
-                <small class="form-text text-muted">Campo opcional</small>
+                <label for="formacao">Formação:</label>
+                <input type="text" class="form-control" id="formacao" name="formacao" value="{{ form_data.get('formacao', '') }}" placeholder="Ex: Bacharel em Direito, Licenciado em Educação Física, etc.">
             </div>
             <div class="form-group">
-                {{ form.telefone.label }}
-                {{ form.telefone(class="form-control", placeholder="(XX) XXXXX-XXXX") }}
-                <small class="form-text text-muted">Campo opcional</small>
-            </div>
-            <div class="form-group">
-                {{ form.credor.label }}
-                {{ form.credor(class="form-control", rows="3", placeholder="Informações de pagamento, ex: Banco, Agência, Conta, CPF/CNPJ") }}
-                <small class="form-text text-muted">Campo opcional</small>
+                <label for="telefone">Telefone:</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" value="{{ form_data.get('telefone', '') }}" placeholder="(XX) XXXXX-XXXX">
             </div>
 
             {{ form.submit(class="btn btn-primary") }}
@@ -60,28 +87,27 @@
     </div>
 </div>
 
+<style>
+.radio-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+</style>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const telefoneInput = document.getElementById('telefone');
-
-        if (telefoneInput) {
-            telefoneInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length > 11) value = value.slice(0, 11);
-
-                if (value.length > 10) {
-                    value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
-                } else if (value.length > 6) {
-                    value = value.replace(/^(\d{2})(\d{4})(\d{4}).*/, '($1) $2-$3');
-                } else if (value.length > 2) {
-                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
-                } else if (value.length > 0) {
-                    value = value.replace(/^(\d{0,2})/, '($1');
-                }
-                e.target.value = value;
-            });
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    const postoSelect = document.getElementById('posto_graduacao_select');
+    const outroDiv = document.getElementById('posto_graduacao_outro_div');
+    postoSelect.addEventListener('change', function() {
+        outroDiv.style.display = this.value === 'Outro' ? 'block' : 'none';
     });
+});
 </script>
-
 {% endblock %}

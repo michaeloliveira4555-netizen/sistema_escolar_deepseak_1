@@ -16,11 +16,11 @@
         <thead>
             <tr>
                 <th class="header-tempo">Horário</th>
-                <th class="header-dia">Segunda-feira</th>
-                <th class="header-dia">Terça-feira</th>
-                <th class="header-dia">Quarta-feira</th>
-                <th class="header-dia">Quinta-feira</th>
-                <th class="header-dia">Sexta-feira</th>
+                <th class="header-dia">Segunda-feira <br><small>({{ datas_semana.segunda }})</small></th>
+                <th class="header-dia">Terça-feira <br><small>({{ datas_semana.terca }})</small></th>
+                <th class="header-dia">Quarta-feira <br><small>({{ datas_semana.quarta }})</small></th>
+                <th class="header-dia">Quinta-feira <br><small>({{ datas_semana.quinta }})</small></th>
+                <th class="header-dia">Sexta-feira <br><small>({{ datas_semana.sexta }})</small></th>
             </tr>
         </thead>
         <tbody>
@@ -34,56 +34,28 @@
             {% set dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'] %}
 
             {% for row_idx in range(15) %}
-            <tr>
-                <td class="cell-tempo">
-                    <strong>{{ tempos[row_idx][0] }}</strong>
-                    <span>{{ tempos[row_idx][1] }}</span>
-                </td>
-
-                {% for col_idx in range(5) %}
-                    {% set aula = horario_matrix[row_idx][col_idx] %}
-                    {% if aula != 'SKIP' %}
-                        <td class="schedule-slot"
-                            rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}"
-                            data-dia="{{ dias[col_idx] }}"
-                            data-periodo="{{ row_idx + 1 }}">
-
-                            {% if aula.is_disposicao %}
-                                <button type="button" class="slot-button disponivel" data-action="add">Adicionar</button>
-                            {% else %}
-                                <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}">
-                                    <div class="slot-info">
-                                        <div class="disciplina-title">{{ aula.materia }}</div>
-                                        <div class="instrutor-name">{{ aula.instrutor }}</div>
-                                    </div>
-
-                                    {% if aula.can_edit %}
-                                    <div class="slot-actions">
-                                        <button class="btn-icon" data-action="edit" data-id="{{ aula.id }}" title="Editar Aula">✏️</button>
-                                        <button class="btn-icon" data-action="delete" data-id="{{ aula.id }}" title="Remover Aula">🗑️</button>
-                                    </div>
-                                    {% else %}
-                                    <div class="slot-actions">
-                                        <span class="no-permission" title="Você não pode editar esta aula">🔒</span>
-                                    </div>
-                                    {% endif %}
-
-                                    {% if aula.status == 'pendente' %}
-                                        <span class="status-icon" title="Aguardando confirmação">🕐</span>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        </td>
-                    {% endif %}
-                {% endfor %}
-            </tr>
+                {% if (current_user.role in ['admin', 'programador']) or
+                      (row_idx < 12) or 
+                      (row_idx == 12 and semana_selecionada.mostrar_periodo_13) or
+                      (row_idx == 13 and semana_selecionada.mostrar_periodo_14) or
+                      (row_idx == 14 and semana_selecionada.mostrar_periodo_15) %}
+                <tr>
+                    <td class="cell-tempo"><strong>{{ tempos[row_idx][0] }}</strong><span>{{ tempos[row_idx][1] }}</span></td>
+                    {% for col_idx in range(5) %}
+                        {% set aula = horario_matrix[row_idx][col_idx] %}
+                        {% set dia = dias[col_idx] %}
+                        {% set periodo = row_idx + 1 %}
+                        {% include 'partials/_horario_slot_edit.html' %}
+                    {% endfor %}
+                </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
 </div>
 
 <div class="form-actions">
-    <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id) }}" class="btn btn-secondary">Voltar para Visualização</a>
+    <a href="{{ url_for('horario.index', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id, ciclo=semana_selecionada.ciclo) }}" class="btn btn-secondary">Voltar para Visualização</a>
 </div>
 
 <style>
@@ -101,6 +73,10 @@
 .modal-overlay.visible .modal-content { transform: scale(1); }
 .no-permission { color: #94a3b8; font-size: 1rem; cursor: not-allowed; }
 .slot-content:has(.no-permission) { opacity: 0.7; border-color: #e2e8f0; }
+.weekend-slot.disabled {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+}
 </style>
 
 <div class="modal-overlay" id="horario-modal-overlay">
@@ -132,7 +108,7 @@
 
             <div class="form-group">
                 <label for="modal-duracao">Duração (períodos)</label>
-                <input type="number" id="modal-duracao" name="duracao" class="form-control" value="1" min="1" max="8">
+                <input type="number" id="modal-duracao" name="duracao" class="form-control" value="1" min="1" max="12">
             </div>
 
             <div class="form-actions">
@@ -143,6 +119,7 @@
     </div>
 </div>
 
+{% if semana_selecionada.mostrar_sabado or semana_selecionada.mostrar_domingo %}
 <button class="weekend-toggle-btn" id="weekend-toggle">
     <span>Fim de Semana</span>
 </button>
@@ -153,53 +130,36 @@
             <thead>
                 <tr>
                     <th class="header-tempo">Horário</th>
-                    <th class="header-dia weekend">Sábado</th>
-                    <th class="header-dia weekend">Domingo</th>
+                    {% if semana_selecionada.mostrar_sabado %}<th class="header-dia weekend">Sábado <br><small>({{ datas_semana.sabado }})</small></th>{% endif %}
+                    {% if semana_selecionada.mostrar_domingo %}<th class="header-dia weekend">Domingo <br><small>({{ datas_semana.domingo }})</small></th>{% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for row_idx in range(15) %}
-                <tr>
-                    <td class="cell-tempo">
-                        <strong>{{ tempos[row_idx][0] }}</strong>
-                        <span>{{ tempos[row_idx][1] }}</span>
-                    </td>
-                    {% for col_idx in range(5, 7) %}
-                        {% set aula = horario_matrix[row_idx][col_idx] %}
-                        {% if aula != 'SKIP' %}
-                            <td class="schedule-slot weekend-slot" rowspan="{{ aula.duracao if not aula.is_disposicao else 1 }}" data-dia="{{ dias[col_idx] }}" data-periodo="{{ row_idx + 1 }}">
-                                {% if aula.is_disposicao %}
-                                    <button type="button" class="slot-button disponivel" data-action="add">Adicionar</button>
-                                {% else %}
-                                    <div class="slot-content {% if aula.status == 'pendente' %}pendente{% endif %}">
-                                        <div class="slot-info">
-                                            <div class="disciplina-title">{{ aula.materia }}</div>
-                                            <div class="instrutor-name">{{ aula.instrutor }}</div>
-                                        </div>
-                                        {% if aula.can_edit %}
-                                        <div class="slot-actions">
-                                            <button class="btn-icon" data-action="edit" data-id="{{ aula.id }}" title="Editar Aula">✏️</button>
-                                            <button class="btn-icon" data-action="delete" data-id="{{ aula.id }}" title="Remover Aula">🗑️</button>
-                                        </div>
-                                        {% else %}
-                                        <div class="slot-actions">
-                                            <span class="no-permission" title="Você não pode editar esta aula">🔒</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if aula.status == 'pendente' %}
-                                            <span class="status-icon" title="Aguardando confirmação">🕐</span>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            </td>
+                    {% if (semana_selecionada.mostrar_sabado and loop.index <= semana_selecionada.periodos_sabado) or
+                          (semana_selecionada.mostrar_domingo and loop.index <= semana_selecionada.periodos_domingo) %}
+                    <tr>
+                        <td class="cell-tempo"><strong>{{ tempos[row_idx][0] }}</strong><span>{{ tempos[row_idx][1] }}</span></td>
+                        {% if semana_selecionada.mostrar_sabado %}
+                            {% set aula = horario_matrix[row_idx][5] %}
+                            {% set dia = 'sabado' %}
+                            {% set periodo = row_idx + 1 %}
+                            {% include 'partials/_horario_slot_edit.html' %}
                         {% endif %}
-                    {% endfor %}
-                </tr>
+                        {% if semana_selecionada.mostrar_domingo %}
+                            {% set aula = horario_matrix[row_idx][6] %}
+                            {% set dia = 'domingo' %}
+                            {% set periodo = row_idx + 1 %}
+                            {% include 'partials/_horario_slot_edit.html' %}
+                        {% endif %}
+                    </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endif %}
 
 <script>
     const DISCIPLINAS_DISPONIVEIS = {{ disciplinas_disponiveis | tojson }};
@@ -273,6 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = target.dataset.id;
         const slot = target.closest('.schedule-slot');
 
+        if (!slot) return; 
+
         if (action === 'add') {
             openModal({ dia: slot.dataset.dia, periodo: slot.dataset.periodo });
         } else if (action === 'edit') {
@@ -296,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    weekdayTable.addEventListener('click', handleTableClick);
-    weekendTable.addEventListener('click', handleTableClick);
+    if (weekdayTable) weekdayTable.addEventListener('click', handleTableClick);
+    if (weekendTable) weekendTable.addEventListener('click', handleTableClick);
 
     modalForm.addEventListener('submit', function(e) {
         e.preventDefault();

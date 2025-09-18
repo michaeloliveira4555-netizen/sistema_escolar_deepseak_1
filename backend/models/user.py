@@ -12,24 +12,19 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    
-    # --- ALTERAÇÃO AQUI ---
-    # Renomeamos 'matricula' para 'id_func' para refletir a nova lógica
     id_func = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Campos que podem ser nulos até a ativação da conta
+
     username = db.Column(db.String(80), unique=True, nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=True)
-    
-    nome_completo = db.Column(db.String(120), nullable=True)
 
-    # Controle de acesso e status
+    nome_completo = db.Column(db.String(120), nullable=True)
+    nome_de_guerra = db.Column(db.String(50), nullable=True)
+
     role = db.Column(db.String(20), nullable=False, default='aluno')
     is_active = db.Column(db.Boolean, default=False, nullable=False)
     must_change_password = db.Column(db.Boolean, default=False, nullable=False)
 
-    # Relacionamentos
     aluno_profile = db.relationship('Aluno', back_populates='user', uselist=False, cascade="all, delete-orphan")
     instrutor_profile = db.relationship('Instrutor', back_populates='user', uselist=False, cascade="all, delete-orphan")
     user_schools = relationship('UserSchool', back_populates='user', cascade="all, delete-orphan")

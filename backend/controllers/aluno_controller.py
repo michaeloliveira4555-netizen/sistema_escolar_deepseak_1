@@ -16,7 +16,6 @@ from utils.decorators import admin_or_programmer_required
 
 aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 
-
 class AlunoProfileForm(FlaskForm):
     foto_perfil = FileField('Foto de Perfil', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Apenas imagens!')])
     nome_completo = StringField('Nome Completo', validators=[DataRequired()])
@@ -88,6 +87,7 @@ def editar_aluno(aluno_id):
         flash("Aluno não encontrado.", 'danger')
         return redirect(url_for('aluno.listar_alunos'))
 
+
     form = EditAlunoForm(obj=aluno)
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
     form.turma_id.choices = [(t.id, t.nome) for t in turmas]
@@ -103,6 +103,7 @@ def editar_aluno(aluno_id):
     if form.validate_on_submit():
         form_data = form.data
         foto_perfil = form.foto_perfil.data
+
         success, message = AlunoService.update_aluno(aluno_id, form_data, foto_perfil)
         if success:
             flash(message, 'success')

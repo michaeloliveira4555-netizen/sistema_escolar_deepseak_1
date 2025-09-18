@@ -4,11 +4,9 @@
 
 {% block content %}
 <div class="form-page-container">
-
     <div class="cadastro-container">
         <h2>Cadastrar Novo Aluno</h2>
         <hr style="margin-bottom: 25px;">
-
         <form method="POST" enctype="multipart/form-data">
             {{ csrf_token() }}
 
@@ -16,37 +14,34 @@
                 <label for="nome_completo">Nome Completo:</label>
                 <input type="text" id="nome_completo" name="nome_completo" class="form-control" value="{{ form_data.get('nome_completo', '') }}" required>
             </div>
-
+            <div class="form-group">
+                <label for="nome_de_guerra">Nome de Guerra:</label>
+                <input type="text" id="nome_de_guerra" name="nome_de_guerra" class="form-control" value="{{ form_data.get('nome_de_guerra', '') }}" required>
+            </div>
             <div class="form-group">
                 <label for="foto_perfil">Foto de Perfil:</label>
                 <input type="file" id="foto_perfil" name="foto_perfil" class="form-control">
             </div>
-
             <div class="form-group">
                 <label for="matricula">Matrícula (será usada para o login):</label>
                 <input type="text" id="matricula" name="matricula" class="form-control" value="{{ form_data.get('matricula', '') }}" required>
             </div>
-
             <div class="form-group">
                 <label for="email">E-mail:</label>
                 <input type="email" id="email" name="email" class="form-control" value="{{ form_data.get('email', '') }}" required>
             </div>
-
             <div class="form-group">
                 <label for="password">Senha:</label>
                 <input type="password" id="password" name="password" class="form-control" required>
             </div>
-
             <div class="form-group">
                 <label for="password2">Confirmar Senha:</label>
                 <input type="password" id="password2" name="password2" class="form-control" required>
             </div>
-
             <div class="form-group">
                 <label for="opm">OPM:</label>
                 <input type="text" id="opm" name="opm" class="form-control" value="{{ form_data.get('opm', '') }}" required>
             </div>
-
             <div class="form-group">
                 <label for="turma_id">Turma / Pelotão:</label>
                 <select id="turma_id" name="turma_id" class="form-control" required>
@@ -56,18 +51,6 @@
                     {% endfor %}
                 </select>
             </div>
-
-            <div class="form-group">
-                <label for="funcao_atual">Função Atual:</label>
-                <select id="funcao_atual" name="funcao_atual" class="form-control">
-                    <option value="">-- Nenhuma função --</option>
-                    {% set funcoes = ['P1', 'P2', 'P3', 'P4', 'P5', 'Aux Disc', 'Aux Cia', 'Aux Pel', 'C1', 'C2', 'C3', 'C4', 'C5', 'Formatura', 'Obras', 'Atletismo', 'Jubileu', 'Dia da Criança', 'Seminário', 'Chefe de Turma', 'Correio', 'Cmt 1° GPM', 'Cmt 2° GPM', 'Cmt 3° GPM', 'Socorrista 1', 'Socorrista 2', 'Motorista 1', 'Motorista 2', 'Telefonista 1', 'Telefonista 2'] %}
-                    {% for funcao in funcoes %}
-                        <option value="{{ funcao }}" {% if form_data.get('funcao_atual') == funcao %}selected{% endif %}>{{ funcao }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
             <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Cadastrar Aluno</button>
         </form>
     </div>

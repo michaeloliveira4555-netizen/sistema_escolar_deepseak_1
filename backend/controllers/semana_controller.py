@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from sqlalchemy import select
 from datetime import datetime, timedelta
@@ -9,6 +9,7 @@ from wtforms.validators import DataRequired
 
 from ..models.database import db
 from ..models.semana import Semana
+from ..models.horario import Horario
 from utils.decorators import admin_or_programmer_required
 from ..services.semana_service import SemanaService
 
@@ -31,6 +32,16 @@ class DeleteSemanaForm(FlaskForm):
 @login_required
 @admin_or_programmer_required
 def gerenciar_semanas():
+
+    ciclo_selecionado = request.args.get('ciclo', session.get('ultimo_ciclo_semana', 1), type=int)
+    session['ultimo_ciclo_semana'] = ciclo_selecionado
+    
+    semanas = db.session.scalars(
+        select(Semana).where(Semana.ciclo == ciclo_selecionado).order_by(Semana.data_inicio.desc())
+    ).all()
+    
+    return render_template('gerenciar_semanas.html', semanas=semanas, ciclos=[1, 2, 3], ciclo_selecionado=ciclo_selecionado)
+    
     semanas = SemanaService.get_all_semanas()
     add_form = AddSemanaForm()
     next_form = NextSemanaForm()
@@ -45,43 +56,74 @@ def gerenciar_semanas():
 @login_required
 @admin_or_programmer_required
 def adicionar_semana():
-    form = AddSemanaForm()
-    if form.validate_on_submit():
-        nome = form.nome.data
-        data_inicio = form.data_inicio.data
-        data_fim = form.data_fim.data
+    ciclo = request.form.get('ciclo', 1, type=int)
+    try:
+        nome = request.form.get('nome')
+        data_inicio_str = request.form.get('data_inicio')
+        data_fim_str = request.form.get('data_fim')
 
-        success, message = SemanaService.add_semana(nome, data_inicio.strftime('%Y-%m-%d'), data_fim.strftime('%Y-%m-%d'))
-        if success:
-            db.session.commit()
-            flash(message, 'success')
-        else:
-            db.session.rollback()
-            flash(message, 'danger')
-    else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f"Erro no campo '{getattr(form, field).label.text}': {error}", 'danger')
+        if not all([nome, data_inicio_str, data_fim_str]):
+            flash('Todos os campos são obrigatórios.', 'danger')
+            return redirect(url_for('semana.gerenciar_semanas', ciclo=ciclo))
 
-    return redirect(url_for('semana.gerenciar_semanas'))
+        data_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d').date()
+        data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+
+        nova_semana = Semana(nome=nome, data_inicio=data_inicio, data_fim=data_fim, ciclo=ciclo)
+        
+        nova_semana.mostrar_periodo_13 = 'mostrar_periodo_13' in request.form
+        nova_semana.mostrar_periodo_14 = 'mostrar_periodo_14' in request.form
+        nova_semana.mostrar_periodo_15 = 'mostrar_periodo_15' in request.form
+        nova_semana.mostrar_sabado = 'mostrar_sabado' in request.form
+        nova_semana.periodos_sabado = int(request.form.get('periodos_sabado', 0)) if nova_semana.mostrar_sabado else 0
+        nova_semana.mostrar_domingo = 'mostrar_domingo' in request.form
+        nova_semana.periodos_domingo = int(request.form.get('periodos_domingo', 0)) if nova_semana.mostrar_domingo else 0
+
+        db.session.add(nova_semana)
+        db.session.commit()
+        
+        flash('Nova semana cadastrada com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao adicionar semana: {e}', 'danger')
+        db.session.rollback()
+
+    return redirect(url_for('semana.gerenciar_semanas', ciclo=ciclo))
 
 @semana_bp.route('/adicionar-proxima', methods=['POST'])
 @login_required
 @admin_or_programmer_required
 def adicionar_proxima_semana():
-    form = NextSemanaForm()
-    if form.validate_on_submit():
-        success, message = SemanaService.add_proxima_semana()
-        if success:
-            db.session.commit()
-            flash(message, 'success')
-        else:
-            db.session.rollback()
-            flash(message, 'danger')
-    else:
-        flash('Falha na validação do formulário para adicionar próxima semana.', 'danger')
+    ciclo = request.form.get('ciclo', 1, type=int)
+    ultima_semana = db.session.scalars(
+        select(Semana).where(Semana.ciclo == ciclo).order_by(Semana.data_fim.desc())
+    ).first()
 
-    return redirect(url_for('semana.gerenciar_semanas'))
+    if not ultima_semana:
+        flash(f'Para adicionar a "próxima semana", cadastre a primeira semana do Ciclo {ciclo} manualmente.', 'warning')
+        return redirect(url_for('semana.gerenciar_semanas', ciclo=ciclo))
+
+    numeros = re.findall(r'\d+', ultima_semana.nome)
+    proximo_numero = int(numeros[-1]) + 1 if numeros else 1
+    novo_nome = f"Semana {proximo_numero}"
+
+    dias_para_proxima_segunda = (7 - ultima_semana.data_fim.weekday()) % 7
+    if dias_para_proxima_segunda == 0:
+        dias_para_proxima_segunda = 1
+        
+    nova_data_inicio = ultima_semana.data_fim + timedelta(days=dias_para_proxima_segunda)
+    nova_data_fim = nova_data_inicio + timedelta(days=4)
+
+    nova_semana = Semana(
+        nome=novo_nome, data_inicio=nova_data_inicio, data_fim=nova_data_fim, ciclo=ciclo,
+        mostrar_periodo_13=False, mostrar_periodo_14=False, mostrar_periodo_15=False,
+        mostrar_sabado=False, periodos_sabado=0,
+        mostrar_domingo=False, periodos_domingo=0
+    )
+    db.session.add(nova_semana)
+    db.session.commit()
+
+    flash(f'"{novo_nome}" adicionada com sucesso ao Ciclo {ciclo}!', 'success')
+    return redirect(url_for('semana.gerenciar_semanas', ciclo=ciclo))
 
 @semana_bp.route('/editar/<int:semana_id>', methods=['GET', 'POST'])
 @login_required
@@ -93,18 +135,27 @@ def editar_semana(semana_id):
         return redirect(url_for('semana.gerenciar_semanas'))
 
     if request.method == 'POST':
-        nome = request.form.get('nome')
-        data_inicio_str = request.form.get('data_inicio')
-        data_fim_str = request.form.get('data_fim')
+        try:
+            semana.nome = request.form.get('nome')
+            semana.data_inicio = datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date()
+            semana.data_fim = datetime.strptime(request.form.get('data_fim'), '%Y-%m-%d').date()
+            
+            semana.mostrar_periodo_13 = 'mostrar_periodo_13' in request.form
+            semana.mostrar_periodo_14 = 'mostrar_periodo_14' in request.form
+            semana.mostrar_periodo_15 = 'mostrar_periodo_15' in request.form
+            semana.mostrar_sabado = 'mostrar_sabado' in request.form
+            semana.periodos_sabado = int(request.form.get('periodos_sabado', 0)) if semana.mostrar_sabado else 0
+            semana.mostrar_domingo = 'mostrar_domingo' in request.form
+            semana.periodos_domingo = int(request.form.get('periodos_domingo', 0)) if semana.mostrar_domingo else 0
 
-        success, message = SemanaService.update_semana(semana_id, nome, data_inicio_str, data_fim_str)
-        if success:
             db.session.commit()
-            flash(message, 'success')
-        else:
+            flash('Semana atualizada com sucesso!', 'success')
+        except Exception as e:
+            flash(f'Erro ao atualizar semana: {e}', 'danger')
             db.session.rollback()
-            flash(message, 'danger')
-        return redirect(url_for('semana.gerenciar_semanas'))
+
+        return redirect(url_for('semana.gerenciar_semanas', ciclo=semana.ciclo))
+
     
     return render_template('editar_semana.html', semana=semana)
 
@@ -113,15 +164,14 @@ def editar_semana(semana_id):
 @login_required
 @admin_or_programmer_required
 def deletar_semana(semana_id):
-    form = DeleteSemanaForm()
-    if form.validate_on_submit():
-        success, message = SemanaService.delete_semana(semana_id)
-        if success:
-            db.session.commit()
-            flash(message, 'success')
-        else:
-            db.session.rollback()
-            flash(message, 'danger')
+    semana = db.session.get(Semana, semana_id)
+    if semana:
+        ciclo_redirect = semana.ciclo
+        db.session.query(Horario).filter_by(semana_id=semana_id).delete()
+        db.session.delete(semana)
+        db.session.commit()
+        flash('Semana e todas as suas aulas foram deletadas com sucesso.', 'success')
+        return redirect(url_for('semana.gerenciar_semanas', ciclo=ciclo_redirect))
     else:
-        flash('Falha na validação do formulário para deletar semana.', 'danger')
-    return redirect(url_for('semana.gerenciar_semanas'))
+        flash('Semana não encontrada.', 'danger')
+        return redirect(url_for('semana.gerenciar_semanas'))

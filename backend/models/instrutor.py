@@ -14,17 +14,20 @@ class Instrutor(db.Model):
     matricula: Mapped[str] = mapped_column(db.String(14), unique=True)
     especializacao: Mapped[str] = mapped_column(db.String(100), nullable=False)
     formacao: Mapped[str] = mapped_column(db.String(100))
+    posto_graduacao: Mapped[t.Optional[str]] = mapped_column(db.String(50))
     telefone: Mapped[t.Optional[str]] = mapped_column(db.String(15))
-    credor: Mapped[t.Optional[str]] = mapped_column(db.String(100)) # <-- NOVO CAMPO ADICIONADO
+    credor: Mapped[t.Optional[str]] = mapped_column(db.String(100))
+    is_rr: Mapped[bool] = mapped_column(default=False, nullable=False) # NOVO CAMPO ADICIONADO
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'), unique=True)
     user: Mapped["User"] = relationship(back_populates="instrutor_profile")
 
     def __init__(self, user_id: int, matricula: str, especializacao: str, formacao: str,
-                 telefone: t.Optional[str] = None, credor: t.Optional[str] = None, **kw: t.Any) -> None:
+                 posto_graduacao: t.Optional[str] = None, telefone: t.Optional[str] = None,
+                 credor: t.Optional[str] = None, is_rr: bool = False, **kw: t.Any) -> None:
         super().__init__(user_id=user_id, matricula=matricula, especializacao=especializacao, formacao=formacao,
-                         telefone=telefone, credor=credor, **kw)
+                         posto_graduacao=posto_graduacao, telefone=telefone, credor=credor, is_rr=is_rr, **kw)
 
     def to_dict(self):
         return {
@@ -34,8 +37,10 @@ class Instrutor(db.Model):
             'matricula': self.matricula,
             'especialidade': self.especializacao,
             'formacao': self.formacao,
+            'posto_graduacao': self.posto_graduacao,
             'telefone': self.telefone,
-            'credor': self.credor
+            'credor': self.credor,
+            'is_rr': self.is_rr
         }
 
     def __repr__(self):
