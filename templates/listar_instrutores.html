@@ -11,9 +11,9 @@
 <div class="table-container">
     <div class="table-header">
         <h3>Instrutores Cadastrados</h3>
-        {% if current_user.is_authenticated and current_user.role in ['admin', 'programador'] %}
+        {% if current_user.is_authenticated and current_user.role in ['super_admin', 'programador'] %}
             <div class="header-actions">
-                <a href="{{ url_for('main.pre_cadastro') }}" class="btn btn-info">
+                <a href="{{ url_for('main.pre_cadastro', role='instrutor') }}" class="btn btn-info">
                     <span>+</span> Inserir Pré-Cadastro
                 </a>
                 <a href="{{ url_for('instrutor.cadastro_instrutor_admin') }}" class="btn btn-primary">
@@ -33,7 +33,9 @@
                         <th>Especialização</th>
                         <th>Telefone</th>
                         <th>Email</th>
+                        {% if current_user.role in ['admin_escola', 'programador'] %}
                         <th class="text-right">Ações</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -44,11 +46,13 @@
                         <td data-label="Especialização">{{ instrutor.especializacao }}</td>
                         <td data-label="Telefone">{{ instrutor.telefone if instrutor.telefone else 'N/A' }}</td>
                         <td data-label="Email">{{ instrutor.user.email }}</td>
+                        {% if current_user.role in ['admin_escola', 'programador'] %}
                         <td data-label="Ações" class="text-right">
                             {% if current_user.role in ['admin', 'programador'] %}
                             <div class="btn-group">
                                 <a href="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}" class="btn btn-warning btn-sm">Editar</a>
                                 <form method="POST" action="{{ url_for('instrutor.excluir_instrutor', instrutor_id=instrutor.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir este instrutor? Esta ação não pode ser desfeita.');">
+                                    {{ delete_form.hidden_tag() }}
                                     <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
                                 </form>
                             </div>
@@ -56,6 +60,7 @@
                                 <span>N/A</span>
                             {% endif %}
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>

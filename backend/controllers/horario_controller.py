@@ -2,7 +2,10 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
-from datetime import date, timedelta
+from datetime import date
+from flask_wtf import FlaskForm
+from wtforms import HiddenField, SubmitField
+from wtforms.validators import DataRequired
 
 from ..models.database import db
 from ..models.horario import Horario
@@ -12,17 +15,15 @@ from ..models.disciplina_turma import DisciplinaTurma
 from ..models.semana import Semana
 from ..models.turma import Turma
 from utils.decorators import admin_or_programmer_required
+from ..services.horario_service import HorarioService
 
 horario_bp = Blueprint('horario', __name__, url_prefix='/horario')
 
-def can_edit_horario(horario_id):
-    if current_user.role in ['admin', 'programador']:
-        return True
-    if current_user.role == 'instrutor' and current_user.instrutor_profile:
-        horario = db.session.get(Horario, horario_id)
-        if horario and horario.instrutor_id == current_user.instrutor_profile.id:
-            return True
-    return False
+# Forms
+class AprovarHorarioForm(FlaskForm):
+    horario_id = HiddenField('Horário ID', validators=[DataRequired()])
+    action = HiddenField('Ação', validators=[DataRequired()]) # 'aprovar' ou 'rejeitar'
+    submit = SubmitField('Enviar')
 
 @horario_bp.route('/')
 @login_required
@@ -88,15 +89,18 @@ def index():
         if not semana_selecionada and todas_as_semanas:
             semana_selecionada = todas_as_semanas[0]
 
-    if semana_selecionada:
-        session['ultima_turma_visualizada'] = turma_selecionada_nome
-        horario_matrix = construir_matriz_horario(turma_selecionada_nome, semana_selecionada.id, ciclo_selecionado)
-        dia_atual = semana_selecionada.data_inicio
-        dias_da_semana = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
-        for i in range(7):
-            datas_semana[dias_da_semana[i]] = (dia_atual + timedelta(days=i)).strftime('%d/%m')
-    else:
-        horario_matrix = None
+    if not semana_selecionada:
+        return render_template('quadro_horario.html',
+                               horario_matrix=None,
+                               pelotao_selecionado=turma_selecionada_nome,
+                               semana_selecionada=None,
+                               todas_as_turmas=todas_as_turmas,
+                               todas_as_semanas=todas_as_semanas)
+
+
+    session['ultima_turma_visualizada'] = turma_selecionada_nome
+
+    horario_matrix = HorarioService.construir_matriz_horario(turma_selecionada_nome, semana_selecionada.id)
 
     return render_template('quadro_horario.html',
                            horario_matrix=horario_matrix,
@@ -138,17 +142,17 @@ def index_com_turma(pelotao):
     else:
         horario_matrix = None
 
-    if current_user.role == 'instrutor':
-        vinculos = DisciplinaTurma.query.filter(
-            (DisciplinaTurma.instrutor_id_1 == current_user.instrutor_profile.id) |
-            (DisciplinaTurma.instrutor_id_2 == current_user.instrutor_profile.id)
-        ).all()
-        nomes_turmas_instrutor = sorted(list(set([v.pelotao for v in vinculos])))
-        turmas_visiveis = db.session.scalars(
-            select(Turma).where(Turma.nome.in_(nomes_turmas_instrutor)).order_by(Turma.nome)
-        ).all()
-    else:
-        turmas_visiveis = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+
+    if not semana_selecionada:
+        return render_template('quadro_horario.html',
+                               horario_matrix=None,
+                               pelotao_selecionado=pelotao,
+                               semana_selecionada=None,
+                               todas_as_turmas=[db.session.query(Turma).filter_by(nome=pelotao).first()],
+                               todas_as_semanas=todas_as_semanas)
+
+    horario_matrix = HorarioService.construir_matriz_horario(pelotao, semana_selecionada.id)
+    turma_atual = db.session.query(Turma).filter_by(nome=pelotao).first()
 
     return render_template('quadro_horario.html',
                            horario_matrix=horario_matrix,
@@ -168,14 +172,15 @@ def editar_horario_grid(pelotao, semana_id, ciclo_id):
         flash("Semana não encontrada.", "danger")
         return redirect(url_for('horario.index'))
 
-    is_admin = current_user.role in ['admin', 'programador']
+    is_admin = current_user.role in ['super_admin', 'programador']
     instrutor_id = current_user.instrutor_profile.id if hasattr(current_user, 'instrutor_profile') and current_user.instrutor_profile else None
 
     if not is_admin and not instrutor_id:
         flash("Acesso negado.", "danger")
         return redirect(url_for('horario.index'))
 
-    horario_matrix = construir_matriz_horario(pelotao, semana_id, ciclo_id)
+    horario_matrix = HorarioService.construir_matriz_horario(pelotao, semana_id)
+
     disciplinas_disponiveis = []
     todos_instrutores = []
     disciplinas_do_ciclo = db.session.scalars(select(Disciplina).where(Disciplina.ciclo == ciclo_id).order_by(Disciplina.materia)).all()
@@ -244,7 +249,7 @@ def editar_horario_grid(pelotao, semana_id, ciclo_id):
 @horario_bp.route('/get-aula/<int:horario_id>')
 @login_required
 def get_aula_details(horario_id):
-    if not can_edit_horario(horario_id):
+    if not HorarioService.can_edit_horario(horario_id):
         return jsonify({'success': False, 'message': 'Acesso negado. Você não pode editar esta aula.'}), 403
     aula = db.session.get(Horario, horario_id)
     if not aula:
@@ -255,7 +260,7 @@ def get_aula_details(horario_id):
 @login_required
 def salvar_aula():
     data = request.json
-    is_admin = current_user.role in ['admin', 'programador']
+    is_admin = current_user.role in ['super_admin', 'programador']
     semana_id = int(data.get('semana_id'))
     semana = db.session.get(Semana, semana_id)
     if not semana:
@@ -359,38 +364,25 @@ def salvar_aula():
 def remover_aula():
     data = request.json
     horario_id = data.get('horario_id')
-    if not can_edit_horario(int(horario_id)):
-        return jsonify({'success': False, 'message': 'Acesso negado. Você não pode remover esta aula.'}), 403
-    try:
-        aula = db.session.get(Horario, int(horario_id))
-        if aula:
-            db.session.delete(aula)
-            db.session.commit()
-            return jsonify({'success': True, 'message': 'Aula removida com sucesso!'})
-        return jsonify({'success': False, 'message': 'Aula não encontrada.'}), 404
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Erro ao remover aula: {e}")
-        return jsonify({'success': False, 'message': 'Ocorreu um erro ao remover a aula.'}), 500
+    success, message = HorarioService.remove_aula(horario_id)
+    if success:
+        return jsonify({'success': True, 'message': message})
+    else:
+        return jsonify({'success': False, 'message': message}), 403
 
 @horario_bp.route('/aprovar', methods=['GET', 'POST'])
 @login_required
 @admin_or_programmer_required
 def aprovar_horarios():
-    if request.method == 'POST':
-        horario_id = request.form.get('horario_id')
-        action = request.form.get('action')
-        horario = db.session.get(Horario, int(horario_id))
-        if horario:
-            if action == 'aprovar':
-                horario.status = 'confirmado'
-                flash(f'Aula de {horario.disciplina.materia} aprovada com sucesso!', 'success')
-            elif action == 'negar':
-                db.session.delete(horario)
-                flash(f'Aula de {horario.disciplina.materia} negada e removida com sucesso!', 'warning')
-            db.session.commit()
+    form = AprovarHorarioForm()
+    if form.validate_on_submit():
+        horario_id = form.horario_id.data
+        action = form.action.data
+        success, message = HorarioService.aprovar_horario(horario_id, action)
+        if success:
+            flash(message, 'success')
         else:
-            flash('Horário não encontrado.', 'danger')
+            flash(message, 'danger')
         return redirect(url_for('horario.aprovar_horarios'))
     aulas_pendentes = db.session.scalars(select(Horario).options(joinedload(Horario.disciplina)).where(Horario.status == 'pendente').order_by(Horario.id)).all()
     return render_template('aprovar_horarios.html', aulas_pendentes=aulas_pendentes)
@@ -435,3 +427,4 @@ def construir_matriz_horario(pelotao, semana_id, ciclo):
         except (ValueError, IndexError):
             continue
     return horario_matrix
+

@@ -2,13 +2,44 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 import hashlib
+from flask import current_app
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+IMAGE_MAGIC_BYTES = {
+    "jpeg": [b'\xFF\xD8\xFF\xE0', b'\xFF\xD8\xFF\xE1', b'\xFF\xD8\xFF\xE8'],
+    "png": [b'\x89\x50\x4E\x47\x0D\x0A\x1A\x0A'],
+    "gif": [b'GIF87a', b'GIF89a'],
+    "bmp": [b'BM'],
+    "webp": [b'RIFF', b'WEBP'] # WEBP tem um cabeçalho RIFF, seguido por WEBP
+}
+
+def is_image_by_magic_bytes(file_stream):
+    """Verifica se o arquivo é uma imagem válida lendo seus bytes mágicos."""
+    header = file_stream.read(12) # Ler os primeiros 12 bytes para cobrir a maioria dos casos
+    file_stream.seek(0) # Voltar ao início do stream
+
+    for img_type, magic_bytes_list in IMAGE_MAGIC_BYTES.items():
+        for magic_bytes in magic_bytes_list:
+            if img_type == "webp":
+                # Para WebP, precisamos verificar o cabeçalho RIFF e depois 'WEBP' mais adiante
+                if header.startswith(magic_bytes[0]) and b'WEBP' in header:
+                    return True
+            elif header.startswith(magic_bytes):
+                return True
+    return False
+
+def allowed_file(filename, file_stream, allowed_extensions):
+    """Verifica a extensão do arquivo e os bytes mágicos para garantir que é uma imagem permitida."""
+    # 1. Verificar a extensão
+    if not ('.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+        return False
+
+    # 2. Verificar os bytes mágicos
+    if not is_image_by_magic_bytes(file_stream):
+        return False
+
+    return True
 
 def generate_unique_filename(filename):
     """Gera um nome único para o arquivo"""
@@ -23,32 +54,26 @@ def optimize_image(file_path, max_width=1920, max_height=1080, quality=90):
     - QUALIDADE AUMENTADA PARA 90.
     """
     try:
-        # Importação condicional para evitar erro se PIL não estiver instalado
         from PIL import Image
         
-        # Ignora a otimização para arquivos SVG
         if file_path.lower().endswith('.svg'):
             return True
 
         with Image.open(file_path) as img:
-            # Converte para RGB se necessário (para salvar como JPEG)
             if img.mode in ('RGBA', 'P'):
                 img = img.convert('RGB')
             
-            # Redimensiona mantendo a proporção apenas se a imagem for maior que os limites
             if img.width > max_width or img.height > max_height:
                 img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
             
-            # Salva com qualidade otimizada
             img.save(file_path, 'JPEG', quality=quality, optimize=True)
             
         return True
     except ImportError:
-        # Se a biblioteca PIL/Pillow não estiver instalada, apenas retorna True sem falhar
-        print("AVISO: A biblioteca 'Pillow' não está instalada. Pulando otimização de imagem.")
+        current_app.logger.warning("AVISO: A biblioteca 'Pillow' não está instalada. Pulando otimização de imagem.")
         return True
     except Exception as e:
-        print(f"Erro ao otimizar imagem {file_path}: {e}")
+        current_app.logger.error(f"Erro ao otimizar imagem {file_path}: {e}")
         return False
 
 def get_file_hash(file_path):

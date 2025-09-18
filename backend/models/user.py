@@ -1,6 +1,12 @@
+from __future__ import annotations
+import typing as t
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from .database import db
+from sqlalchemy.orm import relationship
+
+if t.TYPE_CHECKING:
+    from .site_config import SiteConfig
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -17,9 +23,13 @@ class User(UserMixin, db.Model):
 
     role = db.Column(db.String(20), nullable=False, default='aluno')
     is_active = db.Column(db.Boolean, default=False, nullable=False)
+    must_change_password = db.Column(db.Boolean, default=False, nullable=False)
 
     aluno_profile = db.relationship('Aluno', back_populates='user', uselist=False, cascade="all, delete-orphan")
     instrutor_profile = db.relationship('Instrutor', back_populates='user', uselist=False, cascade="all, delete-orphan")
+    user_schools = relationship('UserSchool', back_populates='user', cascade="all, delete-orphan")
+    schools = relationship('School', secondary='user_schools', back_populates='users')
+    site_configs_updated = relationship('SiteConfig', back_populates='updated_by_user')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

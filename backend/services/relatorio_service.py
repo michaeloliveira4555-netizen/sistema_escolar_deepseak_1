@@ -15,13 +15,13 @@ class RelatorioService:
         Busca e totaliza as horas-aula por instrutor e disciplina,
         com filtros opcionais para RR e IDs de instrutores.
         """
-        
-        semanas_no_periodo_atual = db.session.scalars(
-            select(Semana.id).where(and_(Semana.data_inicio <= data_fim, Semana.data_fim >= data_inicio))
-        ).all()
-        
-        semanas_periodo_anterior = db.session.scalars(
-            select(Semana.id).where(Semana.data_inicio < data_inicio)
+        semanas_no_periodo = db.session.scalars(
+            select(Semana.id).where(
+                and_(
+                    Semana.data_inicio <= data_fim,
+                    Semana.data_fim >= data_inicio
+                )
+            )
         ).all()
 
         query_a_pagar = (
@@ -47,7 +47,7 @@ class RelatorioService:
             query_a_pagar.group_by(Horario.instrutor_id, Horario.disciplina_id)
         ).all()
 
-        aulas_pagas_anteriormente = db.session.execute(
+        aulas = db.session.execute(
             select(
                 Horario.instrutor_id,
                 Horario.disciplina_id,
@@ -63,38 +63,42 @@ class RelatorioService:
             for aula in aulas_pagas_anteriormente
         }
 
+        # Pré-carrega instrutores e disciplinas para evitar N+1
+        instrutor_ids = [aula.instrutor_id for aula in aulas]
+        disciplina_ids = [aula.disciplina_id for aula in aulas]
+
+        instrutores_map = {inst.id: inst for inst in db.session.scalars(
+            select(Instrutor).options(joinedload(Instrutor.user)).where(Instrutor.id.in_(instrutor_ids))
+        ).all()}
+        disciplinas_map = {disc.id: disc for disc in db.session.scalars(
+            select(Disciplina).where(Disciplina.id.in_(disciplina_ids))
+        ).all()}
+
         instrutores_dados = defaultdict(lambda: {
             'info': None,
             'disciplinas': []
         })
 
-        for aula in aulas_a_pagar:
-            instrutor_id = aula.instrutor_id
-            disciplina_id = aula.disciplina_id
-            
-            if not instrutores_dados[instrutor_id]['info']:
-                instrutor = db.session.get(Instrutor, instrutor_id)
-                if instrutor:
-                    instrutores_dados[instrutor_id]['info'] = instrutor
+        for aula in aulas:
+            instrutor = instrutores_map.get(aula.instrutor_id)
+            disciplina = disciplinas_map.get(aula.disciplina_id)
 
-            disciplina = db.session.get(Disciplina, disciplina_id)
-            ch_total = disciplina.carga_horaria_prevista if disciplina else 0
-            
-            ch_paga_anteriormente = mapa_ch_paga.get((instrutor_id, disciplina_id), 0)
-
-            disciplina_info = {
-                'nome': disciplina.materia if disciplina else "Disciplina não encontrada",
-                'ch_total': ch_total,
-                'ch_paga_anteriormente': ch_paga_anteriormente,
-                'ch_a_pagar': aula.total_horas,
-            }
-            
-            instrutores_dados[instrutor_id]['disciplinas'].append(disciplina_info)
+            if instrutor:
+                instrutores_dados[instrutor.id]['info'] = instrutor
+                
+                disciplina_info = {
+                    'nome': disciplina.materia if disciplina else "Disciplina não encontrada",
+                    'horas': aula.total_horas
+                }
+                
+                instrutores_dados[instrutor.id]['disciplinas'].append(disciplina_info)
+                instrutores_dados[instrutor.id]['total_geral'] += aula.total_horas
         
-        # Converte para lista e ordena pela Id. Func. do usuário associado
+        # Converte o dicionário para uma lista ordenada por nome do instrutor
+        # Garante que instrutor.user exista antes de acessar nome_completo
         resultado_final = sorted(
-            instrutores_dados.values(), 
-            key=lambda x: (int(x['info'].user.id_func) if x['info'] and x['info'].user and x['info'].user.id_func.isdigit() else float('inf'))
+            [data for data in instrutores_dados.values() if data['info'] and data['info'].user],
+            key=lambda x: x['info'].user.nome_completo or ""
         )
         
         return resultado_final

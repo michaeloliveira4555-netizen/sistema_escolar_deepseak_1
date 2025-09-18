@@ -37,7 +37,12 @@ def upload_asset():
             flash('Nenhum arquivo selecionado.', 'error')
             return redirect(request.url)
         
-        if not allowed_file(file.filename):
+        # Define allowed extensions for assets
+        ALLOWED_ASSET_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'}
+        
+        # Pass file.stream to allowed_file for magic byte validation
+        file.stream.seek(0) # Reset stream position before reading magic bytes
+        if not allowed_file(file.filename, file.stream, ALLOWED_ASSET_EXTENSIONS):
             flash('Tipo de arquivo não permitido. Use: PNG, JPG, JPEG, GIF, SVG, WEBP', 'error')
             return redirect(request.url)
         

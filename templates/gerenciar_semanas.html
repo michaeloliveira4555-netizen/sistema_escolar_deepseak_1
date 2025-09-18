@@ -30,18 +30,19 @@
     </div>
     <form method="POST" action="{{ url_for('semana.adicionar_semana') }}" style="padding: 1rem 0;">
         <input type="hidden" name="ciclo" value="{{ ciclo_selecionado }}">
+
         <div class="form-grid">
             <div class="form-group">
-                <label for="nome">Nome da Semana</label>
-                <input type="text" id="nome" name="nome" class="form-control" placeholder="Ex: Semana 1, Semana de Provas" required>
+                {{ add_form.nome.label }}
+                {{ add_form.nome(class="form-control", placeholder="Ex: Semana 1, Semana de Provas") }}
             </div>
             <div class="form-group">
-                <label for="data_inicio">Data de Início</label>
-                <input type="date" id="data_inicio" name="data_inicio" class="form-control" required>
+                {{ add_form.data_inicio.label }}
+                {{ add_form.data_inicio(class="form-control") }}
             </div>
             <div class="form-group">
-                <label for="data_fim">Data de Fim</label>
-                <input type="date" id="data_fim" name="data_fim" class="form-control" required>
+                {{ add_form.data_fim.label }}
+                {{ add_form.data_fim(class="form-control") }}
             </div>
         </div>
         
@@ -92,6 +93,7 @@
                         <a href="{{ url_for('semana.editar_semana', semana_id=semana.id) }}" class="btn btn-sm btn-warning">Editar</a>
                         <form method="POST" action="{{ url_for('semana.deletar_semana', semana_id=semana.id) }}" onsubmit="return confirm('Tem certeza que deseja deletar esta semana? Todas as aulas agendadas nela também serão removidas!');">
                             <button type="submit" class="btn btn-sm btn-danger">Deletar</button>
+
                         </form>
                     </td>
                 </tr>

@@ -1,11 +1,21 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_user, logout_user, login_required
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired
 
-from ..app import db
+from ..models.database import db
 from ..models.user import User
 from utils.validators import validate_email, validate_password_strength
+from ..services.password_reset_service import PasswordResetService
 
 auth_bp = Blueprint('auth', __name__)
+
+# Define o formulário de login
+class LoginForm(FlaskForm):
+    username = StringField('Id Func / Usuário', validators=[DataRequired()])
+    password = PasswordField('Senha', validators=[DataRequired()])
+    submit = SubmitField('Entrar')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -20,6 +30,17 @@ def register():
 
         if not role:
             flash('Por favor, selecione sua função (Aluno ou Instrutor).', 'danger')
+            return render_template('register.html', form_data=request.form)
+
+        # Validação do e-mail
+        if not validate_email(email):
+            flash('Formato de e-mail inválido.', 'danger')
+            return render_template('register.html', form_data=request.form)
+
+        # Validação da senha
+        is_strong, message = validate_password_strength(password)
+        if not is_strong:
+            flash(message, 'danger')
             return render_template('register.html', form_data=request.form)
 
         user = db.session.execute(
@@ -60,10 +81,12 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+
 def login():
-    if request.method == 'POST':
-        login_identifier = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()
+    if form.validate_on_submit():
+        login_identifier = form.username.data
+        password = form.password.data
 
         user = db.session.execute(db.select(User).filter_by(id_func=login_identifier)).scalar_one_or_none()
 
@@ -73,11 +96,17 @@ def login():
         if user and user.is_active and user.check_password(password):
             login_user(user)
 
+            # Redirecionamento baseado na função do usuário
+            if user.role == 'super_admin' or user.role == 'programador':
+                return redirect(url_for('super_admin.dashboard'))
+            
             # Se for um aluno sem perfil, redireciona para completar
             if user.role == 'aluno' and not user.aluno_profile:
                 flash('Por favor, complete seu perfil de aluno para continuar.', 'info')
-                return redirect(url_for('aluno.cadastro_aluno'))
-            # Se for um instrutor sem perfil, redireciona para completar
+
+                return redirect(url_for('aluno.completar_cadastro'))
+            # SE FOR UM INSTRUTOR SEM PERFIL, REDIRECIONA PARA COMPLETAR
+
             elif user.role == 'instrutor' and not user.instrutor_profile:
                 flash('Por favor, complete seu perfil de instrutor para continuar.', 'info')
                 return redirect(url_for('instrutor.completar_cadastro'))
@@ -88,7 +117,7 @@ def login():
         else:
             flash('Id Func/Usuário ou senha inválidos.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 
 @auth_bp.route('/logout')
@@ -97,3 +126,39 @@ def logout():
     logout_user()
     flash('Você foi desconectado com sucesso.', 'info')
     return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/set-new-with-token', methods=['GET', 'POST'])
+def set_new_with_token():
+    if request.method == 'POST':
+        id_func = request.form.get('id_func', '').strip()
+        raw_token = request.form.get('token', '').strip()
+        password = request.form.get('password', '')
+        password2 = request.form.get('password2', '')
+
+        if not id_func or not raw_token or not password or not password2:
+            flash('Preencha todos os campos.', 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        if password != password2:
+            flash('As senhas não coincidem.', 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        is_strong, message = validate_password_strength(password)
+        if not is_strong:
+            flash(message, 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        user = PasswordResetService.consume_with_user_and_raw_token(id_func, raw_token)
+        if not user:
+            flash('Token inválido, expirado ou dados incorretos.', 'danger')
+            return render_template('set_new_with_token.html', form_data=request.form)
+
+        # Aplica a nova senha
+        user.set_password(password)
+        user.must_change_password = False
+        db.session.commit()
+        flash('Senha redefinida com sucesso. Faça o login com a nova senha.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('set_new_with_token.html', form_data={})

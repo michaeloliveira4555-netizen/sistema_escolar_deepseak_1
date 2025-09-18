@@ -1,60 +1,48 @@
-# backend/controllers/admin_controller.py
-
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
-from functools import wraps
-from backend.models.database import db # <-- Importação correta para sua estrutura
+from backend.models.database import db
 from backend.models.user import User
+from utils.decorators import admin_or_programmer_required
+from ..services.user_service import UserService
 
-# Blueprint para rotas de administração
-admin_bp = Blueprint('admin', __name__)
+admin_escola_bp = Blueprint('admin_escola', __name__, url_prefix='/admin-escola')
 
-# Decorator para verificar se o usuário é admin
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'admin':
-            flash('Acesso negado. Você precisa ser um administrador.', 'danger')
-            return redirect(url_for('main.dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-@admin_bp.route('/pre-cadastro', methods=['GET', 'POST'])
+@admin_escola_bp.route('/pre-cadastro', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@admin_or_programmer_required
 def pre_cadastro():
     if request.method == 'POST':
-        matriculas_raw = request.form.get('matriculas')
+        id_funcs_raw = request.form.get('id_funcs')
         role = request.form.get('role')
+        school_id = request.form.get('school_id') # Campo do formulário para admin global
 
-        if not matriculas_raw or not role:
-            flash('Por favor, preencha todos os campos.', 'danger')
-            return redirect(url_for('admin.pre_cadastro'))
-
-        matriculas = [m.strip() for m in matriculas_raw.replace(',', ' ').replace(';', ' ').split() if m.strip()]
-        
-        novos_usuarios = 0
-        usuarios_existentes = 0
-        
-        for matricula in matriculas:
-            user_exists = db.session.execute(
-                db.select(User).filter_by(matricula=matricula, role=role)
-            ).scalar_one_or_none()
-
-            if user_exists:
-                usuarios_existentes += 1
+        # Se o usuário for um admin de escola, use a escola dele
+        if current_user.role not in ['super_admin', 'programador']:
+            if current_user.user_schools:
+                school_id = current_user.user_schools[0].school_id
             else:
-                new_user = User(matricula=matricula, role=role, is_active=False)
-                db.session.add(new_user)
-                novos_usuarios += 1
+                flash('Você não está associado a nenhuma escola para realizar o pré-cadastro.', 'danger')
+                return redirect(url_for('admin_escola.pre_cadastro'))
         
-        if novos_usuarios > 0:
-            db.session.commit()
-            flash(f'{novos_usuarios} novo(s) usuário(s) pré-cadastrado(s) com sucesso!', 'success')
+        # Validações
+        if not id_funcs_raw or not role or not school_id:
+            flash('Por favor, preencha todos os campos, incluindo a escola.', 'danger')
+            return redirect(url_for('admin_escola.pre_cadastro'))
+
+        id_funcs = [m.strip() for m in id_funcs_raw.replace(',', ' ').replace(';', ' ').split() if m.strip()]
         
-        if usuarios_existentes > 0:
-            flash(f'{usuarios_existentes} identificador(es) já existia(m) e foram ignorado(s).', 'info')
+        success, new_users_count, existing_users_count = UserService.batch_pre_register_users(id_funcs, role, school_id)
+        
+        if success:
+            if new_users_count > 0:
+                flash(f'{new_users_count} novo(s) usuário(s) pré-cadastrado(s) com sucesso na escola selecionada!', 'success')
+            if existing_users_count > 0:
+                flash(f'{existing_users_count} identificador(es) já existia(m) e foram ignorado(s).', 'info')
+        else:
+            flash(f'Erro ao pré-cadastrar usuários.', 'danger')
 
-        return redirect(url_for('admin.pre_cadastro'))
+        return redirect(url_for('admin_escola.pre_cadastro'))
 
-    return render_template('admin/pre_cadastro.html')
+    # Para a requisição GET, busca as escolas para o admin global selecionar
+    schools = db.session.query(School).order_by(School.nome).all()
+    return render_template('admin/pre_cadastro.html', schools=schools)

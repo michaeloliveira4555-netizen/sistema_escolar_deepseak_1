@@ -14,6 +14,8 @@
         <p style="font-size: 0.9rem; opacity: 0.8; margin-top: -15px; margin-bottom: 20px;">Complete seus dados para ativar seu acesso.</p>
 
         <form method="POST" action="{{ url_for('auth.register') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
             <div class="form-group">
                 <label for="role">Eu sou:</label>
                 <select id="role" name="role" class="form-control" required>
@@ -45,18 +47,39 @@
                 <input type="email" id="email" name="email" class="form-control" placeholder="Digite seu e-mail completo" value="{{ form_data.get('email', '') }}" required>
             </div>
             <div class="form-group">
-                <label for="password">Crie uma Senha:</label>
-                <input type="password" id="password" name="password" class="form-control" required>
+                <label for="password_visible">Crie uma Senha:</label>
+                <input type="password" id="password_visible" name="new_password" class="form-control" autocomplete="new-password" required>
+                <input type="hidden" id="password" name="password">
             </div>
             <div class="password-rules">
                 <small>A senha deve conter pelo menos 8 caracteres, incluindo uma letra maiúscula, uma minúscula, um número e um caractere especial (!@#$%).</small>
             </div>
             <div class="form-group">
-                <label for="password2">Confirme a Senha:</label>
-                <input type="password" id="password2" name="password2" class="form-control" required>
+                <label for="password2_visible">Confirme a Senha:</label>
+                <input type="password" id="password2_visible" name="new_password2" class="form-control" autocomplete="new-password" required>
+                <input type="hidden" id="password2" name="password2">
             </div>
             <button type="submit" class="btn btn-primary">Ativar Conta</button>
         </form>
+        <script>
+        (function() {
+            const form = document.querySelector('form[action="{{ url_for('auth.register') }}"]');
+            if (!form) return;
+            const vis1 = document.getElementById('password_visible');
+            const vis2 = document.getElementById('password2_visible');
+            const hid1 = document.getElementById('password');
+            const hid2 = document.getElementById('password2');
+            function sync() {
+                if (vis1 && hid1) hid1.value = vis1.value;
+                if (vis2 && hid2) hid2.value = vis2.value;
+            }
+            ['input','change','blur'].forEach(evt => {
+                if (vis1) vis1.addEventListener(evt, sync);
+                if (vis2) vis2.addEventListener(evt, sync);
+            });
+            form.addEventListener('submit', sync);
+        })();
+        </script>
          <div class="auth-link" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
             <a href="{{ url_for('auth.login') }}">Já tem uma conta ativa? Faça o login.</a>
             <a href="{{ url_for('auth.login') }}">Voltar para o Login</a>

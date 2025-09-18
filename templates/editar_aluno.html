@@ -15,52 +15,42 @@
             {% endif %}
         </h2>
         <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
             
             <div class="form-group text-center">
                 <img src="{{ url_for('static', filename='uploads/profile_pics/' + (aluno.foto_perfil or 'default.png')) }}" alt="Foto de Perfil" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem;">
             </div>
 
             <div class="form-group">
-                <label for="foto_perfil">Alterar Foto de Perfil:</label>
-                <input type="file" id="foto_perfil" name="foto_perfil" class="form-control">
+                {{ form.foto_perfil.label }}
+                {{ form.foto_perfil(class="form-control") }}
             </div>
 
             <div class="form-group">
-                <label for="nome_completo">Nome Completo:</label>
-                <input type="text" id="nome_completo" name="nome_completo" value="{{ (form_data.user.nome_completo if form_data.user else form_data.nome_completo) or '' }}" class="form-control" required>
+                {{ form.nome_completo.label }}
+                {{ form.nome_completo(class="form-control") }}
             </div>
 
             <div class="form-group">
-                <label for="matricula">Matrícula:</label>
-                <input type="text" id="matricula" name="matricula" value="{{ form_data.matricula }}" class="form-control" required {% if self_edit %}readonly{% endif %}>
+                {{ form.matricula.label }}
+                {{ form.matricula(class="form-control", readonly=self_edit) }}
                  {% if self_edit %}<small>A matrícula não pode ser alterada.</small>{% endif %}
             </div>
             <div class="form-group">
-                <label for="opm">OPM:</label>
-                <input type="text" id="opm" name="opm" value="{{ form_data.opm }}" class="form-control" required {% if self_edit %}readonly{% endif %}>
+                {{ form.opm.label }}
+                {{ form.opm(class="form-control", readonly=self_edit) }}
                 {% if self_edit %}<small>A OPM não pode ser alterada.</small>{% endif %}
             </div>
             <div class="form-group">
-                <label for="turma_id">Turma / Pelotão:</label>
-                <select id="turma_id" name="turma_id" class="form-control" required {% if self_edit %}disabled{% endif %}>
-                    <option value="">-- Selecione uma turma --</option>
-                    {% for turma in turmas %}
-                        <option value="{{ turma.id }}" {% if form_data.turma_id == turma.id %}selected{% endif %}>{{ turma.nome }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.turma_id.label }}
+                {{ form.turma_id(class="form-control", disabled=self_edit) }}
                 {% if self_edit %}<small>A turma não pode ser alterada.</small>{% endif %}
             </div>
             <div class="form-group">
-                <label for="funcao_atual">Função Atual:</label>
-                <select id="funcao_atual" name="funcao_atual" class="form-control">
-                    <option value="">-- Nenhuma função --</option>
-                    {% set funcoes = ['P1', 'P2', 'P3', 'P4', 'P5', 'Aux Disc', 'Aux Cia', 'Aux Pel', 'C1', 'C2', 'C3', 'C4', 'C5', 'Formatura', 'Obras', 'Atletismo', 'Jubileu', 'Dia da Criança', 'Seminário', 'Chefe de Turma', 'Correio', 'Cmt 1° GPM', 'Cmt 2° GPM', 'Cmt 3° GPM', 'Socorrista 1', 'Socorrista 2', 'Motorista 1', 'Motorista 2', 'Telefonista 1', 'Telefonista 2'] %}
-                    {% for funcao in funcoes %}
-                        <option value="{{ funcao }}" {% if form_data.funcao_atual == funcao %}selected{% endif %}>{{ funcao }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.funcao_atual.label }}
+                {{ form.funcao_atual(class="form-control") }}
             </div>
-            <button type="submit" class="btn btn-primary">Atualizar Perfil</button>
+            {{ form.submit(class="btn btn-primary") }}
             <a href="{{ url_for('aluno.listar_alunos') }}" class="btn btn-secondary mt-3">Cancelar</a>
         </form>
     </div>

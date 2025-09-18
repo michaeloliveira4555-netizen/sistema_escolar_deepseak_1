@@ -11,24 +11,30 @@
         <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #64748b;">Preencha os dados abaixo para finalizar seu cadastro.</p>
         <hr style="margin-bottom: 25px;">
 
-        <form method="POST" action="{{ url_for('aluno.cadastro_aluno') }}">
+        <form method="POST" action="{{ url_for('aluno.completar_cadastro') }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+
             <div class="form-group">
-                <label for="opm">Sua OPM (Organização Policial Militar):</label>
-                <input type="text" id="opm" name="opm" class="form-control" required>
+                {{ form.nome_completo.label(class="form-label") }}
+                {{ form.nome_completo(class="form-control") }}
             </div>
 
             <div class="form-group">
-                <label for="turma_id">Sua Turma:</label>
-                <select id="turma_id" name="turma_id" class="form-control" required>
-                    <option value="">-- Selecione sua turma --</option>
-                    {% for turma in turmas %}
-                        <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.opm.label(class="form-label") }}
+                {{ form.opm(class="form-control") }}
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Salvar Perfil e Acessar</button>
-        </form>
+            <div class="form-group">
+                {{ form.turma_id.label(class="form-label") }}
+                {{ form.turma_id(class="form-control") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.foto_perfil.label(class="form-label") }}
+                {{ form.foto_perfil(class="form-control-file") }}
+            </div>
+
+            {{ form.submit(class="btn btn-primary", style="margin-top: 20px; width: 100%;") }}
     </div>
 </div>
 {% endblock %}

@@ -5,6 +5,7 @@ from ..models.turma import Turma
 from ..models.aluno import Aluno
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.historico_disciplina import HistoricoDisciplina
+from ..models.horario import Horario
 from ..models.instrutor import Instrutor
 from sqlalchemy import select, or_
 from sqlalchemy.orm import joinedload
@@ -14,12 +15,6 @@ from flask import current_app
 class DisciplinaService:
     @staticmethod
     def get_disciplinas_with_instrutores_for_pelotao(pelotao: str):
-        """
-        Busca todas as associações de disciplina para um pelotão específico,
-        garantindo que os dados do instrutor e do usuário sejam pré-carregados.
-        """
-        print(f"DEBUG: Buscando disciplinas para pelotão: {pelotao}")
-        
         query = (
             select(DisciplinaTurma)
             .options(
@@ -31,28 +26,10 @@ class DisciplinaService:
             .filter(DisciplinaTurma.pelotao == pelotao)
             .order_by(Disciplina.materia)
         )
-        
-        associacoes = db.session.scalars(query).unique().all()
-        
-        print(f"DEBUG: Encontradas {len(associacoes)} associações")
-        for a in associacoes:
-            print(f"  - {a.disciplina.materia}: Instrutor1={a.instrutor_id_1}, Instrutor2={a.instrutor_id_2}")
-            if a.instrutor_1:
-                print(f"    Instrutor 1: {a.instrutor_1.user.nome_completo if a.instrutor_1.user else 'Sem user'}")
-            if a.instrutor_2:
-                print(f"    Instrutor 2: {a.instrutor_2.user.nome_completo if a.instrutor_2.user else 'Sem user'}")
-        
-        return associacoes
+        return db.session.scalars(query).unique().all()
 
     @staticmethod
     def get_disciplinas_for_instrutor_in_pelotao(instrutor_id: int, pelotao: str):
-        """
-        Busca disciplinas específicas de um instrutor em um pelotão específico.
-        Esta é a função crítica para o problema reportado.
-        """
-        print(f"DEBUG: Buscando disciplinas para instrutor ID {instrutor_id} no pelotão {pelotao}")
-        
-        # Query mais explícita e com debug
         query = (
             select(DisciplinaTurma)
             .options(joinedload(DisciplinaTurma.disciplina))
@@ -65,50 +42,7 @@ class DisciplinaService:
             )
             .order_by(DisciplinaTurma.disciplina_id)
         )
-        
-        print(f"DEBUG: Query SQL: {query}")
-        
-        associacoes = db.session.scalars(query).unique().all()
-        
-        print(f"DEBUG: Query retornou {len(associacoes)} associação(ões)")
-        
-        for assoc in associacoes:
-            print(f"  - Disciplina: {assoc.disciplina.materia}")
-            print(f"    Instrutor 1 ID: {assoc.instrutor_id_1}")
-            print(f"    Instrutor 2 ID: {assoc.instrutor_id_2}")
-            print(f"    Pelotão: {assoc.pelotao}")
-        
-        if len(associacoes) == 0:
-            print(f"DEBUG: NENHUMA associação encontrada para instrutor {instrutor_id} no {pelotao}")
-            
-            # Vamos buscar TODAS as associações deste pelotão para debug
-            print(f"DEBUG: Listando TODAS as associações do {pelotao}:")
-            todas_associacoes = db.session.scalars(
-                select(DisciplinaTurma)
-                .options(joinedload(DisciplinaTurma.disciplina))
-                .where(DisciplinaTurma.pelotao == pelotao)
-            ).all()
-            
-            for assoc in todas_associacoes:
-                print(f"  - {assoc.disciplina.materia}: Inst1={assoc.instrutor_id_1}, Inst2={assoc.instrutor_id_2}")
-            
-            # Vamos buscar TODAS as associações deste instrutor
-            print(f"DEBUG: Listando TODAS as associações do instrutor {instrutor_id}:")
-            associacoes_instrutor = db.session.scalars(
-                select(DisciplinaTurma)
-                .options(joinedload(DisciplinaTurma.disciplina))
-                .where(
-                    or_(
-                        DisciplinaTurma.instrutor_id_1 == instrutor_id,
-                        DisciplinaTurma.instrutor_id_2 == instrutor_id
-                    )
-                )
-            ).all()
-            
-            for assoc in associacoes_instrutor:
-                print(f"  - {assoc.disciplina.materia} no {assoc.pelotao}")
-        
-        return associacoes
+        return db.session.scalars(query).unique().all()
         
     @staticmethod
     def save_disciplina(data):
@@ -120,55 +54,47 @@ class DisciplinaService:
 
         try:
             carga_horaria_int = int(carga_horaria)
-        except (ValueError, TypeError):
-            return False, "Carga horária deve ser um número inteiro."
 
-        existing_disciplina = db.session.execute(
-            select(Disciplina).where(Disciplina.materia == nome_materia)
-        ).scalar_one_or_none()
-        if existing_disciplina:
-            return False, "Uma disciplina com este nome já existe."
+            if db.session.execute(select(Disciplina).where(Disciplina.materia == nome_materia)).scalar_one_or_none():
+                return False, "Uma disciplina com este nome já existe."
 
-        try:
             nova_disciplina = Disciplina(
                 materia=nome_materia,
                 carga_horaria_prevista=carga_horaria_int
             )
             db.session.add(nova_disciplina)
-            db.session.commit()
+            db.session.flush()
 
-            # Matricula todos os alunos na nova disciplina
             todos_os_alunos = db.session.scalars(select(Aluno)).all()
             for aluno in todos_os_alunos:
                 nova_matricula = HistoricoDisciplina(aluno_id=aluno.id, disciplina_id=nova_disciplina.id)
                 db.session.add(nova_matricula)
-            
-            # Cria associações para todas as turmas (sem instrutores inicialmente)
+
             turmas = db.session.scalars(select(Turma)).all()
             for turma in turmas:
-                associacao = DisciplinaTurma(
-                    pelotao=turma.nome,
-                    disciplina_id=nova_disciplina.id,
-                    instrutor_id_1=None,  # Será definido posteriormente
-                    instrutor_id_2=None   # Será definido posteriormente
-                )
+                associacao = DisciplinaTurma(pelotao=turma.nome, disciplina_id=nova_disciplina.id)
                 db.session.add(associacao)
 
             db.session.commit()
-            print(f"DEBUG: Disciplina '{nome_materia}' criada e associada a todas as turmas")
             return True, "Disciplina cadastrada e associada a todos os alunos e turmas!"
-        except IntegrityError:
-            db.session.rollback()
-            return False, "Uma disciplina com este nome já existe."
+        except (ValueError, TypeError):
+            return False, "Carga horária deve ser um número inteiro."
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Erro inesperado ao cadastrar disciplina: {e}")
-            return False, f"Erro inesperado ao cadastrar disciplina: {str(e)}"
+            current_app.logger.error(f"Erro ao salvar disciplina: {e}")
+            return False, f"Ocorreu um erro ao salvar a disciplina: {str(e)}"
 
     @staticmethod
     def get_all_disciplinas():
         stmt = select(Disciplina).order_by(Disciplina.materia)
         return db.session.scalars(stmt).all()
+
+    @staticmethod
+    def get_all_disciplinas_com_associacoes(pelotao: str = None):
+        stmt = select(Disciplina).options(joinedload(Disciplina.associacoes_turmas)).order_by(Disciplina.materia)
+        if pelotao:
+            stmt = stmt.join(Disciplina.associacoes_turmas).where(DisciplinaTurma.pelotao == pelotao)
+        return db.session.scalars(stmt).unique().all()
 
     @staticmethod
     def get_disciplina_by_id(disciplina_id: int):
@@ -188,54 +114,44 @@ class DisciplinaService:
 
         try:
             carga_horaria_int = int(carga_horaria)
-        except (ValueError, TypeError):
-            return False, "Carga horária deve ser um número inteiro."
 
-        try:
+            if nome_materia != disciplina.materia and db.session.execute(select(Disciplina).filter(Disciplina.materia == nome_materia)).scalar_one_or_none():
+                return False, "Uma disciplina com este nome já existe."
+
             disciplina.materia = nome_materia
             disciplina.carga_horaria_prevista = carga_horaria_int
-            
             db.session.commit()
             return True, "Disciplina atualizada com sucesso!"
-        except IntegrityError:
-            db.session.rollback()
-            return False, "Erro de integridade dos dados. Verifique se a matéria já existe."
+        except (ValueError, TypeError):
+            return False, "Carga horária deve ser um número inteiro."
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Erro inesperado ao atualizar disciplina: {e}")
-            return False, f"Erro inesperado ao atualizar disciplina: {str(e)}"
+            current_app.logger.error(f"Erro ao atualizar disciplina: {e}")
+            return False, f"Ocorreu um erro ao atualizar a disciplina: {str(e)}"
 
-    @staticmethod 
-    def verificar_associacoes_disciplinas():
-        """
-        Método de debug para verificar todas as associações disciplina-turma
-        """
-        print("=== DEBUG: Verificando todas as associações disciplina-turma ===")
+    @staticmethod
+    def delete_disciplina(disciplina_id: int):
+        disciplina = db.session.get(Disciplina, disciplina_id)
+        if not disciplina:
+            return False, "Disciplina não encontrada."
         
-        query = (
-            select(DisciplinaTurma)
-            .options(
-                joinedload(DisciplinaTurma.disciplina),
-                joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
-                joinedload(DisciplinaTurma.instrutor_2).joinedload(Instrutor.user)
-            )
-            .order_by(DisciplinaTurma.pelotao, DisciplinaTurma.disciplina_id)
-        )
-        
-        todas_associacoes = db.session.scalars(query).unique().all()
-        
-        for assoc in todas_associacoes:
-            print(f"Pelotão: {assoc.pelotao}")
-            print(f"  Disciplina: {assoc.disciplina.materia}")
-            print(f"  Instrutor 1 ID: {assoc.instrutor_id_1}")
-            if assoc.instrutor_1:
-                nome1 = assoc.instrutor_1.user.nome_completo if assoc.instrutor_1.user else "Sem usuário"
-                print(f"    Nome: {nome1}")
-            print(f"  Instrutor 2 ID: {assoc.instrutor_id_2}")
-            if assoc.instrutor_2:
-                nome2 = assoc.instrutor_2.user.nome_completo if assoc.instrutor_2.user else "Sem usuário"
-                print(f"    Nome: {nome2}")
-            print("---")
-        
-        print(f"Total de associações: {len(todas_associacoes)}")
-        return todas_associacoes
+        try:
+            # 1. Remover associações disciplina-turma
+            db.session.query(DisciplinaTurma).filter_by(disciplina_id=disciplina_id).delete()
+            
+            # 2. Remover aulas agendadas
+            db.session.query(Horario).filter_by(disciplina_id=disciplina_id).delete()
+            
+            # 3. Remover histórico de disciplinas dos alunos
+            db.session.query(HistoricoDisciplina).filter_by(disciplina_id=disciplina_id).delete()
+            
+            # 4. Finalmente, remover a disciplina
+            db.session.delete(disciplina)
+            
+            db.session.commit()
+            return True, f'Disciplina "{disciplina.materia}" e todos os dados relacionados foram excluídos com sucesso!'
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao excluir disciplina: {e}")
+            return False, f'Erro ao excluir disciplina: {str(e)}'

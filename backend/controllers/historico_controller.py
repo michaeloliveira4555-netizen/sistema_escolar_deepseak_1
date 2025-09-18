@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from ..models.database import db
 from ..services.historico_service import HistoricoService
 from ..services.aluno_service import AlunoService
-from ..models.historico_disciplina import HistoricoDisciplina
+
 from utils.decorators import admin_or_programmer_required
 
 historico_bp = Blueprint('historico', __name__, url_prefix='/historico')
@@ -13,7 +13,11 @@ historico_bp = Blueprint('historico', __name__, url_prefix='/historico')
 @login_required
 def historico_aluno(aluno_id):
     user_role = getattr(current_user, 'role', None)
-    is_authorized = user_role in ['admin', 'programador']
+
+    is_authorized = user_role in ['super_admin', 'programador']
+    
+    # Verifica se o usuário logado é o próprio aluno
+
     is_own_profile = hasattr(current_user, 'aluno_profile') and current_user.aluno_profile and current_user.aluno_profile.id == aluno_id
 
     if not (is_authorized or is_own_profile):
@@ -39,7 +43,11 @@ def historico_aluno(aluno_id):
 @historico_bp.route('/avaliar/<int:historico_id>', methods=['POST'])
 @login_required
 def avaliar_aluno_disciplina(historico_id):
-    registro = db.session.get(HistoricoDisciplina, historico_id)
+
+    # Verificação de permissão atualizada para incluir 'programador'
+    user_role = getattr(current_user, 'role', None)
+    is_authorized = user_role in ['super_admin', 'programador', 'instrutor']
+
     
     # VERIFICAÇÃO DE SEGURANÇA: Garante que apenas o aluno dono do histórico pode salvar
     is_own_profile = current_user.is_authenticated and hasattr(current_user, 'aluno_profile') and current_user.aluno_profile.id == registro.aluno_id

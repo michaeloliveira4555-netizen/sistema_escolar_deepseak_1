@@ -7,9 +7,10 @@
     <div class="auth-card">
         <h2>Editar Perfil do Instrutor: {{ instrutor.user.username }}</h2>
         <form method="POST" action="{{ url_for('instrutor.editar_instrutor', instrutor_id=instrutor.id) }}">
+            {{ form.hidden_tag() }}
             <div class="form-group">
-                <label for="matricula">Matrícula:</label>
-                <input type="text" id="matricula" name="matricula" value="{{ instrutor.matricula }}" required>
+                {{ form.especializacao.label }}
+                {{ form.especializacao(class="form-control") }}
             </div>
             
             <div class="form-group">
@@ -25,19 +26,19 @@
             </div>
             
             <div class="form-group">
-                <label for="especializacao">Especialização:</label>
-                <input type="text" id="especializacao" name="especializacao" value="{{ instrutor.especializacao }}">
+                {{ form.formacao.label }}
+                {{ form.formacao(class="form-control") }}
             </div>
             <div class="form-group">
-                <label for="formacao">Formação:</label>
-                <input type="text" id="formacao" name="formacao" value="{{ instrutor.formacao }}">
+                {{ form.telefone.label }}
+                {{ form.telefone(class="form-control", placeholder="(XX) XXXXX-XXXX") }}
             </div>
             <div class="form-group">
-                <label for="telefone">Telefone:</label>
-                <input type="text" id="telefone" name="telefone" value="{{ instrutor.telefone or '' }}" placeholder="(XX) XXXXX-XXXX">
+                {{ form.credor.label }}
+                {{ form.credor(class="form-control", rows="3", placeholder="Informações de pagamento, ex: Banco, Agência, Conta, CPF/CNPJ") }}
             </div>
 
-            <button type="submit" class="btn btn-primary">Atualizar Perfil</button>
+            {{ form.submit(class="btn btn-primary") }}
             <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn btn-secondary mt-3">Cancelar</a>
         </form>
     </div>
@@ -66,8 +67,12 @@
                 if (value.length > 11) value = value.slice(0, 11);
                 if (value.length > 10) {
                     value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
-                } else {
-                    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{4}).*/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                } else if (value.length > 0) {
+                    value = value.replace(/^(\d{0,2})/, '($1');
                 }
                 e.target.value = value;
             });

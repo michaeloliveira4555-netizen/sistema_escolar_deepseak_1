@@ -10,30 +10,30 @@
 
 <div class="table-container" style="max-width: 700px; margin: 0 auto;">
     <form method="POST" action="{{ url_for('turma.cadastrar_turma') }}">
+        {{ form.hidden_tag() }}
         <div class="form-group">
-            <label for="nome">Nome da Turma</label>
-            <input type="text" name="nome" class="form-control" placeholder="Ex: 1º Pelotão - Turma 2025" required>
+            {{ form.nome.label }}
+            {{ form.nome(class="form-control", placeholder="Ex: 1º Pelotão - Turma 2025") }}
         </div>
         <div class="form-group">
-            <label for="ano">Ano</label>
-            <input type="number" name="ano" class="form-control" placeholder="Ex: 2025" required min="2020" max="2100">
+            {{ form.ano.label }}
+            {{ form.ano(class="form-control", placeholder="Ex: 2025") }}
         </div>
         <div class="form-group">
-            <label>Alunos Sem Turma (Opcional)</label>
+            {{ form.alunos_ids.label }}
             <div class="checkbox-list">
-                {% for aluno in alunos_sem_turma %}
-                <label class="checkbox-item">
-                    <input type="checkbox" name="alunos_ids" value="{{ aluno.id }}">
-                    {{ aluno.user.nome_completo or aluno.user.username }} (Matrícula: {{ aluno.matricula }})
-                </label>
+                {% for subfield in form.alunos_ids %}
+                    <label class="checkbox-item">
+                        {{ subfield }} {{ subfield.label.text }}
+                    </label>
                 {% else %}
-                <p style="color: #94a3b8; font-style: italic;">Nenhum aluno sem turma encontrado para adicionar.</p>
+                    <p style="color: #94a3b8; font-style: italic;">Nenhum aluno sem turma encontrado para adicionar.</p>
                 {% endfor %}
             </div>
         </div>
         <div class="form-actions">
             <a href="{{ url_for('turma.listar_turmas') }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar Turma</button>
+            {{ form.submit(class="btn btn-primary") }}
         </div>
     </form>
 </div>

@@ -13,9 +13,10 @@
         <h2>Login no Sistema</h2>
 
         <form method="POST" action="{{ url_for('auth.login') }}">
+            {{ form.hidden_tag() }} {# Mantém a proteção CSRF #}
             <div class="form-group">
                 <label for="username">Id Func / Usuário:</label>
-                <input type="text" id="username" name="username" placeholder="Digite sua Id Func ou usuário" required>
+                <input type="text" id="username" name="username" placeholder="Digite sua Id Func ou usuário" required value="{{ form.username.data or '' }}">
             </div>
             <div class="form-group">
                 <label for="password">Senha:</label>
@@ -24,8 +25,9 @@
             <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
         
-        <div class="auth-link">
+        <div class="auth-link" style="display: flex; flex-direction: column; gap: 0.5rem;">
             <a href="{{ url_for('auth.register') }}">Não tem uma conta ativa? Ative aqui.</a>
+            <a href="{{ url_for('auth.set_new_with_token') }}">Esqueci minha senha</a>
         </div>
     </div>
 </div>

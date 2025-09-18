@@ -12,6 +12,7 @@
     <div class="auth-card" style="max-width: 600px;">
         <h2>Dados Pessoais</h2>
         <form method="POST" action="{{ url_for('user.meu_perfil') }}">
+            {{ form.hidden_tag() }}
             <div class="form-group">
                 <label for="id_func">Identidade Funcional / Matrícula</label>
                 <input type="text" id="id_func" name="id_func" class="form-control" value="{{ current_user.id_func }}" readonly>
@@ -19,8 +20,8 @@
             </div>
 
             <div class="form-group">
-                <label for="nome_completo">Nome Completo</label>
-                <input type="text" id="nome_completo" name="nome_completo" class="form-control" value="{{ current_user.nome_completo or '' }}" required>
+                {{ form.nome_completo.label }}
+                {{ form.nome_completo(class="form-control") }}
             </div>
             
             <div class="form-group">
@@ -29,8 +30,8 @@
             </div>
 
             <div class="form-group">
-                <label for="email">E-mail</label>
-                <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email or '' }}" required>
+                {{ form.email.label }}
+                {{ form.email(class="form-control") }}
             </div>
 
             {% if current_user.role == 'aluno' and current_user.aluno_profile %}
@@ -58,21 +59,21 @@
             <p style="font-size: 0.9rem; color: #64748b; margin-top: -1rem; margin-bottom: 1rem;">Preencha os campos abaixo somente se desejar alterar sua senha.</p>
             
             <div class="form-group">
-                <label for="senha_atual">Senha Atual</label>
-                <input type="password" id="senha_atual" name="senha_atual" class="form-control">
+                {{ form.current_password.label }}
+                {{ form.current_password(class="form-control") }}
             </div>
             <div class="form-group">
-                <label for="nova_senha">Nova Senha</label>
-                <input type="password" id="nova_senha" name="nova_senha" class="form-control">
+                {{ form.new_password.label }}
+                {{ form.new_password(class="form-control") }}
             </div>
             <div class="form-group">
-                <label for="confirmar_nova_senha">Confirmar Nova Senha</label>
-                <input type="password" id="confirmar_nova_senha" name="confirmar_nova_senha" class="form-control">
+                {{ form.confirm_new_password.label }}
+                {{ form.confirm_new_password(class="form-control") }}
             </div>
 
             <div class="form-actions" style="justify-content: flex-end;">
                  <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Voltar</a>
-                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                {{ form.submit(class="btn btn-primary") }}
             </div>
         </form>
     </div>

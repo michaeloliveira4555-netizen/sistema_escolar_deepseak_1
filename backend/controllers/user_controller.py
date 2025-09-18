@@ -1,51 +1,50 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
+from sqlalchemy import select
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, Email, Optional, EqualTo
+
 from ..models.database import db
 from ..models.user import User
 from werkzeug.security import check_password_hash
+from ..services.user_service import UserService
 
 user_bp = Blueprint('user', __name__, url_prefix='/usuario')
+
+# Forms
+class UserProfileForm(FlaskForm):
+    nome_completo = StringField('Nome Completo', validators=[DataRequired(), Length(max=100)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    current_password = PasswordField('Senha Atual', validators=[Optional()])
+    new_password = PasswordField('Nova Senha', validators=[Optional(), Length(min=6)])
+    confirm_new_password = PasswordField('Confirmar Nova Senha', validators=[EqualTo('new_password', message='As senhas devem ser iguais.')])
+    submit = SubmitField('Atualizar Perfil')
 
 @user_bp.route('/meu-perfil', methods=['GET', 'POST'])
 @login_required
 def meu_perfil():
-    if request.method == 'POST':
-        nome_completo = request.form.get('nome_completo')
-        nome_de_guerra = request.form.get('nome_de_guerra')
-        email = request.form.get('email')
-        telefone = request.form.get('telefone')
-        credor = request.form.get('credor')
-        posto_graduacao = request.form.get('posto_graduacao')
-        
-        senha_atual = request.form.get('senha_atual')
-        nova_senha = request.form.get('nova_senha')
-        confirmar_nova_senha = request.form.get('confirmar_nova_senha')
+    form = UserProfileForm(obj=current_user)
 
-        # Atualiza informações básicas do usuário
-        current_user.nome_completo = nome_completo
-        current_user.nome_de_guerra = nome_de_guerra
-        current_user.email = email
+    if form.validate_on_submit():
+        # Update basic profile info
+        current_user.nome_completo = form.nome_completo.data
+        current_user.email = form.email.data
 
-        # Atualiza perfil específico
-        if current_user.role == 'aluno' and current_user.aluno_profile:
-            current_user.aluno_profile.telefone = telefone
-        elif current_user.role == 'instrutor' and current_user.instrutor_profile:
-            current_user.instrutor_profile.telefone = telefone
-            current_user.instrutor_profile.credor = credor
-            current_user.instrutor_profile.posto_graduacao = posto_graduacao
+        # Handle password change
+        if form.current_password.data or form.new_password.data or form.confirm_new_password.data:
+            if not check_password_hash(current_user.password_hash, form.current_password.data):
+                flash('Senha atual incorreta.', 'danger')
+                return redirect(url_for('user.meu_perfil'))
+            
+            if form.new_password.data != form.confirm_new_password.data:
+                flash('As novas senhas não coincidem.', 'danger')
+                return redirect(url_for('user.meu_perfil'))
 
-        # Lógica para alteração de senha
-        if senha_atual and nova_senha and confirmar_nova_senha:
-            if not current_user.check_password(senha_atual):
-                flash('A senha atual está incorreta.', 'danger')
-            elif nova_senha != confirmar_nova_senha:
-                flash('A nova senha e a confirmação não coincidem.', 'danger')
-            else:
-                current_user.set_password(nova_senha)
-                flash('Senha alterada com sucesso!', 'success')
-        
+            current_user.set_password(form.new_password.data)
+
         db.session.commit()
         flash('Perfil atualizado com sucesso!', 'success')
         return redirect(url_for('user.meu_perfil'))
 
-    return render_template('meu_perfil.html')
+    return render_template('meu_perfil.html', form=form)

@@ -19,7 +19,7 @@
                 <thead>
                     <tr>
                         <th>Nome Completo</th>
-                        {% if current_user.role in ['admin', 'programador'] %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}
                         <th>Id Func.</th>
                         {% endif %}
                     </tr>
@@ -28,7 +28,7 @@
                     {% for aluno in turma.alunos | sort(attribute='user.nome_completo') %}
                     <tr>
                         <td>{{ aluno.user.nome_completo or aluno.user.username }}</td>
-                        {% if current_user.role in ['admin', 'programador'] %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}
                         <td>{{ aluno.user.id_func }}</td>
                         {% endif %}
                     </tr>
@@ -42,12 +42,13 @@
         </div>
     </div>
 
-    {% if current_user.role in ['admin', 'programador'] %}
+    {% if current_user.role in ['super_admin', 'programador'] %}
     <div class="details-section">
         <div class="section-header">
             <h3>Cargos da Turma</h3>
         </div>
         <form method="POST" action="{{ url_for('turma.salvar_cargos_turma', turma_id=turma.id) }}">
+            {{ form.hidden_tag() }}
             <div class="cargos-grid">
                 {% for cargo in cargos_lista %}
                 <div class="form-group">
@@ -65,7 +66,7 @@
             </div>
             <div class="form-actions">
                 <a href="{{ url_for('turma.listar_turmas') }}" class="btn btn-secondary">Voltar</a>
-                <button type="submit" class="btn btn-primary">Salvar Cargos</button>
+                {{ form.submit(class="btn btn-primary") }}
             </div>
         </form>
     </div>

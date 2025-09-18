@@ -1,0 +1,172 @@
+from flask import current_app
+from utils.validators import validate_password_strength
+from ..models.database import db
+from ..models.user import User
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+
+from ..models.user_school import UserSchool # Importar UserSchool
+
+
+class UserService:
+    @staticmethod
+    def pre_register_user(data):
+        id_func = data.get('id_func', '').strip()
+        role = data.get('role')
+
+        if not id_func or not role:
+            return False, 'Por favor, preencha todos os campos.'
+
+        if not id_func.isdigit():
+            return False, 'A Identidade Funcional deve conter apenas números.'
+
+        if db.session.execute(select(User).filter_by(id_func=id_func)).scalar_one_or_none():
+            return False, f'A Id Func "{id_func}" já está pré-cadastrada no sistema.'
+
+        try:
+            new_user = User(
+                id_func=id_func,
+                role=role,
+                is_active=False
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            return True, f'Usuário com Id Func "{id_func}" pré-cadastrado com sucesso!'
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro de banco de dados ao pré-cadastrar usuário: {e}")
+            return False, f"Erro de banco de dados ao pré-cadastrar usuário: {str(e)}"
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro inesperado ao pré-cadastrar usuário: {e}")
+            return False, f"Erro inesperado ao pré-cadastrar usuário: {str(e)}"
+
+    @staticmethod
+    def update_user_profile(user, data):
+        nome_completo = data.get('nome_completo')
+        email = data.get('email')
+        telefone = data.get('telefone')
+        credor = data.get('credor')
+
+        senha_atual = data.get('senha_atual')
+        nova_senha = data.get('nova_senha')
+        confirmar_nova_senha = data.get('confirmar_nova_senha')
+
+        user.nome_completo = nome_completo
+        user.email = email
+
+        if user.role == 'aluno' and user.aluno_profile:
+            user.aluno_profile.telefone = telefone
+        elif user.role == 'instrutor' and user.instrutor_profile:
+            user.instrutor_profile.telefone = telefone
+            user.instrutor_profile.credor = credor
+
+        if senha_atual or nova_senha or confirmar_nova_senha:
+            if not senha_atual:
+                return False, 'Por favor, informe sua senha atual para alterar a senha.'
+            if not user.check_password(senha_atual):
+                return False, 'A senha atual está incorreta.'
+            if not nova_senha or not confirmar_nova_senha:
+                return False, 'Por favor, preencha os campos de nova senha e confirmação.'
+            if nova_senha != confirmar_nova_senha:
+                return False, 'A nova senha e a confirmação não coincidem.'
+            
+            is_strong, message = validate_password_strength(nova_senha)
+            if not is_strong:
+                return False, message
+
+            user.set_password(nova_senha)
+
+        try:
+            db.session.commit()
+            return True, 'Perfil atualizado com sucesso!'
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro de banco de dados ao atualizar perfil: {e}")
+            return False, f"Erro de banco de dados ao atualizar perfil: {str(e)}"
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro inesperado ao atualizar perfil: {e}")
+            return False, f"Erro inesperado ao atualizar perfil: {str(e)}"
+
+    @staticmethod
+    def batch_pre_register_users(id_funcs, role, school_id=None):
+        new_users_count = 0
+        existing_users_count = 0
+        
+        for id_func in id_funcs:
+            if not id_func.isdigit():
+                current_app.logger.warning(f"ID Funcional inválido encontrado: {id_func}. Ignorando.")
+                continue
+
+            user_exists = db.session.execute(
+                select(User).filter_by(id_func=id_func)
+            ).scalar_one_or_none()
+
+            if user_exists:
+                existing_users_count += 1
+            else:
+                new_user = User(id_func=id_func, role=role, is_active=False)
+                db.session.add(new_user)
+                
+                if school_id:
+                    db.session.flush() # Garante que new_user.id esteja disponível
+                    user_school_association = UserSchool(user_id=new_user.id, school_id=school_id, role=role)
+                    db.session.add(user_school_association)
+
+                new_users_count += 1
+        
+        try:
+            db.session.commit()
+            return True, new_users_count, existing_users_count
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro de banco de dados ao pré-cadastrar usuários em lote: {e}")
+            return False, 0, 0
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro inesperado ao pré-cadastrar usuários em lote: {e}")
+            return False, 0, 0
+
+    @staticmethod
+    def assign_school_role(user_id, school_id, role):
+        """Atribui um papel a um usuário em uma escola específica."""
+        try:
+            # Verifica se a associação já existe
+            existing_association = db.session.execute(
+                select(UserSchool).filter_by(user_id=user_id, school_id=school_id)
+            ).scalar_one_or_none()
+
+            if existing_association:
+                # Se já existe, apenas atualiza o papel
+                existing_association.role = role
+            else:
+                # Se não existe, cria uma nova associação
+                new_association = UserSchool(user_id=user_id, school_id=school_id, role=role)
+                db.session.add(new_association)
+            
+            db.session.commit()
+            return True, "Papel atribuído com sucesso."
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao atribuir papel de escola: {e}")
+            return False, f"Erro ao atribuir papel: {e}"
+
+    @staticmethod
+    def remove_school_role(user_id, school_id):
+        """Remove o vínculo de um usuário com uma escola."""
+        try:
+            association = db.session.execute(
+                select(UserSchool).filter_by(user_id=user_id, school_id=school_id)
+            ).scalar_one_or_none()
+
+            if association:
+                db.session.delete(association)
+                db.session.commit()
+                return True, "Vínculo com a escola removido com sucesso."
+            else:
+                return False, "Vínculo não encontrado."
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao remover vínculo de escola: {e}")
+            return False, f"Erro ao remover vínculo: {e}"

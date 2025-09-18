@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, request, flash, Response
 from flask_login import login_required
-from weasyprint import HTML
 from datetime import datetime
 from ..services.relatorio_service import RelatorioService
 from ..services.instrutor_service import InstrutorService
 from utils.decorators import admin_or_programmer_required
+from ..services.site_config_service import SiteConfigService
 import locale
+import requests
+import io
 
 # Configura o locale para Português do Brasil para traduzir o mês
 try:
@@ -16,8 +18,32 @@ except locale.Error:
     except locale.Error:
         print("Locale pt_BR não pôde ser configurado.")
 
-
 relatorios_bp = Blueprint('relatorios', __name__, url_prefix='/relatorios')
+
+# URL da API do WeasyPrint (container Docker)
+WEASYPRINT_API_URL = "http://localhost:5001"
+
+def gerar_pdf_com_api(html_content):
+    """Função para gerar PDF usando a API do WeasyPrint"""
+    try:
+        response = requests.post(
+            f"{WEASYPRINT_API_URL}/pdf",
+            json={'html': html_content},
+            headers={'Content-Type': 'application/json'},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.content
+        else:
+            raise Exception(f"Erro na API WeasyPrint: {response.status_code} - {response.text}")
+            
+    except requests.exceptions.ConnectionError:
+        raise Exception("Serviço de PDF não disponível. Verifique se o container weasyprint-api está rodando.")
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout ao conectar com o serviço de PDF.")
+    except Exception as e:
+        raise Exception(f"Erro ao gerar PDF: {str(e)}")
 
 @relatorios_bp.route('/')
 @login_required
@@ -41,11 +67,8 @@ def gerar_relatorio_horas_aula():
     if request.method == 'POST':
         data_inicio_str = request.form.get('data_inicio')
         data_fim_str = request.form.get('data_fim')
-        
-        curso_nome = request.form.get('curso_nome', '')
+        chefe_ensino_nome = request.form.get('chefe_ensino_nome', '')
         comandante_nome = request.form.get('comandante_nome', '')
-        auxiliar_nome = request.form.get('auxiliar_nome', '')
-        
         action = request.form.get('action')
 
         try:
@@ -63,9 +86,12 @@ def gerar_relatorio_horas_aula():
                 flash('Por favor, selecione pelo menos um instrutor para este tipo de relatório.', 'warning')
                 return render_template('relatorios/horas_aula_form.html', tipo_relatorio=report_type.replace("_", " ").title(), todos_instrutores=todos_instrutores)
 
-        dados_relatorio = RelatorioService.get_horas_aula_por_instrutor(
-            data_inicio, data_fim, is_rr_filter, instrutor_ids_filter
-        )
+        data_geracao = datetime.now().strftime("%d de %B de %Y")
+        
+        # Usar configurações do SiteConfigService
+        chefe_ensino_cargo = SiteConfigService.get_config('report_chefe_ensino_cargo', 'Chefe da Seção de Ensino')
+        comandante_cargo = SiteConfigService.get_config('report_comandante_cargo', 'Comandante da EsFAS-SM')
+        cidade_estado = SiteConfigService.get_config('report_cidade_estado', 'Santa Maria - RS')
 
         # String de Mês e Ano formatada corretamente
         nome_mes_ano = data_inicio.strftime("%B de %Y").capitalize()
@@ -88,10 +114,21 @@ def gerar_relatorio_horas_aula():
             return rendered_html
 
         if action == 'download':
-            pdf = HTML(string=rendered_html).write_pdf()
-            return Response(pdf, mimetype='application/pdf', headers={
-                'Content-Disposition': f'attachment; filename=relatorio_{report_type}.pdf'
-            })
+
+            try:
+                # Usa a API do WeasyPrint em vez da importação direta
+                pdf_content = gerar_pdf_com_api(rendered_html)
+                
+                return Response(
+                    pdf_content,
+                    mimetype='application/pdf',
+                    headers={
+                        'Content-Disposition': 'attachment; filename=relatorio_horas_aula.pdf'
+                    }
+                )
+            except Exception as e:
+                flash(f'Erro ao gerar PDF: {str(e)}', 'danger')
+                return render_template('relatorios/horas_aula_form.html')
 
     return render_template('relatorios/horas_aula_form.html', 
                            tipo_relatorio=report_type.replace("_", " ").title(), 

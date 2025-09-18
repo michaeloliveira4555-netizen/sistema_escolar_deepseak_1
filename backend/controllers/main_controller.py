@@ -1,9 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from ..models.user import User
-from ..app import db
-# IMPORTAÇÃO DO NOVO DECORADOR
-from utils.decorators import aluno_profile_required
+from ..models.school import School
+from ..models.database import db
+from ..services.dashboard_service import DashboardService
+from utils.decorators import aluno_profile_required, admin_or_programmer_required
+from ..services.user_service import UserService
 
 main_bp = Blueprint('main', __name__)
 
@@ -15,46 +17,69 @@ def index():
 
 @main_bp.route('/dashboard')
 @login_required
-@aluno_profile_required # <-- DECORADOR APLICADO
 def dashboard():
-    dashboard_data = {}
-    return render_template('dashboard.html', dashboard_data=dashboard_data)
+    viewing_school = None
+    school_id_to_load = None
+
+    # 1. Verifica se o Super Admin está no modo "Visualizar como"
+    view_as_school_id = request.args.get('view_as_school', type=int)
+    if current_user.role in ['super_admin', 'programador'] and view_as_school_id:
+        school_id_to_load = view_as_school_id
+        viewing_school = db.session.get(School, school_id_to_load)
+        if not viewing_school:
+            flash("Escola selecionada para visualização não encontrada.", "danger")
+            return redirect(url_for('super_admin.dashboard'))
+    else:
+        # 2. Para usuários normais, encontra a primeira escola associada
+        if current_user.schools:
+            school_id_to_load = current_user.schools[0].id
+        else:
+            # Se o usuário não tem escola (ex: super_admin sem modo de visualização),
+            # school_id_to_load permanece None, mostrando dados globais.
+            pass
+
+    dashboard_data = DashboardService.get_dashboard_data(school_id=school_id_to_load)
+    
+    # Define qual escola está em contexto para exibição no template
+    school_in_context = viewing_school or (current_user.schools[0] if current_user.schools else None)
+
+    return render_template('dashboard.html', 
+                           dashboard_data=dashboard_data, 
+                           viewing_school=viewing_school,
+                           school_in_context=school_in_context)
 
 @main_bp.route('/pre-cadastro', methods=['GET', 'POST'])
 @login_required
+@admin_or_programmer_required
 def pre_cadastro():
-    # Garante que apenas administradores possam acessar
-    if current_user.role not in ['admin', 'programador']:
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.dashboard'))
+    role_arg = request.args.get('role')
 
     if request.method == 'POST':
-        id_func = request.form.get('id_func', '').strip()
-        role = request.form.get('role')
+        form_data = request.form.to_dict()
+        if role_arg and not form_data.get('role'):
+            form_data['role'] = role_arg
 
-        if not id_func or not role:
-            flash('Por favor, preencha todos os campos.', 'warning')
-            return render_template('pre_cadastro.html')
+        id_func_raw = form_data.get('id_func', '').strip()
+        if '/' in id_func_raw:
+            partes = [p.strip() for p in id_func_raw.split('/') if p.strip()]
+            ids_numericos = [p for p in partes if p.isdigit()]
 
-        if not id_func.isdigit():
-            flash('A Identidade Funcional deve conter apenas números.', 'danger')
-            return render_template('pre_cadastro.html')
+            if not form_data.get('role'):
+                flash('Função não informada para pré-cadastro em lote.', 'danger')
+                return redirect(url_for('main.pre_cadastro', role=role_arg) if role_arg else url_for('main.pre_cadastro'))
 
-        # Verifica se um usuário com esta Id Func já existe
-        user_exists = db.session.execute(db.select(User).filter_by(id_func=id_func)).scalar_one_or_none()
-
-        if user_exists:
-            flash(f'A Id Func "{id_func}" já está pré-cadastrada no sistema.', 'danger')
+            success, novos, existentes = UserService.batch_pre_register_users(ids_numericos, form_data['role'])
+            if success:
+                flash(f'Pré-cadastro realizado: {novos} novo(s), {existentes} já existente(s).', 'success')
+            else:
+                flash('Falha ao pré-cadastrar usuários em lote.', 'danger')
+            return redirect(url_for('main.pre_cadastro', role=role_arg) if role_arg else url_for('main.pre_cadastro'))
         else:
-            new_user = User(
-                id_func=id_func,
-                role=role,
-                is_active=False # O usuário é criado como inativo
-            )
-            db.session.add(new_user)
-            db.session.commit()
-            flash(f'Usuário com Id Func "{id_func}" pré-cadastrado com sucesso!', 'success')
+            success, message = UserService.pre_register_user(form_data)
+            if success:
+                flash(message, 'success')
+            else:
+                flash(message, 'danger')
+            return redirect(url_for('main.pre_cadastro', role=role_arg) if role_arg else url_for('main.pre_cadastro'))
 
-        return redirect(url_for('main.pre_cadastro'))
-
-    return render_template('pre_cadastro.html')
+    return render_template('pre_cadastro.html', role_predefinido=role_arg)

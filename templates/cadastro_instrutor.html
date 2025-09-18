@@ -6,6 +6,7 @@
 <div class="auth-container">
     <div class="auth-card">
         <h2>{% if is_admin_flow %}Cadastrar Novo Instrutor{% else %}Completar Perfil de Instrutor{% endif %}</h2>
+
         <form method="POST" action="{% if is_admin_flow %}{{ url_for('instrutor.cadastro_instrutor_admin') }}{% else %}{{ url_for('instrutor.completar_cadastro') }}{% endif %}">
             
             {% if is_admin_flow %}
@@ -26,12 +27,12 @@
                     <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">Senha: <span style="color: red;">*</span></label>
-                    <input type="password" id="password" name="password" required>
+                    {{ form.password.label }}
+                    {{ form.password(class="form-control") }}
                 </div>
                 <div class="form-group">
-                    <label for="password2">Confirmar Senha: <span style="color: red;">*</span></label>
-                    <input type="password" id="password2" name="password2" required>
+                    {{ form.password2.label }}
+                    {{ form.password2(class="form-control") }}
                 </div>
                 <hr class="my-4">
                 <h3>Detalhes do Perfil do Instrutor</h3>
@@ -81,7 +82,7 @@
                 <input type="text" class="form-control" id="telefone" name="telefone" value="{{ form_data.get('telefone', '') }}" placeholder="(XX) XXXXX-XXXX">
             </div>
 
-            <button type="submit" class="btn btn-primary">Salvar Perfil</button>
+            {{ form.submit(class="btn btn-primary") }}
         </form>
     </div>
 </div>

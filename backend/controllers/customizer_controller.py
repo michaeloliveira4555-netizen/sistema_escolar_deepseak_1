@@ -6,6 +6,7 @@ from ..models.image_asset import ImageAsset
 from ..models.site_config import SiteConfig
 from ..services.site_config_service import SiteConfigService
 from utils.decorators import programmer_required
+from ..services.asset_service import AssetService
 
 customizer_bp = Blueprint('customizer', __name__, url_prefix='/customizer')
 
@@ -18,7 +19,7 @@ def index():
     SiteConfigService.init_default_configs()
     
     configs = SiteConfigService.get_all_configs()
-    assets = db.session.query(ImageAsset).filter_by(is_active=True).all()
+    assets = AssetService.get_all_assets()
     
     # Organiza configs por categoria
     configs_by_category = {}
@@ -50,9 +51,11 @@ def update_config():
             config_type=config_type,
             updated_by=current_user.id
         )
+        db.session.commit()
         
         return jsonify({'success': True, 'message': 'Configuração atualizada com sucesso!'})
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'message': f'Erro: {str(e)}'})
 
 @customizer_bp.route('/preview')
@@ -71,12 +74,11 @@ def preview():
 def reset_configs():
     """Reset todas as configurações para padrão"""
     try:
-        # Deleta todas as configurações usando o modelo importado
-        db.session.query(SiteConfig).delete()
+        SiteConfigService.delete_all_configs()
         db.session.commit()
         
-        # Reinicializa com padrões
         SiteConfigService.init_default_configs()
+        db.session.commit()
         
         flash('Configurações resetadas para o padrão!', 'success')
         return redirect(url_for('customizer.index'))

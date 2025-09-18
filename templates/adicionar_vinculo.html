@@ -10,21 +10,20 @@
 
 <div class="table-container" style="max-width: 700px; margin: 0 auto;">
     <form method="POST" action="{{ url_for('vinculo.adicionar_vinculo') }}">
+        {{ form.csrf_token }}
         <div class="form-group">
             <label for="instrutor_id">Instrutor</label>
-            <select name="instrutor_id" id="instrutor_id" class="form-control" required>
-                <option value="">Selecione um instrutor</option>
+            <select class="form-control" id="instrutor_id" name="instrutor_id">
                 {% for instrutor in instrutores %}
-                <option value="{{ instrutor.id }}">{{ instrutor.user.nome_completo or instrutor.user.username }}</option>
+                    <option value="{{ instrutor.id }}">{{ instrutor.nome }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="form-group">
             <label for="turma_id">Turma</label>
-            <select name="turma_id" id="turma_id" class="form-control" required>
-                <option value="">Selecione uma turma</option>
+            <select class="form-control" id="turma_id" name="turma_id">
                 {% for turma in turmas %}
-                <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                    <option value="{{ turma.id }}">{{ turma.nome }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -39,13 +38,16 @@
         </div>
         <div class="form-group">
             <label for="disciplina_id">Disciplina</label>
-            <select name="disciplina_id" id="disciplina_id" class="form-control" required>
-                <option value="">Aguardando seleção do ciclo...</option>
+            <select class="form-control" id="disciplina_id" name="disciplina_id">
+                {% for disciplina in disciplinas %}
+                    <option value="{{ disciplina.id }}">{{ disciplina.nome }}</option>
+                {% endfor %}
+
             </select>
         </div>
         <div class="form-actions">
             <a href="{{ url_for('vinculo.gerenciar_vinculos') }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar Vínculo</button>
+            <button type="submit" class="btn btn-primary">Adicionar Vínculo</button>
         </div>
     </form>
 </div>

@@ -3,18 +3,36 @@ from flask_login import login_required
 from sqlalchemy import select
 from datetime import datetime, timedelta
 import re
+from flask_wtf import FlaskForm
+from wtforms import StringField, DateField, SubmitField
+from wtforms.validators import DataRequired
 
 from ..models.database import db
 from ..models.semana import Semana
 from ..models.horario import Horario
 from utils.decorators import admin_or_programmer_required
+from ..services.semana_service import SemanaService
 
 semana_bp = Blueprint('semana', __name__, url_prefix='/semana')
+
+# Formulários
+class AddSemanaForm(FlaskForm):
+    nome = StringField('Nome da Semana', validators=[DataRequired()])
+    data_inicio = DateField('Data de Início', validators=[DataRequired()])
+    data_fim = DateField('Data de Fim', validators=[DataRequired()])
+    submit_add = SubmitField('Adicionar Semana')
+
+class NextSemanaForm(FlaskForm):
+    submit_next = SubmitField('Adicionar Próxima Semana')
+
+class DeleteSemanaForm(FlaskForm):
+    submit_delete = SubmitField('Deletar')
 
 @semana_bp.route('/gerenciar')
 @login_required
 @admin_or_programmer_required
 def gerenciar_semanas():
+
     ciclo_selecionado = request.args.get('ciclo', session.get('ultimo_ciclo_semana', 1), type=int)
     session['ultimo_ciclo_semana'] = ciclo_selecionado
     
@@ -23,6 +41,16 @@ def gerenciar_semanas():
     ).all()
     
     return render_template('gerenciar_semanas.html', semanas=semanas, ciclos=[1, 2, 3], ciclo_selecionado=ciclo_selecionado)
+    
+    semanas = SemanaService.get_all_semanas()
+    add_form = AddSemanaForm()
+    next_form = NextSemanaForm()
+    delete_form = DeleteSemanaForm()
+    return render_template('gerenciar_semanas.html', 
+                           semanas=semanas, 
+                           add_form=add_form, 
+                           next_form=next_form, 
+                           delete_form=delete_form)
 
 @semana_bp.route('/adicionar', methods=['POST'])
 @login_required
@@ -101,7 +129,7 @@ def adicionar_proxima_semana():
 @login_required
 @admin_or_programmer_required
 def editar_semana(semana_id):
-    semana = db.session.get(Semana, semana_id)
+    semana = SemanaService.get_semana_by_id(semana_id)
     if not semana:
         flash('Semana não encontrada.', 'danger')
         return redirect(url_for('semana.gerenciar_semanas'))
@@ -127,6 +155,7 @@ def editar_semana(semana_id):
             db.session.rollback()
 
         return redirect(url_for('semana.gerenciar_semanas', ciclo=semana.ciclo))
+
     
     return render_template('editar_semana.html', semana=semana)
 

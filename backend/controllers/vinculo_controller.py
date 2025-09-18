@@ -2,6 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
+from flask_wtf import FlaskForm
+from wtforms import SelectField, SubmitField
+from wtforms.validators import DataRequired
 
 from ..models.database import db
 from ..models.instrutor import Instrutor
@@ -12,16 +15,28 @@ from utils.decorators import admin_or_programmer_required
 
 vinculo_bp = Blueprint('vinculo', __name__, url_prefix='/vinculos')
 
+# Forms
+class VinculoForm(FlaskForm):
+    instrutor_id = SelectField('Instrutor', coerce=int, validators=[DataRequired()])
+    turma_id = SelectField('Turma', coerce=int, validators=[DataRequired()])
+    disciplina_id = SelectField('Disciplina', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Salvar')
+
+class DeleteForm(FlaskForm):
+    pass
+
 @vinculo_bp.route('/')
 @login_required
 @admin_or_programmer_required
 def gerenciar_vinculos():
+
+    delete_form = DeleteForm()
     turma_filtrada = request.args.get('turma', '')
     disciplina_filtrada_id = request.args.get('disciplina_id', '')
 
     query = db.select(DisciplinaTurma).options(
         joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
-        joinedload(DisciplinaTurma.disciplina)
+        joinedload(DisciplinaTurma.disciplina_associada)
     ).filter(DisciplinaTurma.instrutor_id_1.isnot(None))
 
     if turma_filtrada:
@@ -43,50 +58,42 @@ def gerenciar_vinculos():
         turmas=turmas,
         disciplinas=disciplinas,
         turma_filtrada=turma_filtrada,
-        disciplina_filtrada_id=int(disciplina_filtrada_id) if disciplina_filtrada_id else None
+        disciplina_filtrada_id=int(disciplina_filtrada_id) if disciplina_filtrada_id else None,
+        delete_form=delete_form
     )
 
 @vinculo_bp.route('/adicionar', methods=['GET', 'POST'])
 @login_required
 @admin_or_programmer_required
 def adicionar_vinculo():
-    if request.method == 'POST':
-        instrutor_id = request.form.get('instrutor_id')
-        turma_id = request.form.get('turma_id')
-        disciplina_id = request.form.get('disciplina_id')
+    form = VinculoForm()
+    instrutores = db.session.scalars(select(Instrutor)).all()
+    turmas = db.session.scalars(select(Turma)).all()
+    disciplinas = db.session.scalars(select(Disciplina)).all()
+    form.instrutor_id.choices = [(i.id, i.user.nome_completo) for i in instrutores]
+    form.turma_id.choices = [(t.id, t.nome) for t in turmas]
+    form.disciplina_id.choices = [(d.id, d.materia) for d in disciplinas]
 
-        if not all([instrutor_id, turma_id, disciplina_id]):
-            flash('Todos os campos são obrigatórios.', 'danger')
-            return redirect(url_for('vinculo.adicionar_vinculo'))
-
-        turma = db.session.get(Turma, int(turma_id))
-        if not turma:
-            flash('Turma não encontrada.', 'danger')
-            return redirect(url_for('vinculo.adicionar_vinculo'))
-
-        vinculo_existente = DisciplinaTurma.query.filter_by(
-            disciplina_id=int(disciplina_id),
-            pelotao=turma.nome
-        ).first()
+    if form.validate_on_submit():
+        turma = db.session.get(Turma, form.turma_id.data)
+        vinculo_existente = db.session.execute(select(DisciplinaTurma).filter_by(disciplina_id=form.disciplina_id.data, pelotao=turma.nome)).scalar_one_or_none()
 
         if vinculo_existente:
-            vinculo_existente.instrutor_id_1 = int(instrutor_id)
+            vinculo_existente.instrutor_id_1 = form.instrutor_id.data
             flash('Vínculo atualizado com sucesso!', 'info')
         else:
             novo_vinculo = DisciplinaTurma(
-                instrutor_id_1=int(instrutor_id),
+                instrutor_id_1=form.instrutor_id.data,
                 pelotao=turma.nome,
-                disciplina_id=int(disciplina_id)
+                disciplina_id=form.disciplina_id.data
             )
             db.session.add(novo_vinculo)
             flash('Vínculo criado com sucesso!', 'success')
-
+        
         db.session.commit()
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
-    instrutores = db.session.scalars(select(Instrutor).order_by(Instrutor.id)).all()
-    turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
-    return render_template('adicionar_vinculo.html', instrutores=instrutores, turmas=turmas, ciclos=[1, 2, 3])
+    return render_template('adicionar_vinculo.html', form=form)
 
 @vinculo_bp.route('/editar/<int:vinculo_id>', methods=['GET', 'POST'])
 @login_required
@@ -97,44 +104,43 @@ def editar_vinculo(vinculo_id):
         flash('Vínculo não encontrado.', 'danger')
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
-    if request.method == 'POST':
-        instrutor_id = request.form.get('instrutor_id')
-        turma_id = request.form.get('turma_id')
-        disciplina_id = request.form.get('disciplina_id')
+    form = VinculoForm(obj=vinculo)
+    instrutores = db.session.scalars(select(Instrutor)).all()
+    turmas = db.session.scalars(select(Turma)).all()
+    disciplinas = db.session.scalars(select(Disciplina)).all()
+    form.instrutor_id.choices = [(i.id, i.user.nome_completo) for i in instrutores]
+    form.turma_id.choices = [(t.id, t.nome) for t in turmas]
+    form.disciplina_id.choices = [(d.id, d.materia) for d in disciplinas]
 
-        if not all([instrutor_id, turma_id, disciplina_id]):
-            flash('Todos os campos são obrigatórios.', 'danger')
-            return redirect(url_for('vinculo.editar_vinculo', vinculo_id=vinculo_id))
-
-        turma = db.session.get(Turma, int(turma_id))
-        if not turma:
-            flash('Turma não encontrada.', 'danger')
-            return redirect(url_for('vinculo.editar_vinculo', vinculo_id=vinculo_id))
-
-        vinculo.instrutor_id_1 = int(instrutor_id)
+    if form.validate_on_submit():
+        turma = db.session.get(Turma, form.turma_id.data)
+        vinculo.instrutor_id_1 = form.instrutor_id.data
         vinculo.pelotao = turma.nome
-        vinculo.disciplina_id = int(disciplina_id)
+        vinculo.disciplina_id = form.disciplina_id.data
         db.session.commit()
-
         flash('Vínculo atualizado com sucesso!', 'success')
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
-    instrutores = db.session.scalars(select(Instrutor)).all()
-    turmas = db.session.scalars(select(Turma)).all()
-    disciplina_atual = db.session.get(Disciplina, vinculo.disciplina_id)
-    return render_template('editar_vinculo.html', vinculo=vinculo, instrutores=instrutores, turmas=turmas, ciclos=[1, 2, 3], ciclo_atual=disciplina_atual.ciclo)
+    # Manually set data for GET request
+    turma_atual = db.session.execute(select(Turma).filter_by(nome=vinculo.pelotao)).scalar_one_or_none()
+    if turma_atual:
+        form.turma_id.data = turma_atual.id
+
+    return render_template('editar_vinculo.html', form=form, vinculo=vinculo)
 
 @vinculo_bp.route('/excluir/<int:vinculo_id>', methods=['POST'])
 @login_required
 @admin_or_programmer_required
 def excluir_vinculo(vinculo_id):
-    vinculo = db.session.get(DisciplinaTurma, vinculo_id)
-    if vinculo:
-        # Em vez de deletar, apenas remove o instrutor para manter a associação
-        vinculo.instrutor_id_1 = None
-        vinculo.instrutor_id_2 = None
-        db.session.commit()
-        flash('Vínculo de instrutor removido com sucesso!', 'success')
+    form = DeleteForm()
+    if form.validate_on_submit():
+        vinculo = db.session.get(DisciplinaTurma, vinculo_id)
+        if vinculo:
+            db.session.delete(vinculo)
+            db.session.commit()
+            flash('Vínculo excluído com sucesso!', 'success')
+        else:
+            flash('Vínculo não encontrado.', 'danger')
     else:
-        flash('Vínculo não encontrado.', 'danger')
+        flash('Falha na validação do token CSRF.', 'danger')
     return redirect(url_for('vinculo.gerenciar_vinculos'))

@@ -3,16 +3,31 @@
 {% block title %}Dashboard - Sistema EsFAS{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="container-fluid dashboard-container">
+
+    {% if viewing_school %}
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mt-3" role="alert">
+        <div>
+            <strong>Modo de Visualização:</strong> Você está vendo o painel como um administrador da escola <strong>{{ viewing_school.nome }}</strong>.
+        </div>
+        <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-outline-dark">Sair da Visualização</a>
+    </div>
+    {% endif %}
+
     <div class="dashboard-header">
         <div class="welcome-section">
             <div class="welcome-text">
                 <h1>Olá, <span class="user-highlight">{{ current_user.nome_completo or current_user.username }}</span>!</h1>
-                <p class="welcome-subtitle">Bem-vindo de volta ao SiGA EsFAS</p>
+                {% if school_in_context %}
+                    <p class="welcome-subtitle">Você está no painel da <strong>{{ school_in_context.nome }}</strong>.</p>
+                {% else %}
+                    <p class="welcome-subtitle">Bem-vindo de volta à visão geral do SiGA EsFAS.</p>
+                {% endif %}
             </div>
         </div>
 
-        {% if current_user.role in ['admin', 'programador'] and dashboard_data %}
+        {# Mostra as estatísticas se houver dados e se estiver no contexto de uma escola ou for super admin #}
+        {% if dashboard_data and (school_in_context or current_user.role in ['super_admin', 'programador']) %}
         <div class="quick-stats-bar">
             <div class="stat-compact">
                 <span class="stat-icon">👥</span>
@@ -56,7 +71,7 @@
                 <p class="card-description">Consulte os alunos matriculados.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -71,7 +86,7 @@
                 <p class="card-description">Consulte o corpo docente da escola.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -86,7 +101,7 @@
                 <p class="card-description">Consulte as disciplinas e seus instrutores.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -101,7 +116,7 @@
                 <p class="card-description">Visualize a composição das turmas.</p>
                 <div class="card-actions">
                     <a href="{{ url_for('turma.listar_turmas') }}" class="btn-card primary">
-                        {% if current_user.role in ['admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
+                        {% if current_user.role in ['super_admin', 'programador'] %}Gerenciar{% else %}Visualizar{% endif %}
                     </a>
                 </div>
             </div>
@@ -134,7 +149,7 @@
             </div>
         {% endif %}
 
-        {% if current_user.role in ['admin', 'programador'] %}
+        {% if current_user.role in ['super_admin', 'programador'] %}
             <div class="module-card">
                 <div class="card-content">
                     <div class="card-header">

@@ -11,7 +11,7 @@
 <div class="table-container">
     <div class="table-header">
         <h3>Turmas Cadastradas</h3>
-        {% if current_user.role in ['admin', 'programador'] %}
+        {% if current_user.role in ['super_admin', 'programador'] %}
         <div class="header-actions">
             <a href="{{ url_for('turma.cadastrar_turma') }}" class="btn btn-primary">
                 <span>+</span> Cadastrar Nova Turma
@@ -48,7 +48,7 @@
         <div class="empty-state">
             <div class="empty-icon">🏫</div>
             <h2>Nenhuma Turma Cadastrada</h2>
-            {% if current_user.role in ['admin', 'programador'] %}
+            {% if current_user.role in ['super_admin', 'programador'] %}
             <p>Clique no botão acima para cadastrar a primeira turma.</p>
             {% endif %}
         </div>
@@ -78,7 +78,8 @@
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-content">
         <h3>Selecione a turma para excluir</h3>
-        <form id="deleteForm" method="POST" onsubmit="return confirm('ATENÇÃO: Excluir esta turma irá desvincular todos os alunos e remover todos os vínculos de disciplinas e cargos associados a ela. Esta ação não pode ser desfeita. Deseja continuar?');">
+        <form id="deleteForm" method="POST" action="#" onsubmit="return confirm('ATENÇÃO: Excluir esta turma irá desvincular todos os alunos e remover todos os vínculos de disciplinas e cargos associados a ela. Esta ação não pode ser desfeita. Deseja continuar?');">
+            {{ delete_form.hidden_tag() }}
             <div class="form-group">
                 <label for="turmaDeleteSelect">Turma</label>
                 <select id="turmaDeleteSelect" class="form-control" name="turma_id" required>
