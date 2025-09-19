@@ -8,6 +8,7 @@ if t.TYPE_CHECKING:
     from .user import User
     from .user_school import UserSchool
     from .turma import Turma
+    from .disciplina import Disciplina
 
 class School(db.Model):
     __tablename__ = 'schools'
@@ -22,6 +23,7 @@ class School(db.Model):
     user_schools: Mapped[list['UserSchool']] = relationship('UserSchool', back_populates='school', cascade="all, delete-orphan")
     users: Mapped[list['User']] = relationship('User', secondary='user_schools', back_populates='schools')
     turmas: Mapped[list['Turma']] = relationship(back_populates='school', cascade="all, delete-orphan")
+    disciplinas: Mapped[list['Disciplina']] = relationship(back_populates='school', cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<School id={self.id} nome='{self.nome}'>"

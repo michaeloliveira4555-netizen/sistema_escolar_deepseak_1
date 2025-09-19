@@ -71,22 +71,25 @@ class AlunoService:
             db.session.add(novo_aluno)
             db.session.commit()
 
-            # LÓGICA DE MATRÍCULA AUTOMÁTICA
-            todas_as_disciplinas = db.session.scalars(select(Disciplina)).all()
-            for disciplina in todas_as_disciplinas:
-                # Verifica se a matrícula já não existe por algum motivo
-                matricula_existente = db.session.execute(
-                    select(HistoricoDisciplina).where(
-                        HistoricoDisciplina.aluno_id == novo_aluno.id,
-                        HistoricoDisciplina.disciplina_id == disciplina.id
-                    )
-                ).scalar_one_or_none()
-                if not matricula_existente:
-                    nova_matricula = HistoricoDisciplina(aluno_id=novo_aluno.id, disciplina_id=disciplina.id)
-                    db.session.add(nova_matricula)
+            # LÓGICA DE MATRÍCULA AUTOMÁTICA CORRIGIDA
+            if turma_id:
+                turma = db.session.get(Turma, turma_id)
+                if turma and turma.school:
+                    disciplinas_da_escola = turma.school.disciplinas
+                    for disciplina in disciplinas_da_escola:
+                        # Verifica se a matrícula já não existe por algum motivo
+                        matricula_existente = db.session.execute(
+                            select(HistoricoDisciplina).where(
+                                HistoricoDisciplina.aluno_id == novo_aluno.id,
+                                HistoricoDisciplina.disciplina_id == disciplina.id
+                            )
+                        ).scalar_one_or_none()
+                        if not matricula_existente:
+                            nova_matricula = HistoricoDisciplina(aluno_id=novo_aluno.id, disciplina_id=disciplina.id)
+                            db.session.add(nova_matricula)
 
             db.session.commit()
-            return True, "Perfil de aluno cadastrado e matriculado em todas as disciplinas!"
+            return True, "Perfil de aluno cadastrado e matriculado nas disciplinas da escola!"
         except IntegrityError:
             db.session.rollback()
             return False, "Erro de integridade dos dados. Verifique se a matrícula já está em uso."
