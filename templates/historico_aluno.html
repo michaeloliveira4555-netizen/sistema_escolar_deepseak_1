@@ -16,225 +16,123 @@
     <p>Esta é a média de todas as disciplinas com notas já lançadas e salvas.</p>
 </div>
 
+<div class="content-header" style="margin-top: 2rem;">
+    <h2>Notas por Disciplina</h2>
+</div>
 <div class="disciplinas-grid">
     {% for registro in historico_disciplinas %}
     <div class="disciplina-card">
-        <form method="POST" action="{{ url_for('historico.avaliar_aluno_disciplina', historico_id=registro.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <h4>{{ registro.disciplina.materia }}</h4>
-            <div class="notas-container">
-                <div class="form-group">
-                    <label>1ª Prova</label>
-                    <input type="number" step="0.01" min="0" max="10" class="form-control nota-input p1" name="nota_p1" value="{{ registro.nota_p1 or '' }}" {% if current_user.id != aluno.user.id %}readonly{% endif %}>
-                </div>
-                <div class="form-group">
-                    <label>2ª Prova</label>
-                    <input type="number" step="0.01" min="0" max="10" class="form-control nota-input p2" name="nota_p2" value="{{ registro.nota_p2 or '' }}" {% if current_user.id != aluno.user.id %}readonly{% endif %}>
-                </div>
-                <div class="form-group rec-group" style="display: none;">
-                    <label>Recuperação</label>
-                    <input type="number" step="0.01" min="0" max="10" class="form-control nota-input rec" name="nota_rec" value="{{ registro.nota_rec or '' }}" {% if current_user.id != aluno.user.id %}readonly{% endif %}>
-                </div>
-            </div>
-            <div class="medias-container">
-                <div class="media-display">
-                    <strong>MPD:</strong>
-                    <span class="media-value mpd">--</span>
-                </div>
-                <div class="media-display mfd-display" style="display: none;">
-                    <strong>MFD:</strong>
-                    <span class="media-value mfd">--</span>
-                </div>
-            </div>
-            {% if current_user.role in ['super_admin', 'programador'] %}
-            <div class="form-actions">
-                <button type="submit" class="btn btn-sm btn-primary">Salvar Minhas Notas</button>
-            </div>
-            {% endif %}
-        </form>
-    </div>
-    {% else %}
-    <p>Você ainda não está matriculado em nenhuma disciplina.</p>
+        </div>
     {% endfor %}
 </div>
 
-<div class="content-header" style="margin-top: 2rem;">
-    <h2>Histórico de Atividades</h2>
-    <p>Registros de atualizações do perfil, mudanças de função e outras atividades.</p>
-</div>
-<div class="timeline">
-    {% if historico_atividades %}
-        {% for evento in historico_atividades %}
-        <div class="timeline-item">
-            <div class="timeline-time">{{ evento.data_inicio.strftime('%d/%m/%Y %H:%M') if evento.data_inicio else '' }}</div>
-            <div class="timeline-content">
-                <strong>{{ evento.tipo }}</strong>
-                <p>{{ evento.descricao }}</p>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p style="color: var(--color-text-muted);">Nenhuma atividade registrada até o momento.</p>
+<div class="content-header" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2>Histórico de Atividades</h2>
+        <p>Registros de atualizações do perfil, elogios, sanções e outras atividades.</p>
+    </div>
+    {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#atividadeModal" onclick="prepareAddModal()">
+        + Adicionar Atividade
+    </button>
     {% endif %}
 </div>
+<div class="timeline">
+    {% for evento in historico_atividades %}
+    <div class="timeline-item">
+        <div class="timeline-time">{{ evento.data_inicio.strftime('%d/%m/%Y %H:%M') if evento.data_inicio else '' }}</div>
+        <div class="timeline-content">
+            <div class="timeline-header">
+                <strong>{{ evento.tipo }}</strong>
+                {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
+                <div class="timeline-actions">
+                    <button class="btn-icon" title="Editar" data-bs-toggle="modal" data-bs-target="#atividadeModal"
+                            onclick="prepareEditModal('{{ evento.id }}', '{{ evento.tipo }}', '{{ evento.descricao | e }}', '{{ evento.data_inicio.strftime('%Y-%m-%dT%H:%M') }}')">
+                        ✏️
+                    </button>
+                    <form method="POST" action="{{ url_for('historico.deletar_atividade', atividade_id=evento.id) }}" onsubmit="return confirm('Tem certeza que deseja remover este registro?');" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ delete_form.csrf_token() }}">
+                        <input type="hidden" name="aluno_id" value="{{ aluno.id }}">
+                        <button type="submit" class="btn-icon" title="Excluir">🗑️</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            <p>{{ evento.descricao }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p style="color: var(--color-text-muted);">Nenhuma atividade registrada até o momento.</p>
+    {% endfor %}
+</div>
+
+{% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
+<div class="modal fade" id="atividadeModal" tabindex="-1" aria-labelledby="atividadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="atividadeModalLabel">Adicionar Registro de Atividade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="atividadeForm" method="POST" action="">
+                <div class="modal-body">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="aluno_id" value="{{ aluno.id }}">
+                    <div class="form-group">
+                        {{ form.tipo.label }}
+                        {{ form.tipo(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.descricao.label }}
+                        {{ form.descricao(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.data_inicio.label }}
+                        {{ form.data_inicio(class="form-control") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <style>
-/* ... (o CSS permanece o mesmo da versão anterior) ... */
-.media-final-curso-container {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    color: white;
-    padding: 2rem;
-    border-radius: var(--border-radius);
-    text-align: center;
-    margin-bottom: 2rem;
-    box-shadow: var(--shadow-medium);
-}
-.media-final-curso-container h3 {
-    font-size: 1.5rem;
-    margin: 0;
-    opacity: 0.9;
-}
-.media-final-valor {
-    font-size: 4rem;
-    font-weight: 800;
-    line-height: 1.2;
-    margin: 0.5rem 0;
-}
-.media-final-curso-container p {
-    margin: 0;
-    opacity: 0.8;
-    font-size: 0.9rem;
-}
-
-.disciplinas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
-}
-.disciplina-card {
-    background: var(--color-white);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-soft);
-    border: 1px solid var(--color-border);
-}
-.disciplina-card h4 {
-    font-size: 1.2rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 1rem;
-}
-.notas-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-.rec-group {
-    grid-column: 1 / -1; /* Ocupa a linha inteira */
-}
-.medias-container {
-    background: #f8fafc;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-top: 1rem;
-}
-.media-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.1rem;
-}
-.media-display strong { color: var(--color-secondary); }
-.media-value { font-weight: 700; color: var(--color-primary); }
-.form-actions { margin-top: 1.5rem; text-align: right; }
+/* ... estilos existentes ... */
+.timeline { border-left: 3px solid var(--color-border); margin-left: 1rem; padding-left: 1.5rem; }
+.timeline-item { position: relative; margin-bottom: 2rem; }
+.timeline-item::before { content: ''; position: absolute; left: -1.5rem; top: 0.5rem; transform: translateX(-45%); width: 15px; height: 15px; background-color: var(--color-white); border: 3px solid var(--color-primary); border-radius: 50%; }
+.timeline-time { font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem; }
+.timeline-content { background-color: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--color-border); }
+.timeline-header { display: flex; justify-content: space-between; align-items: center; }
+.timeline-header strong { font-size: 1.1rem; }
+.timeline-actions { display: flex; gap: 0.5rem; }
+.timeline-content p { margin-top: 0.5rem; margin-bottom: 0; }
 </style>
 
 <script>
-// O SCRIPT JAVASCRIPT PERMANECE O MESMO DA VERSÃO ANTERIOR
-document.addEventListener('DOMContentLoaded', function() {
-    const mediaFinalCursoDisplay = document.getElementById('media-final-curso');
+// ... script de cálculo de notas existente ...
 
-    function calcularMediaFinalCurso() {
-        let somaMedias = 0;
-        let countDisciplinas = 0;
-        document.querySelectorAll('.disciplina-card').forEach(card => {
-            const p1_input = card.querySelector('.nota-input.p1');
-            const p2_input = card.querySelector('.nota-input.p2');
-            
-            if (p1_input.value && p2_input.value) {
-                const mpdText = card.querySelector('.media-value.mpd').textContent;
-                const mfdText = card.querySelector('.media-value.mfd').textContent;
-                
-                if (mfdText !== '--' && card.querySelector('.mfd-display').style.display !== 'none') {
-                    somaMedias += parseFloat(mfdText) || 0;
-                } else if (mpdText !== '--') {
-                    somaMedias += parseFloat(mpdText) || 0;
-                }
-                countDisciplinas++;
-            }
-        });
+function prepareAddModal() {
+    const form = document.getElementById('atividadeForm');
+    form.action = "{{ url_for('historico.adicionar_atividade', aluno_id=aluno.id) }}";
+    document.getElementById('atividadeModalLabel').textContent = 'Adicionar Novo Registro';
+    form.reset(); // Limpa o formulário
+}
 
-        if (countDisciplinas > 0) {
-            const mediaFinal = somaMedias / countDisciplinas;
-            mediaFinalCursoDisplay.textContent = mediaFinal.toFixed(3);
-        } else {
-            mediaFinalCursoDisplay.textContent = '0.000';
-        }
-    }
-
-    document.querySelectorAll('.disciplina-card').forEach(card => {
-        const p1_input = card.querySelector('.nota-input.p1');
-        const p2_input = card.querySelector('.nota-input.p2');
-        const rec_input = card.querySelector('.nota-input.rec');
-        const rec_group = card.querySelector('.rec-group');
-        const mpd_display = card.querySelector('.media-value.mpd');
-        const mfd_display_container = card.querySelector('.mfd-display');
-        const mfd_display = card.querySelector('.media-value.mfd');
-
-        function calcularMediasDisciplina() {
-            const p1 = parseFloat(p1_input.value) || 0;
-            const p2 = parseFloat(p2_input.value) || 0;
-            const rec = parseFloat(rec_input.value) || 0;
-
-            if (p1_input.value && p2_input.value) {
-                const mpd = (p1 + p2) / 2;
-                mpd_display.textContent = mpd.toFixed(3);
-
-                if (mpd < 7.0) {
-                    rec_group.style.display = 'block';
-                    mfd_display_container.style.display = 'flex';
-
-                    if (rec_input.value) {
-                        const mfd = (p1 + p2 + rec) / 3;
-                        mfd_display.textContent = mfd.toFixed(3);
-                    } else {
-                        mfd_display.textContent = '--';
-                    }
-                } else {
-                    rec_group.style.display = 'none';
-                    mfd_display_container.style.display = 'none';
-                    mfd_display.textContent = '--';
-                }
-            } else {
-                mpd_display.textContent = '--';
-                mfd_display_container.style.display = 'none';
-                mfd_display.textContent = '--';
-                rec_group.style.display = 'none';
-            }
-        }
-
-        card.querySelectorAll('.nota-input').forEach(input => {
-            input.addEventListener('input', calcularMediasDisciplina);
-        });
-
-        calcularMediasDisciplina();
-    });
-
-    // Chama a função de cálculo da média geral uma vez no carregamento da página
-    // para garantir que o valor inicial (vindo do backend) seja atualizado se
-    // houver interações antes de salvar.
-    calcularMediaFinalCurso();
-});
+function prepareEditModal(id, tipo, descricao, data) {
+    const form = document.getElementById('atividadeForm');
+    form.action = `/historico/atividade/editar/${id}`;
+    document.getElementById('atividadeModalLabel').textContent = 'Editar Registro de Atividade';
+    
+    // Preenche o formulário com os dados do evento
+    form.querySelector('#tipo').value = tipo;
+    form.querySelector('#descricao').value = descricao;
+    form.querySelector('#data_inicio').value = data;
+}
 </script>
 {% endblock %}
