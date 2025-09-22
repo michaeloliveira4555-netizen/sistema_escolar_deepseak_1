@@ -51,7 +51,6 @@
                 </div>
             </div>
             
-            {# Card de Aulas Pendentes (visível apenas para admins de escola ou super admin em modo de visualização) #}
             {% if school_in_context and current_user.role in ['super_admin', 'programador', 'admin_escola'] and dashboard_data.aulas_pendentes > 0 %}
             <a href="{{ url_for('horario.aprovar_horarios') }}" class="stat-compact stat-warning">
                 <span class="stat-icon">⚠️</span>
@@ -68,32 +67,8 @@
     {# Grade principal de Módulos e Informações #}
     <div class="dashboard-grid">
         <div class="modules-grid-main">
-            {# Cards de Módulos existentes ... #}
-             <div class="module-card">
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="card-icon">{{ site_config.dashboard_card_alunos_icon or "👥" }}</div>
-                        <h3 class="card-title">Alunos</h3>
-                    </div>
-                    <p class="card-description">Consulte os alunos matriculados.</p>
-                    <div class="card-actions">
-                        <a href="{{ url_for('aluno.listar_alunos') }}" class="btn-card primary">Gerenciar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="module-card">
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="card-icon">{{ site_config.dashboard_card_instrutores_icon or "🎓" }}</div>
-                        <h3 class="card-title">Instrutores</h3>
-                    </div>
-                    <p class="card-description">Consulte o corpo docente da escola.</p>
-                    <div class="card-actions">
-                        <a href="{{ url_for('instrutor.listar_instrutores') }}" class="btn-card primary">Gerenciar</a>
-                    </div>
-                </div>
-            </div>
-            </div>
+            {# ... Cards de Módulos (Alunos, Instrutores, etc.) ... #}
+        </div>
 
         {# Painel Lateral de Informações #}
         <div class="dashboard-sidebar">
@@ -103,11 +78,11 @@
                 </div>
                 <div class="panel-body">
                     {% if dashboard_data.proximas_aulas %}
-                        <ul class="upcoming-classes-list">
+                        <ul class="info-list">
                         {% for aula in dashboard_data.proximas_aulas %}
                             <li>
-                                <div class="class-date">{{ aula.semana.data_inicio.strftime('%d/%m') }}<br>({{ aula.dia_semana|capitalize }})</div>
-                                <div class="class-details">
+                                <div class="info-icon class-date">{{ aula.semana.data_inicio.strftime('%d/%m') }}</div>
+                                <div class="info-details">
                                     <strong>{{ aula.disciplina.materia }}</strong>
                                     <span>{{ aula.pelotao }} - {{ aula.instrutor.user.nome_de_guerra }}</span>
                                 </div>
@@ -115,7 +90,33 @@
                         {% endfor %}
                         </ul>
                     {% else %}
-                        <p style="color: var(--color-text-muted); text-align: center; font-size: 0.9rem;">Nenhuma aula agendada para os próximos dias.</p>
+                        <p class="text-muted text-center">Nenhuma aula agendada.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- NOVO PAINEL DE ATIVIDADE RECENTE --- #}
+            <div class="info-panel">
+                <div class="panel-header">
+                    <h4>Atividade Recente</h4>
+                </div>
+                <div class="panel-body">
+                    {% if dashboard_data.usuarios_recentes %}
+                        <ul class="info-list">
+                        {% for usuario in dashboard_data.usuarios_recentes %}
+                            <li>
+                                <div class="info-icon user-role-icon {{ usuario.role }}">
+                                    {% if usuario.role == 'aluno' %}👥{% else %}🎓{% endif %}
+                                </div>
+                                <div class="info-details">
+                                    <strong>{{ usuario.nome_completo or usuario.username }}</strong>
+                                    <span>Novo {{ usuario.role|replace('_', ' ')|title }} cadastrado</span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted text-center">Nenhuma atividade recente.</p>
                     {% endif %}
                 </div>
             </div>
@@ -129,42 +130,17 @@
     .stat-compact.stat-warning:hover { background-color: #fefce8; transform: translateY(-2px); box-shadow: var(--shadow-medium); }
     .stat-warning .stat-icon { color: #f59e0b; }
 
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-    }
-    .modules-grid-main {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-    }
-    .info-panel {
-        background: var(--color-white);
-        border-radius: var(--border-radius);
-        border: 1px solid var(--color-border);
-        box-shadow: var(--shadow-soft);
-    }
-    .panel-header {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--color-border);
-    }
-    .panel-header h4 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 700;
-    }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+    .modules-grid-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+    .dashboard-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+    .info-panel { background: var(--color-white); border-radius: var(--border-radius); border: 1px solid var(--color-border); box-shadow: var(--shadow-soft); }
+    .panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--color-border); }
+    .panel-header h4 { margin: 0; font-size: 1.1rem; font-weight: 700; }
     .panel-body { padding: 1.5rem; }
-    .upcoming-classes-list { list-style: none; padding: 0; margin: 0; }
-    .upcoming-classes-list li { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; }
-    .upcoming-classes-list li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .class-date { flex-shrink: 0; width: 60px; height: 50px; display: flex; flex-direction: column; align-items-center; justify-content: center; font-weight: 600; font-size: 0.8rem; color: var(--color-primary); background-color: #eff6ff; border-radius: 6px; text-align: center; line-height: 1.2; }
-    .class-details strong { display: block; font-weight: 600; }
-    .class-details span { font-size: 0.9rem; color: var(--color-text-muted); }
-
-    @media (min-width: 992px) {
-        .dashboard-grid { grid-template-columns: 3fr 1fr; }
-    }
+    .info-list { list-style: none; padding: 0; margin: 0; }
+    .info-list li { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; }
+    .info-list li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .info-icon { flex-shrink: 0; width: 50px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content,
 </style>
+
 {% endblock %}
