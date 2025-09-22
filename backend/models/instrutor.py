@@ -1,6 +1,8 @@
+# backend/models/instrutor.py
+
 from __future__ import annotations
 import typing as t
-from datetime import datetime
+from datetime import datetime, timezone # <-- Importar timezone
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,8 +19,8 @@ class Instrutor(db.Model):
     posto_graduacao: Mapped[t.Optional[str]] = mapped_column(db.String(50))
     telefone: Mapped[t.Optional[str]] = mapped_column(db.String(15))
     credor: Mapped[t.Optional[str]] = mapped_column(db.String(100))
-    is_rr: Mapped[bool] = mapped_column(default=False, nullable=False) # NOVO CAMPO ADICIONADO
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    is_rr: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) # <-- CORRIGIDO
 
     user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'), unique=True)
     user: Mapped["User"] = relationship(back_populates="instrutor_profile")
@@ -28,7 +30,7 @@ class Instrutor(db.Model):
                  credor: t.Optional[str] = None, is_rr: bool = False, **kw: t.Any) -> None:
         super().__init__(user_id=user_id, matricula=matricula, especializacao=especializacao, formacao=formacao,
                          posto_graduacao=posto_graduacao, telefone=telefone, credor=credor, is_rr=is_rr, **kw)
-
+    
     def to_dict(self):
         return {
             'id': self.id,

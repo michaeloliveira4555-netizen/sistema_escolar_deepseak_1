@@ -32,3 +32,4 @@ zopfli==0.2.3.post1
 Flask-Limiter==3.5.1
 requests
 redis
+pytest

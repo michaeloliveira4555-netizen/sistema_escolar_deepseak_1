@@ -1,6 +1,8 @@
+# backend/models/historico.py
+
 from __future__ import annotations
 import typing as t
-from datetime import datetime
+from datetime import datetime, timezone # <-- Importar timezone
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,7 +16,7 @@ class HistoricoAluno(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     tipo: Mapped[str] = mapped_column(db.String(50))
     descricao: Mapped[str] = mapped_column(db.String(255))
-    data_inicio: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    data_inicio: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) # <-- CORRIGIDO
     data_fim: Mapped[t.Optional[datetime]] = mapped_column(nullable=True)
 
     aluno_id: Mapped[int] = mapped_column(db.ForeignKey('alunos.id'))
@@ -24,7 +26,7 @@ class HistoricoAluno(db.Model):
                  data_inicio: t.Optional[datetime] = None, data_fim: t.Optional[datetime] = None, 
                  **kw: t.Any) -> None:
         super().__init__(aluno_id=aluno_id, tipo=tipo, descricao=descricao, 
-                         data_inicio=data_inicio if data_inicio is not None else datetime.utcnow(), 
+                         data_inicio=data_inicio if data_inicio is not None else datetime.now(timezone.utc), # <-- CORRIGIDO
                          data_fim=data_fim, **kw)
 
     def __repr__(self):

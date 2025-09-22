@@ -1,6 +1,6 @@
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone # <-- Importar timezone
 from flask import current_app
 from ..models.database import db
 from ..models.user import User
@@ -20,7 +20,7 @@ class PasswordResetService:
         token = PasswordResetToken(
             user_id=user.id,
             token_hash=PasswordResetToken.hash_token(raw),
-            expires_at=datetime.utcnow() + timedelta(minutes=minutes),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=minutes), # <-- CORRIGIDO
             created_by_admin_id=admin_id
         )
         db.session.add(token)
@@ -53,7 +53,7 @@ class PasswordResetService:
             return None
 
         # Marca como usado
-        token.used_at = datetime.utcnow()
+        token.used_at = datetime.now(timezone.utc) # <-- CORRIGIDO
         db.session.commit()
         return user
 

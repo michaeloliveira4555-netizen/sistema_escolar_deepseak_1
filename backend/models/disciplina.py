@@ -1,6 +1,8 @@
+# backend/models/disciplina.py
+
 from __future__ import annotations
 import typing as t
-from datetime import datetime
+from datetime import datetime, timezone # <-- Importar timezone
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +19,7 @@ class Disciplina(db.Model):
     materia: Mapped[str] = mapped_column(db.String(100), unique=True)
     carga_horaria_prevista: Mapped[int] = mapped_column()
     ciclo: Mapped[int] = mapped_column(db.Integer, nullable=False, default=1, server_default='1')
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) # <-- CORRIGIDO
     
     school_id: Mapped[int] = mapped_column(db.ForeignKey('schools.id'), nullable=False)
     school: Mapped["School"] = relationship(back_populates="disciplinas")

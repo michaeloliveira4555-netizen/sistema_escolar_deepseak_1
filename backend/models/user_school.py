@@ -1,3 +1,5 @@
+# backend/models/user_school.py
+
 from __future__ import annotations
 import typing as t
 from datetime import datetime
@@ -14,11 +16,12 @@ class UserSchool(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'), nullable=False)
     school_id: Mapped[int] = mapped_column(db.ForeignKey('schools.id'), nullable=False)
-    role: Mapped[str] = mapped_column(db.String(20), nullable=False)  # 'aluno', 'instrutor', 'admin_escola'
+    role: Mapped[str] = mapped_column(db.String(20), nullable=False)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    user: Mapped['User'] = relationship('User', back_populates='user_schools')
-    school: Mapped['School'] = relationship('School', back_populates='user_schools')
+    # RELACIONAMENTOS CORRIGIDOS
+    user: Mapped['User'] = relationship('User', back_populates='user_schools', overlaps="schools,users")
+    school: Mapped['School'] = relationship('School', back_populates='user_schools', overlaps="schools,users")
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'school_id', name='uq_user_school'),

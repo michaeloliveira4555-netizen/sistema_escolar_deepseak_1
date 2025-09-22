@@ -1,3 +1,5 @@
+# backend/models/school.py
+
 from __future__ import annotations
 import typing as t
 from datetime import datetime
@@ -19,9 +21,10 @@ class School(db.Model):
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    # Relacionamentos
+    # RELACIONAMENTOS CORRIGIDOS
     user_schools: Mapped[list['UserSchool']] = relationship('UserSchool', back_populates='school', cascade="all, delete-orphan")
-    users: Mapped[list['User']] = relationship('User', secondary='user_schools', back_populates='schools')
+    users: Mapped[list['User']] = relationship('User', secondary='user_schools', back_populates='schools', overlaps="user_schools")
+    
     turmas: Mapped[list['Turma']] = relationship(back_populates='school', cascade="all, delete-orphan")
     disciplinas: Mapped[list['Disciplina']] = relationship(back_populates='school', cascade="all, delete-orphan")
 

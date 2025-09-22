@@ -1,6 +1,8 @@
+# backend/models/password_reset_token.py
+
 from __future__ import annotations
 import typing as t
-from datetime import datetime
+from datetime import datetime, timezone # <-- Importar timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -15,7 +17,7 @@ class PasswordResetToken(db.Model):
     user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'), nullable=False)
     token_hash: Mapped[str] = mapped_column(db.String(256), nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) # <-- CORRIGIDO
     expires_at: Mapped[datetime] = mapped_column(nullable=False)
     used_at: Mapped[t.Optional[datetime]] = mapped_column(nullable=True)
 
