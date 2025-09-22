@@ -21,7 +21,7 @@ def admin_or_programmer_required(f):
             flash('Por favor, faça login para acessar esta página.', 'warning')
             return redirect(url_for('auth.login'))
         user_role = getattr(current_user, 'role', None)
-        if user_role not in ['super_admin', 'programador']:
+        if user_role not in ['super_admin', 'programador', 'admin_escola']:
             flash('Você não tem permissão para acessar esta página.', 'danger')
             return redirect(url_for('main.dashboard'))
         return f(*args, **kwargs)

@@ -130,21 +130,30 @@ class UserService:
 
     @staticmethod
     def assign_school_role(user_id, school_id, role):
-        """Atribui um papel a um usuário em uma escola específica."""
+        """Atribui um papel a um usuário em uma escola específica e atualiza a função principal."""
         try:
+            user = db.session.get(User, user_id)
+            if not user:
+                return False, "Usuário não encontrado."
+
             # Verifica se a associação já existe
             existing_association = db.session.execute(
                 select(UserSchool).filter_by(user_id=user_id, school_id=school_id)
             ).scalar_one_or_none()
 
             if existing_association:
-                # Se já existe, apenas atualiza o papel
                 existing_association.role = role
             else:
-                # Se não existe, cria uma nova associação
                 new_association = UserSchool(user_id=user_id, school_id=school_id, role=role)
                 db.session.add(new_association)
             
+            # --- INÍCIO DA CORREÇÃO ---
+            # Atualiza também a função principal na tabela de usuário se for um admin,
+            # para garantir que a interface (barra lateral) seja exibida corretamente.
+            if role == 'admin_escola':
+                user.role = 'admin_escola'
+            # --- FIM DA CORREÇÃO ---
+
             db.session.commit()
             return True, "Papel atribuído com sucesso."
         except Exception as e:

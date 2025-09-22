@@ -9,7 +9,7 @@
             <h1>Quadro Horário</h1>
             <p>Selecione um pelotão, ciclo e semana para visualizar o horário correspondente.</p>
         </div>
-        {% if current_user.role in ['super_admin', 'programador'] %}
+        {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
         <div class="controls-group">
             <a href="{{ url_for('horario.editar_horario_grid', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id, ciclo_id=ciclo_selecionado) }}" class="btn btn-primary">
                 Editar Quadro Horário
@@ -52,7 +52,7 @@
                     <option>Nenhuma semana cadastrada para este ciclo</option>
                 {% endif %}
             </select>
-            {% if current_user.role in ['admin_escola', 'programador'] %}
+            {% if current_user.role in ['admin_escola', 'programador', 'super_admin'] %}
             <a href="{{ url_for('semana.gerenciar_semanas') }}" class="btn btn-sm btn-info">
                 Gerenciar Semanas
             </a>
@@ -83,7 +83,7 @@
                     ("14º", "19:15-20:00"), ("15º", "20:00-20:45")
                 ] %}
                 {% for row_idx in range(15) %}
-                    {% if (current_user.role in ['admin', 'programador']) or
+                    {% if (current_user.role in ['admin', 'programador', 'admin_escola', 'super_admin']) or
                           (row_idx < 12) or 
                           (row_idx == 12 and semana_selecionada.mostrar_periodo_13) or
                           (row_idx == 13 and semana_selecionada.mostrar_periodo_14) or

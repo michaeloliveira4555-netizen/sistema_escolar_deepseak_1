@@ -30,7 +30,7 @@
                 Disciplinas do Ciclo {{ ciclo_selecionado }}
             {% endif %}
         </h3>
-        {% if current_user.role in ['super_admin', 'programador'] %}
+        {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
         <a href="{{ url_for('disciplina.adicionar_disciplina') }}" class="btn btn-primary">
             <span>+</span> Adicionar Nova Disciplina
         </a>
@@ -62,7 +62,7 @@
                         {% if pelotao_filtrado %}
                         <th>Instrutor(es) ({{ pelotao_filtrado }})</th>
                         {% endif %}
-                        {% if current_user.role in ['super_admin', 'programador'] %}
+                        {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
                         <th class="text-right">Ações</th>
                         {% endif %}
                     </tr>
@@ -84,7 +84,7 @@
                             {% endif %}
                         </td>
                         {% endif %}
-                        {% if current_user.role in ['super_admin', 'programador'] %}
+                        {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
                         <td data-label="Ações" class="text-right">
                             <div class="btn-group">
                                 <a href="{{ url_for('disciplina.editar_disciplina', disciplina_id=disciplina.id) }}" class="btn btn-sm btn-warning">Gerenciar</a>

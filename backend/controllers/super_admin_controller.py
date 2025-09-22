@@ -130,7 +130,7 @@ def create_administrator():
         nome_completo=nome_completo,
         email=email,
         id_func=id_func,
-        role='admin',
+        role='admin_escola', # <<< CORREÇÃO APLICADA AQUI
         is_active=True,
         must_change_password=True
     )
