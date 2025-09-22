@@ -1,28 +1,29 @@
+# backend/controllers/turma_controller.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask_login import login_required
 from sqlalchemy import select, or_
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, SelectField, SelectMultipleField
+from wtforms import StringField, IntegerField, SubmitField, SelectMultipleField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from wtforms.widgets import CheckboxInput, ListWidget
 
+# Imports dos Models e Services
 from ..models.database import db
 from ..models.turma import Turma
 from ..models.aluno import Aluno
-from ..models.disciplina_turma import DisciplinaTurma
-from ..models.instrutor import Instrutor
-from ..models.disciplina import Disciplina
 from ..models.turma_cargo import TurmaCargo
 from utils.decorators import admin_or_programmer_required
 from ..services.turma_service import TurmaService
 
 turma_bp = Blueprint('turma', __name__, url_prefix='/turma')
 
+# Lista de cargos fixa para consistência
 CARGOS_LISTA = [
     "Auxiliar do Pelotão", "Chefe de Turma", "C1", "C2", "C3", "C4", "C5"
 ]
 
-# Forms
+# --- Formulários ---
 class TurmaForm(FlaskForm):
     nome = StringField('Nome da Turma', validators=[DataRequired(), Length(max=100)])
     ano = IntegerField('Ano da Turma', validators=[DataRequired(), NumberRange(min=2000, max=2100)])
@@ -31,11 +32,12 @@ class TurmaForm(FlaskForm):
     submit = SubmitField('Salvar Turma')
 
 class TurmaCargoForm(FlaskForm):
-    # Fields will be dynamically added in the view
     submit = SubmitField('Salvar Cargos')
 
 class DeleteForm(FlaskForm):
     pass
+
+# --- Rotas (Views / Controllers) ---
 
 @turma_bp.route('/')
 @login_required
@@ -51,16 +53,10 @@ def detalhes_turma(turma_id):
     if not turma:
         flash('Turma não encontrada.', 'danger')
         return redirect(url_for('turma.listar_turmas'))
-
-    cargos_db = db.session.scalars(
-        select(TurmaCargo).where(TurmaCargo.turma_id == turma_id)
-    ).all()
-    cargos_atuais = {cargo.cargo_nome: cargo.aluno_id for cargo in cargos_db}
-
-    for cargo in CARGOS_LISTA:
-        if cargo not in cargos_atuais:
-            cargos_atuais[cargo] = None
-
+    
+    # Busca os cargos e alunos da turma através do service
+    cargos_atuais = TurmaService.get_cargos_da_turma(turma_id, CARGOS_LISTA)
+    
     form = TurmaCargoForm()
     return render_template(
         'detalhes_turma.html',
@@ -74,44 +70,15 @@ def detalhes_turma(turma_id):
 @login_required
 @admin_or_programmer_required
 def salvar_cargos_turma(turma_id):
-    turma = db.session.get(Turma, turma_id)
-    if not turma:
-        flash('Turma não encontrada.', 'danger')
-        return redirect(url_for('turma.listar_turmas'))
-
     form = TurmaCargoForm()
-
     if form.validate_on_submit():
-        try:
-            for cargo_nome in CARGOS_LISTA:
-                aluno_id_str = request.form.get(f'cargo_{cargo_nome}')
-                aluno_id = int(aluno_id_str) if aluno_id_str else None
-
-                cargo_existente = db.session.scalars(
-                    select(TurmaCargo).where(
-                        TurmaCargo.turma_id == turma_id,
-                        TurmaCargo.cargo_nome == cargo_nome
-                    )
-                ).first()
-
-                if cargo_existente:
-                    cargo_existente.aluno_id = aluno_id
-                else:
-                    novo_cargo = TurmaCargo(
-                        turma_id=turma_id,
-                        cargo_nome=cargo_nome,
-                        aluno_id=aluno_id
-                    )
-                    db.session.add(novo_cargo)
-
-            db.session.commit()
-            flash('Cargos da turma atualizados com sucesso!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao salvar os cargos: {e}', 'danger')
+        success, message = TurmaService.atualizar_cargos(turma_id, request.form)
+        if success:
+            flash(message, 'success')
+        else:
+            flash(message, 'danger')
     else:
-        flash('Falha na validação do token CSRF ou dados inválidos.', 'danger')
-
+        flash('Falha na validação do formulário.', 'danger')
     return redirect(url_for('turma.detalhes_turma', turma_id=turma_id))
 
 @turma_bp.route('/cadastrar', methods=['GET', 'POST'])
@@ -119,8 +86,9 @@ def salvar_cargos_turma(turma_id):
 @admin_or_programmer_required
 def cadastrar_turma():
     form = TurmaForm()
+    # Busca alunos sem turma para popular o formulário
     alunos_sem_turma = db.session.scalars(
-        select(Aluno).where(or_(Aluno.turma_id == None, Aluno.turma_id == 0))
+        select(Aluno).where(Aluno.turma_id.is_(None))
     ).all()
     form.alunos_ids.choices = [(a.id, a.user.nome_completo) for a in alunos_sem_turma]
 
@@ -131,7 +99,7 @@ def cadastrar_turma():
             return redirect(url_for('turma.listar_turmas'))
         else:
             flash(message, 'danger')
-
+    
     return render_template('cadastrar_turma.html', form=form, alunos_sem_turma=alunos_sem_turma)
 
 @turma_bp.route('/editar/<int:turma_id>', methods=['GET', 'POST'])
@@ -142,44 +110,27 @@ def editar_turma(turma_id):
     if not turma:
         flash('Turma não encontrada.', 'danger')
         return redirect(url_for('turma.listar_turmas'))
-
+    
     form = TurmaForm(obj=turma)
+    # Alunos disponíveis são os que não têm turma ou os que já estão nesta turma
     alunos_disponiveis = db.session.scalars(
-        select(Aluno).where(or_(Aluno.turma_id == None, Aluno.turma_id == 0, Aluno.turma_id == turma_id))
+        select(Aluno).where(or_(Aluno.turma_id.is_(None), Aluno.turma_id == turma_id))
     ).all()
     form.alunos_ids.choices = [(a.id, a.user.nome_completo) for a in alunos_disponiveis]
-
+    
     if form.validate_on_submit():
-        # Verifica se o novo nome já existe em outra turma
-        turma_existente = db.session.execute(
-            select(Turma).where(Turma.nome == form.nome.data, Turma.id != turma_id)
-        ).scalar_one_or_none()
-
-        if turma_existente:
-            flash(f'Já existe outra turma com o nome "{form.nome.data}".', 'danger')
-        else:
-            turma.nome = form.nome.data
-            turma.ano = form.ano.data
-            
-            # Desvincula todos os alunos atuais
-            for aluno in turma.alunos:
-                aluno.turma_id = None
-            
-            # Vincula os novos alunos selecionados
-            for aluno_id in form.alunos_ids.data:
-                aluno = db.session.get(Aluno, int(aluno_id))
-                if aluno:
-                    aluno.turma_id = turma.id
-
-            db.session.commit()
-            flash('Turma atualizada com sucesso!', 'success')
+        success, message = TurmaService.update_turma(turma_id, form)
+        if success:
+            flash(message, 'success')
             return redirect(url_for('turma.listar_turmas'))
+        else:
+            flash(message, 'danger')
 
-    # Para o GET, preenche os alunos selecionados no formulário
     if request.method == 'GET':
         form.alunos_ids.data = [a.id for a in turma.alunos]
 
     return render_template('editar_turma.html', form=form, turma=turma, alunos_disponiveis=alunos_disponiveis)
+
 
 @turma_bp.route('/excluir/<int:turma_id>', methods=['POST'])
 @login_required

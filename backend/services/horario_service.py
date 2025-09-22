@@ -1,3 +1,5 @@
+# backend/services/horario_service.py
+
 from ..models.database import db
 from ..models.horario import Horario
 from ..models.disciplina import Disciplina
@@ -9,39 +11,89 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from flask_login import current_user
 from flask import current_app
+from datetime import date, timedelta
 
 class HorarioService:
+
     @staticmethod
-    def can_edit_horario(horario_id):
-        """Verifica se o usuário atual pode editar/deletar um horário específico"""
-        if current_user.role in ['super_admin', 'programador']:
+    def can_edit_horario(horario, user):
+        """Verifica se um usuário pode editar um horário específico."""
+        if not horario or not user:
+            return False
+        if user.role in ['super_admin', 'programador', 'admin_escola']:
             return True
-
-        if current_user.role == 'instrutor' and current_user.instrutor_profile:
-            horario = db.session.get(Horario, horario_id)
-            if horario and horario.instrutor_id == current_user.instrutor_profile.id:
-                return True
-
+        if user.role == 'instrutor' and user.instrutor_profile:
+            return horario.instrutor_id == user.instrutor_profile.id
         return False
 
     @staticmethod
+    def get_turmas_do_instrutor(instrutor_id):
+        """Retorna uma lista de nomes de turmas vinculadas a um instrutor."""
+        vinculos = db.session.scalars(
+            select(DisciplinaTurma.pelotao).where(
+                (DisciplinaTurma.instrutor_id_1 == instrutor_id) |
+                (DisciplinaTurma.instrutor_id_2 == instrutor_id)
+            ).distinct()
+        ).all()
+        return sorted(list(set(vinculos)))
+
+    @staticmethod
+    def get_semana_selecionada(semana_id_str, ciclo):
+        """Determina qual semana deve ser exibida, com base na seleção ou na data atual."""
+        if semana_id_str and semana_id_str.isdigit():
+            return db.session.get(Semana, int(semana_id_str))
+        
+        today = date.today()
+        semana_atual = db.session.scalars(
+            select(Semana).where(
+                Semana.ciclo == ciclo,
+                Semana.data_inicio <= today,
+                Semana.data_fim >= today
+            )
+        ).first()
+        if semana_atual:
+            return semana_atual
+            
+        # Fallback para a semana mais recente, se nenhuma estiver ativa
+        return db.session.scalars(
+            select(Semana).where(Semana.ciclo == ciclo).order_by(Semana.data_inicio.desc())
+        ).first()
+
+    @staticmethod
+    def get_datas_da_semana(semana):
+        """Retorna um dicionário com as datas formatadas para cada dia da semana."""
+        if not semana:
+            return {}
+        datas = {}
+        dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
+        for i, dia_nome in enumerate(dias):
+            data_calculada = semana.data_inicio + timedelta(days=i)
+            datas[dia_nome] = data_calculada.strftime('%d/%m')
+        return datas
+
+    @staticmethod
     def construir_matriz_horario(pelotao, semana_id):
-        a_disposicao = {'materia': 'A disposição do C Al /S Ens', 'instrutor': None, 'duracao': 1, 'is_disposicao': True, 'id': None}
+        """Constrói a matriz 15x7 para exibir o quadro de horários."""
+        a_disposicao = {'materia': 'A disposição', 'instrutor': None, 'duracao': 1, 'is_disposicao': True, 'id': None, 'status': 'confirmado'}
         horario_matrix = [[dict(a_disposicao) for _ in range(7)] for _ in range(15)]
         dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
-        aulas_agendadas = db.session.scalars(
-            select(Horario).options(joinedload(Horario.disciplina), joinedload(Horario.instrutor).joinedload(Instrutor.user))
-            .where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
+        
+        aulas = db.session.scalars(
+            select(Horario).options(
+                joinedload(Horario.disciplina),
+                joinedload(Horario.instrutor).joinedload(Instrutor.user)
+            ).where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
         ).all()
-        for aula in aulas_agendadas:
+
+        for aula in aulas:
             try:
                 dia_idx = dias.index(aula.dia_semana)
                 periodo_idx = aula.periodo - 1
                 if 0 <= periodo_idx < 15 and 0 <= dia_idx < 7:
                     instrutor_nome = "N/D"
                     if aula.instrutor and aula.instrutor.user:
-                        instrutor_nome = aula.instrutor.user.nome_completo or aula.instrutor.user.username
-                    can_edit = HorarioService.can_edit_horario(aula.id)
+                        instrutor_nome = aula.instrutor.user.nome_de_guerra or aula.instrutor.user.username
+                    
                     aula_info = {
                         'id': aula.id,
                         'materia': aula.disciplina.materia,
@@ -49,173 +101,146 @@ class HorarioService:
                         'duracao': aula.duracao,
                         'status': aula.status,
                         'is_disposicao': False,
-                        'can_edit': can_edit,
+                        'can_edit': HorarioService.can_edit_horario(aula, current_user),
                     }
                     horario_matrix[periodo_idx][dia_idx] = aula_info
+                    # Marca os períodos subsequentes como ocupados
                     for i in range(1, aula.duracao):
-                        if periodo_idx + i < 15:
+                        if (periodo_idx + i) < 15:
                             horario_matrix[periodo_idx + i][dia_idx] = 'SKIP'
             except (ValueError, IndexError):
                 continue
         return horario_matrix
 
     @staticmethod
-    def save_aula(data):
-        horario_id = data.get('horario_id')
-        is_admin = current_user.role in ['admin_escola', 'programador']
-
-        # --- Input Validation --- #
-        pelotao = data.get('pelotao')
-        semana_id = data.get('semana_id')
-        dia_semana = data.get('dia')
-        periodo = data.get('periodo')
-        duracao = data.get('duracao', 1)
-        disciplina_id = data.get('disciplina_id')
-
-        if not all([pelotao, semana_id, dia_semana, periodo, disciplina_id]):
-            return False, 'Todos os campos obrigatórios devem ser preenchidos.'
-
-        try:
-            semana_id = int(semana_id)
-            periodo = int(periodo)
-            duracao = int(duracao)
-            disciplina_id = int(disciplina_id)
-        except ValueError:
-            return False, 'IDs, período e duração devem ser números inteiros válidos.'
-
-        # Validate existence of Pelotao (Turma)
-        turma_existe = db.session.scalars(select(Turma).where(Turma.nome == pelotao)).first()
-        if not turma_existe:
-            return False, 'Pelotão (Turma) não encontrado.'
-
-        # Validate existence of Semana
-        semana_existe = db.session.get(Semana, semana_id)
-        if not semana_existe:
-            return False, 'Semana não encontrada.'
-
-        # Validate Dia da Semana
-        dias_validos = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
-        if dia_semana not in dias_validos:
-            return False, 'Dia da semana inválido.'
-
-        # Validate Periodo and Duracao ranges
-        if not (1 <= periodo <= 15):
-            return False, 'Período deve ser entre 1 e 15.'
-        if not (1 <= duracao <= 3): # Assuming max 3 consecutive periods for a single class
-            return False, 'Duração deve ser entre 1 e 3.'
-        if (periodo + duracao - 1) > 15: # Check if class duration exceeds daily periods
-            return False, 'A duração da aula excede o limite de períodos do dia.'
-
-        # End Input Validation #
-
+    def get_edit_grid_context(pelotao, semana_id, ciclo_id, user):
+        """Prepara todos os dados necessários para a tela de edição de horários."""
+        horario_matrix = HorarioService.construir_matriz_horario(pelotao, semana_id)
+        semana = db.session.get(Semana, semana_id)
+        is_admin = user.role in ['super_admin', 'programador', 'admin_escola']
+        
+        disciplinas_disponiveis = []
         if is_admin:
-            if not data.get('instrutor_id'):
-                return False, 'Instrutor é obrigatório para administradores.'
-            try:
-                instrutor_final_id = int(data.get('instrutor_id'))
-            except ValueError:
-                return False, 'ID do instrutor deve ser um número inteiro válido.'
-        else:
-            if not current_user.instrutor_profile:
-                return False, 'Usuário não é um instrutor válido.'
-            instrutor_final_id = current_user.instrutor_profile.id
-
-        disciplina = db.session.get(Disciplina, disciplina_id)
-        if not disciplina:
-            return False, 'Disciplina não encontrada.'
-
-        instrutor = db.session.get(Instrutor, instrutor_final_id)
-        if not instrutor:
-            return False, 'Instrutor não encontrado.'
-
-        if not is_admin:
-            associacao = db.session.execute(
-                select(DisciplinaTurma).where(
+            # Admin vê todas as disciplinas do ciclo
+            disciplinas_do_ciclo = db.session.scalars(select(Disciplina).where(Disciplina.ciclo == ciclo_id).order_by(Disciplina.materia)).all()
+            for d in disciplinas_do_ciclo:
+                disciplinas_disponiveis.append({"id": d.id, "nome": d.materia})
+        else: # Se for instrutor
+            instrutor_id = user.instrutor_profile.id if user.instrutor_profile else 0
+            # Instrutor vê apenas as disciplinas às quais está vinculado naquele pelotão e ciclo
+            associacoes = db.session.scalars(
+                select(DisciplinaTurma).options(joinedload(DisciplinaTurma.disciplina_associada))
+                .join(Disciplina).where(
                     DisciplinaTurma.pelotao == pelotao,
-                    DisciplinaTurma.disciplina_id == disciplina_id,
-                    (DisciplinaTurma.instrutor_id_1 == instrutor_final_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_final_id)
+                    Disciplina.ciclo == ciclo_id,
+                    (DisciplinaTurma.instrutor_id_1 == instrutor_id) | (DisciplinaTurma.instrutor_id_2 == instrutor_id)
                 )
-            ).scalar_one_or_none()
-            if not associacao:
-                return False, 'Você não está autorizado para esta disciplina neste pelotão.'
+            ).unique().all()
+            for a in associacoes:
+                disciplinas_disponiveis.append({"id": a.disciplina_associada.id, "nome": a.disciplina_associada.materia})
+
+        todos_instrutores = [{"id": i.id, "nome": i.user.nome_de_guerra or i.user.username} for i in db.session.scalars(select(Instrutor).options(joinedload(Instrutor.user)).order_by(User.nome_de_guerra)).all()]
+
+        return {
+            'success': True,
+            'horario_matrix': horario_matrix,
+            'pelotao_selecionado': pelotao,
+            'semana_selecionada': semana,
+            'disciplinas_disponiveis': disciplinas_disponiveis,
+            'todos_instrutores': todos_instrutores,
+            'is_admin': is_admin,
+            'instrutor_logado_id': user.instrutor_profile.id if user.instrutor_profile else None,
+            'datas_semana': HorarioService.get_datas_da_semana(semana)
+        }
+        
+    @staticmethod
+    def get_aula_details(horario_id, user):
+        """Busca os detalhes de uma aula para o modal de edição."""
+        aula = db.session.get(Horario, horario_id)
+        if not aula or not HorarioService.can_edit_horario(aula, user):
+            return None
+        return {
+            'disciplina_id': aula.disciplina_id,
+            'instrutor_id': aula.instrutor_id,
+            'duracao': aula.duracao
+        }
+
+    @staticmethod
+    def save_aula(data, user):
+        """Salva uma nova aula ou atualiza uma existente."""
+        try:
+            horario_id = data.get('horario_id')
+            pelotao = data['pelotao']
+            semana_id = int(data['semana_id'])
+            dia = data['dia']
+            periodo = int(data['periodo'])
+            disciplina_id = int(data['disciplina_id'])
+            duracao = int(data.get('duracao', 1))
+            is_admin = user.role in ['super_admin', 'programador', 'admin_escola']
+            instrutor_id = int(data['instrutor_id']) if is_admin else user.instrutor_profile.id
+        except (KeyError, ValueError, TypeError):
+            return False, 'Dados inválidos ou incompletos.', 400
+
+        # Lógica de atualização vs. criação
+        if horario_id:
+            aula = db.session.get(Horario, int(horario_id))
+            if not aula: return False, 'Aula não encontrada.', 404
+            if not HorarioService.can_edit_horario(aula, user): return False, 'Sem permissão para editar esta aula.', 403
+        else: # Nova aula
+            # Verifica conflitos de horário
+            conflito = db.session.execute(select(Horario).where(Horario.pelotao == pelotao, Horario.semana_id == semana_id, Horario.dia_semana == dia, Horario.periodo == periodo)).scalar_one_or_none()
+            if conflito: return False, 'Já existe uma aula neste horário.', 409
+            aula = Horario(status='confirmado' if is_admin else 'pendente')
+            db.session.add(aula)
+        
+        # Atribui os dados
+        aula.pelotao, aula.semana_id, aula.dia_semana, aula.periodo, aula.disciplina_id, aula.duracao, aula.instrutor_id = \
+            pelotao, semana_id, dia, periodo, disciplina_id, duracao, instrutor_id
 
         try:
-            if horario_id:
-                if not HorarioService.can_edit_horario(int(horario_id)):
-                    return False, 'Acesso negado. Você não pode editar esta aula.'
-                aula = db.session.get(Horario, int(horario_id))
-                if not aula:
-                    return False, 'Aula não encontrada.'
-                aula.disciplina_id = disciplina_id
-                aula.instrutor_id = instrutor_final_id
-                aula.duracao = duracao
-                aula.status = 'confirmado' if is_admin else 'pendente'
-            else:
-                # Check for conflicts for the entire duration of the new class
-                for i in range(duracao):
-                    conflito = db.session.execute(
-                        select(Horario).where(
-                            Horario.pelotao == pelotao,
-                            Horario.semana_id == semana_id,
-                            Horario.dia_semana == dia_semana,
-                            Horario.periodo == (periodo + i)
-                        )
-                    ).scalar_one_or_none()
-                    if conflito:
-                        return False, f'Já existe uma aula agendada no período {periodo + i} deste horário.'
-
-                aula = Horario()
-                aula.pelotao = pelotao
-                aula.semana_id = semana_id
-                aula.dia_semana = dia_semana
-                aula.periodo = periodo
-                aula.disciplina_id = disciplina_id
-                aula.instrutor_id = instrutor_final_id
-                aula.duracao = duracao
-                aula.status = 'confirmado' if is_admin else 'pendente'
-                db.session.add(aula)
             db.session.commit()
-            return True, 'Aula salva com sucesso!'
+            return True, 'Aula salva com sucesso!', 200
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Erro ao salvar aula: {e}")
-            return False, f'Erro interno: {str(e)}'
+            return False, 'Erro interno do servidor ao salvar.', 500
+            
+    @staticmethod
+    def remove_aula(horario_id, user):
+        """Remove uma aula do banco de dados."""
+        aula = db.session.get(Horario, int(horario_id))
+        if not aula: return False, 'Aula não encontrada.'
+        if not HorarioService.can_edit_horario(aula, user): return False, 'Sem permissão para remover esta aula.'
+        
+        db.session.delete(aula)
+        db.session.commit()
+        return True, 'Aula removida com sucesso!'
 
     @staticmethod
-    def remove_aula(horario_id):
-        if not HorarioService.can_edit_horario(int(horario_id)):
-            return False, 'Acesso negado. Você não pode remover esta aula.'
-        try:
-            aula = db.session.get(Horario, int(horario_id))
-            if aula:
-                db.session.delete(aula)
-                db.session.commit()
-                return True, 'Aula removida com sucesso!'
-            return False, 'Aula não encontrada.'
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Erro ao remover aula: {e}")
-            return False, 'Ocorreu um erro ao remover a aula.'
-
+    def get_aulas_pendentes():
+        """Retorna uma lista de todas as aulas com status 'pendente'."""
+        return db.session.scalars(
+            select(Horario).options(
+                joinedload(Horario.disciplina),
+                joinedload(Horario.instrutor).joinedload(Instrutor.user),
+                joinedload(Horario.semana)
+            ).where(Horario.status == 'pendente').order_by(Horario.created_at.desc())
+        ).all()
+        
     @staticmethod
     def aprovar_horario(horario_id, action):
-        horario = db.session.get(Horario, int(horario_id))
-        if not horario:
-            return False, 'Horário não encontrado.'
+        """Aprova ou nega uma solicitação de aula."""
+        aula = db.session.get(Horario, int(horario_id))
+        if not aula: return False, 'Aula não encontrada.'
 
-        try:
-            if action == 'aprovar':
-                horario.status = 'confirmado'
-                message = f'Aula de {horario.disciplina.materia} aprovada com sucesso!'
-            elif action == 'negar':
-                db.session.delete(horario)
-                message = f'Aula de {horario.disciplina.materia} negada e removida com sucesso!'
-            else:
-                return False, 'Ação inválida.'
+        if action == 'aprovar':
+            aula.status = 'confirmado'
+            message = f'Aula de {aula.disciplina.materia} aprovada.'
+        elif action == 'negar':
+            db.session.delete(aula)
+            message = f'Solicitação de aula de {aula.disciplina.materia} foi negada e removida.'
+        else:
+            return False, 'Ação inválida.'
             
-            db.session.commit()
-            return True, message
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Erro ao processar horário: {e}")
-            return False, 'Ocorreu um erro ao processar o horário.'
+        db.session.commit()
+        return True, message
