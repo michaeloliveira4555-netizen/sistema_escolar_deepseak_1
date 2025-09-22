@@ -1,10 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+# backend/controllers/main_controller.py
+
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required, current_user
 from ..models.user import User
 from ..models.school import School
 from ..models.database import db
 from ..services.dashboard_service import DashboardService
-from utils.decorators import aluno_profile_required, admin_or_programmer_required
+from utils.decorators import admin_or_programmer_required
 from ..services.user_service import UserService
 
 main_bp = Blueprint('main', __name__)
@@ -18,34 +20,40 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    viewing_school = None
-    school_id_to_load = None
+    # Limpa a visualização se o usuário não for super admin/programador
+    if current_user.role not in ['super_admin', 'programador']:
+        session.pop('view_as_school_id', None)
+        session.pop('view_as_school_name', None)
 
-    # 1. Verifica se o Super Admin está no modo "Visualizar como"
     view_as_school_id = request.args.get('view_as_school', type=int)
+    
+    # Se um super admin selecionou uma escola, armazena na sessão
     if current_user.role in ['super_admin', 'programador'] and view_as_school_id:
-        school_id_to_load = view_as_school_id
-        viewing_school = db.session.get(School, school_id_to_load)
-        if not viewing_school:
+        school = db.session.get(School, view_as_school_id)
+        if school:
+            session['view_as_school_id'] = school.id
+            session['view_as_school_name'] = school.nome
+        else:
             flash("Escola selecionada para visualização não encontrada.", "danger")
             return redirect(url_for('super_admin.dashboard'))
-    else:
-        # 2. Para usuários normais, encontra a primeira escola associada
-        if current_user.schools:
-            school_id_to_load = current_user.schools[0].id
-        else:
-            # Se o usuário não tem escola (ex: super_admin sem modo de visualização),
-            # school_id_to_load permanece None, mostrando dados globais.
-            pass
 
+    # Determina o ID da escola para carregar os dados
+    school_id_to_load = None
+    if current_user.role in ['super_admin', 'programador']:
+        school_id_to_load = session.get('view_as_school_id')
+    elif current_user.schools:
+        school_id_to_load = current_user.schools[0].id
+    
+    # Busca os dados do dashboard com o ID da escola
     dashboard_data = DashboardService.get_dashboard_data(school_id=school_id_to_load)
     
-    # Define qual escola está em contexto para exibição no template
-    school_in_context = viewing_school or (current_user.schools[0] if current_user.schools else None)
+    # Determina o contexto da escola para exibição no template
+    school_in_context = None
+    if school_id_to_load:
+        school_in_context = db.session.get(School, school_id_to_load)
 
     return render_template('dashboard.html', 
                            dashboard_data=dashboard_data, 
-                           viewing_school=viewing_school,
                            school_in_context=school_in_context)
 
 @main_bp.route('/pre-cadastro', methods=['GET', 'POST'])

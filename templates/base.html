@@ -37,6 +37,17 @@
             pointer-events: none;
         }
         {% endif %}
+        
+        .view-as-banner { 
+            background-color: #fffbeb; 
+            color: #92400e; 
+            padding: 0.75rem 1.5rem; 
+            border-bottom: 1px solid #fde68a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -62,6 +73,13 @@
             </div>
 
             <nav class="sidebar-nav">
+                {% if current_user.role in ['super_admin', 'programador'] %}
+                    <a href="{{ url_for('super_admin.dashboard') }}" class="nav-link {% if 'super_admin.' in request.endpoint %}active{% endif %}">
+                        <div class="nav-icon">👑</div> Painel Super Admin
+                    </a>
+                    <div class="nav-separator"></div>
+                {% endif %}
+
                 <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
                     <div class="nav-icon">🏠</div> Início
                 </a>
@@ -80,14 +98,6 @@
                 </a>
                 
                 {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
-                    <div class="nav-separator"></div>
-
-                    {% if current_user.role in ['super_admin', 'programador'] %}
-                        <a href="{{ url_for('super_admin.dashboard') }}" class="nav-link {% if 'super_admin.' in request.endpoint %}active{% endif %}">
-                            <div class="nav-icon">👑</div> Painel Super Admin
-                        </a>
-                    {% endif %}
-
                     <a href="{{ url_for('vinculo.gerenciar_vinculos') }}" class="nav-link {% if 'vinculo.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">🔗</div> Vínculos
                     </a>
@@ -147,6 +157,15 @@
         {% endif %}
 
         <main class="main-content">
+            {% if current_user.role in ['super_admin', 'programador'] and session.get('view_as_school_id') %}
+            <div class="view-as-banner">
+                <div>
+                    <strong>Modo de Visualização:</strong> Você está navegando como um administrador da escola <strong>{{ session.get('view_as_school_name') }}</strong>.
+                </div>
+                <a href="{{ url_for('super_admin.exit_view') }}" class="btn btn-sm btn-outline-dark">Sair da Visualização</a>
+            </div>
+            {% endif %}
+
             {% block navbar_content %}
             <nav class="navbar" {% if site_config.navbar_background_image %}style="background-image: url('{{ site_config.navbar_background_image }}');"{% endif %}>
             </nav>
@@ -171,12 +190,5 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // O SCRIPT DO SUBMENU NÃO É MAIS NECESSÁRIO, MAS PODE SER DEIXADO AQUI
-        // POIS NÃO ENCONTRARÁ ELEMENTOS E NÃO CAUSARÁ ERRO.
-    });
-    </script>
 </body>
 </html>
