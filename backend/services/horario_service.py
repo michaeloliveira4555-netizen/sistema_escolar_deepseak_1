@@ -7,9 +7,9 @@ from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.semana import Semana
 from ..models.turma import Turma
+from ..models.user import User  # Importar User
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
-from flask_login import current_user
 from flask import current_app
 from datetime import date, timedelta
 
@@ -54,7 +54,6 @@ class HorarioService:
         if semana_atual:
             return semana_atual
             
-        # Fallback para a semana mais recente, se nenhuma estiver ativa
         return db.session.scalars(
             select(Semana).where(Semana.ciclo == ciclo).order_by(Semana.data_inicio.desc())
         ).first()
@@ -104,7 +103,6 @@ class HorarioService:
                         'can_edit': HorarioService.can_edit_horario(aula, current_user),
                     }
                     horario_matrix[periodo_idx][dia_idx] = aula_info
-                    # Marca os períodos subsequentes como ocupados
                     for i in range(1, aula.duracao):
                         if (periodo_idx + i) < 15:
                             horario_matrix[periodo_idx + i][dia_idx] = 'SKIP'
@@ -121,13 +119,11 @@ class HorarioService:
         
         disciplinas_disponiveis = []
         if is_admin:
-            # Admin vê todas as disciplinas do ciclo
             disciplinas_do_ciclo = db.session.scalars(select(Disciplina).where(Disciplina.ciclo == ciclo_id).order_by(Disciplina.materia)).all()
             for d in disciplinas_do_ciclo:
                 disciplinas_disponiveis.append({"id": d.id, "nome": d.materia})
-        else: # Se for instrutor
+        else:
             instrutor_id = user.instrutor_profile.id if user.instrutor_profile else 0
-            # Instrutor vê apenas as disciplinas às quais está vinculado naquele pelotão e ciclo
             associacoes = db.session.scalars(
                 select(DisciplinaTurma).options(joinedload(DisciplinaTurma.disciplina_associada))
                 .join(Disciplina).where(
@@ -181,19 +177,16 @@ class HorarioService:
         except (KeyError, ValueError, TypeError):
             return False, 'Dados inválidos ou incompletos.', 400
 
-        # Lógica de atualização vs. criação
         if horario_id:
             aula = db.session.get(Horario, int(horario_id))
             if not aula: return False, 'Aula não encontrada.', 404
             if not HorarioService.can_edit_horario(aula, user): return False, 'Sem permissão para editar esta aula.', 403
-        else: # Nova aula
-            # Verifica conflitos de horário
+        else:
             conflito = db.session.execute(select(Horario).where(Horario.pelotao == pelotao, Horario.semana_id == semana_id, Horario.dia_semana == dia, Horario.periodo == periodo)).scalar_one_or_none()
             if conflito: return False, 'Já existe uma aula neste horário.', 409
             aula = Horario(status='confirmado' if is_admin else 'pendente')
             db.session.add(aula)
         
-        # Atribui os dados
         aula.pelotao, aula.semana_id, aula.dia_semana, aula.periodo, aula.disciplina_id, aula.duracao, aula.instrutor_id = \
             pelotao, semana_id, dia, periodo, disciplina_id, duracao, instrutor_id
 
@@ -224,7 +217,7 @@ class HorarioService:
                 joinedload(Horario.disciplina),
                 joinedload(Horario.instrutor).joinedload(Instrutor.user),
                 joinedload(Horario.semana)
-            ).where(Horario.status == 'pendente').order_by(Horario.created_at.desc())
+            ).where(Horario.status == 'pendente').order_by(Horario.id.desc())
         ).all()
         
     @staticmethod
