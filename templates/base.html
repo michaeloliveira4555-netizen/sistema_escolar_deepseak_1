@@ -6,10 +6,7 @@
     <title>{% block title %}Sistema EsFAS{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
@@ -18,25 +15,6 @@
             --primary-color: {{ site_config.primary_color or '#3b82f6' }};
             --secondary-color: {{ site_config.secondary_color or '#1a232c' }};
         }
-
-        {% if site_config.site_background %}
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('{{ site_config.site_background }}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            opacity: 0.15;
-            z-index: -1;
-            pointer-events: none;
-        }
-        {% endif %}
         
         .view-as-banner { 
             background-color: #fffbeb; 
@@ -73,8 +51,9 @@
             </div>
 
             <nav class="sidebar-nav">
+                {# --- CORREÇÃO APLICADA A TODOS OS LINKS ABAIXO --- #}
                 {% if current_user.role in ['super_admin', 'programador'] %}
-                    <a href="{{ url_for('super_admin.dashboard') }}" class="nav-link {% if 'super_admin.' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('super_admin.dashboard') }}" class="nav-link {% if request.endpoint and 'super_admin.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">👑</div> Painel Super Admin
                     </a>
                     <div class="nav-separator"></div>
@@ -84,26 +63,26 @@
                     <div class="nav-icon">🏠</div> Início
                 </a>
 
-                <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if 'aluno.' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('aluno.listar_alunos') }}" class="nav-link {% if request.endpoint and 'aluno.' in request.endpoint %}active{% endif %}">
                     <div class="nav-icon">👥</div> Alunos
                 </a>
-                <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if 'instrutor.' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('instrutor.listar_instrutores') }}" class="nav-link {% if request.endpoint and 'instrutor.' in request.endpoint %}active{% endif %}">
                     <div class="nav-icon">🎓</div> Instrutores
                 </a>
-                <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if 'disciplina.' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('disciplina.listar_disciplinas') }}" class="nav-link {% if request.endpoint and 'disciplina.' in request.endpoint %}active{% endif %}">
                     <div class="nav-icon">📚</div> Disciplinas
                 </a>
-                <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if 'turma.' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('turma.listar_turmas') }}" class="nav-link {% if request.endpoint and 'turma.' in request.endpoint %}active{% endif %}">
                     <div class="nav-icon">🏫</div> Turmas
                 </a>
                 
                 {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
-                    <a href="{{ url_for('vinculo.gerenciar_vinculos') }}" class="nav-link {% if 'vinculo.' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('vinculo.gerenciar_vinculos') }}" class="nav-link {% if request.endpoint and 'vinculo.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">🔗</div> Vínculos
                     </a>
                 {% endif %}
 
-                <a href="{{ url_for('horario.index') }}" class="nav-link {% if 'horario.' in request.endpoint or 'semana.' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('horario.index') }}" class="nav-link {% if request.endpoint and ('horario.' in request.endpoint or 'semana.' in request.endpoint) %}active{% endif %}">
                     <div class="nav-icon">📅</div> Quadro Horário
                 </a>
 
@@ -114,24 +93,24 @@
                     <a href="#" class="nav-link">
                         <div class="nav-icon">🔔</div> Notificações
                     </a>
-                    <a href="{{ url_for('relatorios.index') }}" class="nav-link {% if 'relatorios.' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link {% if request.endpoint and 'relatorios.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">📊</div> Relatórios
                     </a>
                 {% endif %}
 
                 {% if current_user.role == 'programador' %}
                     <div class="nav-separator"></div>
-                    <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if 'assets.' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('assets.manage_assets') }}" class="nav-link {% if request.endpoint and 'assets.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">📁</div> Assets
                     </a>
-                    <a href="{{ url_for('customizer.index') }}" class="nav-link {% if 'customizer.' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('customizer.index') }}" class="nav-link {% if request.endpoint and 'customizer.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">🎨</div> Personalizar
                     </a>
                 {% endif %}
 
                 {% if current_user.role == 'aluno' and current_user.aluno_profile %}
                     <div class="nav-separator"></div>
-                    <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if 'historico.' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('historico.historico_aluno', aluno_id=current_user.aluno_profile.id) }}" class="nav-link {% if request.endpoint and 'historico.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">📊</div> Meu CTSP
                     </a>
                     <a href="#" class="nav-link">
@@ -157,7 +136,7 @@
         {% endif %}
 
         <main class="main-content">
-            {% if current_user.role in ['super_admin', 'programador'] and session.get('view_as_school_id') %}
+            {% if current_user.is_authenticated and current_user.role in ['super_admin', 'programador'] and session.get('view_as_school_id') %}
             <div class="view-as-banner">
                 <div>
                     <strong>Modo de Visualização:</strong> Você está navegando como um administrador da escola <strong>{{ session.get('view_as_school_name') }}</strong>.

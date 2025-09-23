@@ -1,5 +1,11 @@
 # backend/services/horario_service.py
 
+from flask import current_app
+from flask_login import current_user
+from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload
+from datetime import date, timedelta
+
 from ..models.database import db
 from ..models.horario import Horario
 from ..models.disciplina import Disciplina
@@ -7,11 +13,8 @@ from ..models.instrutor import Instrutor
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.semana import Semana
 from ..models.turma import Turma
-from ..models.user import User  # Importar User
-from sqlalchemy import select, func
-from sqlalchemy.orm import joinedload
-from flask import current_app
-from datetime import date, timedelta
+from ..models.user import User
+
 
 class HorarioService:
 
@@ -27,15 +30,44 @@ class HorarioService:
         return False
 
     @staticmethod
-    def get_turmas_do_instrutor(instrutor_id):
-        """Retorna uma lista de nomes de turmas vinculadas a um instrutor."""
-        vinculos = db.session.scalars(
-            select(DisciplinaTurma.pelotao).where(
-                (DisciplinaTurma.instrutor_id_1 == instrutor_id) |
-                (DisciplinaTurma.instrutor_id_2 == instrutor_id)
-            ).distinct()
+    def construir_matriz_horario(pelotao, semana_id, user):
+        """Constrói a matriz 15x7 para exibir o quadro de horários."""
+        a_disposicao = {'materia': 'A disposição', 'instrutor': None, 'duracao': 1, 'is_disposicao': True, 'id': None, 'status': 'confirmado'}
+        horario_matrix = [[dict(a_disposicao) for _ in range(7)] for _ in range(15)]
+        dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
+        
+        aulas = db.session.scalars(
+            select(Horario).options(
+                joinedload(Horario.disciplina),
+                joinedload(Horario.instrutor).joinedload(Instrutor.user)
+            ).where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
         ).all()
-        return sorted(list(set(vinculos)))
+
+        for aula in aulas:
+            try:
+                dia_idx = dias.index(aula.dia_semana)
+                periodo_idx = aula.periodo - 1
+                if 0 <= periodo_idx < 15 and 0 <= dia_idx < 7:
+                    instrutor_nome = "N/D"
+                    if aula.instrutor and aula.instrutor.user:
+                        instrutor_nome = aula.instrutor.user.nome_de_guerra or aula.instrutor.user.username
+                    
+                    aula_info = {
+                        'id': aula.id,
+                        'materia': aula.disciplina.materia,
+                        'instrutor': instrutor_nome,
+                        'duracao': aula.duracao,
+                        'status': aula.status,
+                        'is_disposicao': False,
+                        'can_edit': HorarioService.can_edit_horario(aula, user), # Usa o user passado como parâmetro
+                    }
+                    horario_matrix[periodo_idx][dia_idx] = aula_info
+                    for i in range(1, aula.duracao):
+                        if (periodo_idx + i) < 15:
+                            horario_matrix[periodo_idx + i][dia_idx] = 'SKIP'
+            except (ValueError, IndexError):
+                continue
+        return horario_matrix
 
     @staticmethod
     def get_semana_selecionada(semana_id_str, ciclo):
@@ -71,49 +103,9 @@ class HorarioService:
         return datas
 
     @staticmethod
-    def construir_matriz_horario(pelotao, semana_id):
-        """Constrói a matriz 15x7 para exibir o quadro de horários."""
-        a_disposicao = {'materia': 'A disposição', 'instrutor': None, 'duracao': 1, 'is_disposicao': True, 'id': None, 'status': 'confirmado'}
-        horario_matrix = [[dict(a_disposicao) for _ in range(7)] for _ in range(15)]
-        dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
-        
-        aulas = db.session.scalars(
-            select(Horario).options(
-                joinedload(Horario.disciplina),
-                joinedload(Horario.instrutor).joinedload(Instrutor.user)
-            ).where(Horario.pelotao == pelotao, Horario.semana_id == semana_id)
-        ).all()
-
-        for aula in aulas:
-            try:
-                dia_idx = dias.index(aula.dia_semana)
-                periodo_idx = aula.periodo - 1
-                if 0 <= periodo_idx < 15 and 0 <= dia_idx < 7:
-                    instrutor_nome = "N/D"
-                    if aula.instrutor and aula.instrutor.user:
-                        instrutor_nome = aula.instrutor.user.nome_de_guerra or aula.instrutor.user.username
-                    
-                    aula_info = {
-                        'id': aula.id,
-                        'materia': aula.disciplina.materia,
-                        'instrutor': instrutor_nome,
-                        'duracao': aula.duracao,
-                        'status': aula.status,
-                        'is_disposicao': False,
-                        'can_edit': HorarioService.can_edit_horario(aula, current_user),
-                    }
-                    horario_matrix[periodo_idx][dia_idx] = aula_info
-                    for i in range(1, aula.duracao):
-                        if (periodo_idx + i) < 15:
-                            horario_matrix[periodo_idx + i][dia_idx] = 'SKIP'
-            except (ValueError, IndexError):
-                continue
-        return horario_matrix
-
-    @staticmethod
     def get_edit_grid_context(pelotao, semana_id, ciclo_id, user):
         """Prepara todos os dados necessários para a tela de edição de horários."""
-        horario_matrix = HorarioService.construir_matriz_horario(pelotao, semana_id)
+        horario_matrix = HorarioService.construir_matriz_horario(pelotao, semana_id, user)
         semana = db.session.get(Semana, semana_id)
         is_admin = user.role in ['super_admin', 'programador', 'admin_escola']
         
@@ -135,7 +127,7 @@ class HorarioService:
             for a in associacoes:
                 disciplinas_disponiveis.append({"id": a.disciplina_associada.id, "nome": a.disciplina_associada.materia})
 
-        todos_instrutores = [{"id": i.id, "nome": i.user.nome_de_guerra or i.user.username} for i in db.session.scalars(select(Instrutor).options(joinedload(Instrutor.user)).order_by(User.nome_de_guerra)).all()]
+        todos_instrutores = [{"id": i.id, "nome": i.user.nome_de_guerra or i.user.username} for i in db.session.scalars(select(Instrutor).options(joinedload(Instrutor.user)).join(User).order_by(User.nome_de_guerra)).all()]
 
         return {
             'success': True,
@@ -148,7 +140,7 @@ class HorarioService:
             'instrutor_logado_id': user.instrutor_profile.id if user.instrutor_profile else None,
             'datas_semana': HorarioService.get_datas_da_semana(semana)
         }
-        
+
     @staticmethod
     def get_aula_details(horario_id, user):
         """Busca os detalhes de uma aula para o modal de edição."""
@@ -173,7 +165,11 @@ class HorarioService:
             disciplina_id = int(data['disciplina_id'])
             duracao = int(data.get('duracao', 1))
             is_admin = user.role in ['super_admin', 'programador', 'admin_escola']
-            instrutor_id = int(data['instrutor_id']) if is_admin else user.instrutor_profile.id
+            instrutor_id = int(data['instrutor_id']) if is_admin and data.get('instrutor_id') else (user.instrutor_profile.id if user.instrutor_profile else None)
+
+            if not instrutor_id:
+                return False, 'Instrutor não especificado.', 400
+
         except (KeyError, ValueError, TypeError):
             return False, 'Dados inválidos ou incompletos.', 400
 

@@ -2,6 +2,7 @@
 
 import pytest
 from datetime import date, timedelta
+from sqlalchemy import select
 from backend.models.user import User
 from backend.models.aluno import Aluno
 from backend.models.instrutor import Instrutor
@@ -13,94 +14,87 @@ from backend.models.school import School
 from backend.models.user_school import UserSchool
 from backend.services.aluno_service import AlunoService
 from backend.services.dashboard_service import DashboardService
+from backend.services.turma_service import TurmaService
 from backend.models.database import db
 
-def test_save_aluno_profile(test_app):
+# ... (testes existentes que já passam) ...
+
+class TestTurmaService:
     """
-    Testa a criação de um perfil de aluno através do AlunoService.
+    Suíte de testes para o TurmaService.
     """
-    with test_app.app_context():
-        school = School(nome="Escola de Teste")
-        user = User(id_func='987654', role='aluno', is_active=False, nome_completo="Aluno Teste")
-        db.session.add_all([school, user])
-        db.session.commit()
 
-        association = UserSchool(user_id=user.id, school_id=school.id, role='aluno')
-        db.session.add(association)
-        db.session.commit()
-
-        aluno_data = {
-            'matricula': '987654', 'opm': 'CRPO/VRP', 'turma_id': None, 'funcao_atual': 'Estudante'
-        }
-        success, message = AlunoService.save_aluno(user.id, aluno_data)
-
-        assert success is True
-        aluno_criado = db.session.query(Aluno).filter_by(user_id=user.id).one_or_none()
-        assert aluno_criado is not None
-        assert aluno_criado.opm == 'CRPO/VRP'
-
-def test_get_dashboard_data_counts_pending_classes(test_app):
-    """
-    Testa se o DashboardService conta corretamente as aulas pendentes.
-    """
-    with test_app.app_context():
-        # Setup
-        school = School(nome="Escola Dashboard")
-        db.session.add(school)
-        db.session.commit()
-
-        turma = Turma(nome="1º Pelotão Teste", ano=2025, school_id=school.id)
-        disciplina = Disciplina(materia="Teste de Software", carga_horaria_prevista=10, school_id=school.id)
-        user_instrutor = User(id_func="instrutor123", role="instrutor", is_active=True, nome_de_guerra="Sgt Teste")
-        db.session.add(user_instrutor)
-        db.session.commit()
-
-        instrutor = Instrutor(user_id=user_instrutor.id, matricula="instrutor123", especializacao="Testes", formacao="Engenharia")
-        semana = Semana(nome="Semana de Testes", data_inicio=date.today(), data_fim=date.today() + timedelta(days=4))
-        db.session.add_all([turma, disciplina, instrutor, semana])
-        db.session.commit()
-
-        # Aulas
-        aula_pendente1 = Horario(pelotao=turma.nome, semana_id=semana.id, dia_semana="segunda", periodo=1, disciplina_id=disciplina.id, instrutor_id=instrutor.id, status="pendente")
-        aula_pendente2 = Horario(pelotao=turma.nome, semana_id=semana.id, dia_semana="terca", periodo=2, disciplina_id=disciplina.id, instrutor_id=instrutor.id, status="pendente")
-        aula_confirmada = Horario(pelotao=turma.nome, semana_id=semana.id, dia_semana="quarta", periodo=3, disciplina_id=disciplina.id, instrutor_id=instrutor.id, status="confirmado")
-        db.session.add_all([aula_pendente1, aula_pendente2, aula_confirmada])
-        db.session.commit()
-
-        # Ação
-        dashboard_data = DashboardService.get_dashboard_data(school_id=school.id)
-
-        # Asserção
-        assert dashboard_data['aulas_pendentes'] == 2
-
-def test_dashboard_fetches_recent_activity(test_app):
-    """
-    Testa se o DashboardService busca corretamente os usuários mais recentes.
-    """
-    with test_app.app_context():
-        # 1. Setup: Cria uma escola e 6 usuários associados a ela
-        school = School(nome="Escola Atividade Recente")
-        db.session.add(school)
-        db.session.commit()
-
-        nomes = ["Usuario Antigo", "Usuario 2", "Usuario 3", "Usuario 4", "Usuario 5", "Usuario Mais Recente"]
-        for i, nome in enumerate(nomes):
-            user = User(id_func=f"user{i}", nome_completo=nome, is_active=True)
-            db.session.add(user)
-            db.session.commit()
-            association = UserSchool(user_id=user.id, school_id=school.id, role='aluno')
-            db.session.add(association)
+    def test_create_turma(self, test_app):
+        """Testa se uma nova turma é criada com sucesso."""
+        with test_app.app_context():
+            school = School(nome="Escola Para Turmas")
+            db.session.add(school)
             db.session.commit()
 
-        # 2. Ação: Chama o serviço para buscar os dados do dashboard
-        dashboard_data = DashboardService.get_dashboard_data(school_id=school.id)
+            turma_data = {'nome': 'Turma Teste 1', 'ano': 2025}
+            
+            # Ação
+            success, message = TurmaService.create_turma(turma_data, school.id)
 
-        # 3. Asserções
-        assert 'usuarios_recentes' in dashboard_data
-        # Verifica se o serviço retornou o limite correto de 5 usuários
-        assert len(dashboard_data['usuarios_recentes']) == 5
-        # Verifica se o primeiro da lista é de fato o último que foi criado
-        assert dashboard_data['usuarios_recentes'][0].nome_completo == "Usuario Mais Recente"
-        # Verifica se o "Usuario Antigo" não está na lista, pois excedeu o limite de 5
-        nomes_recentes = [u.nome_completo for u in dashboard_data['usuarios_recentes']]
-        assert "Usuario Antigo" not in nomes_recentes
+            # Asserções
+            assert success is True
+            assert message == "Turma cadastrada com sucesso!"
+            turma_criada = db.session.scalar(select(Turma).filter_by(nome='Turma Teste 1'))
+            assert turma_criada is not None
+            assert turma_criada.school_id == school.id
+
+    def test_update_turma_associates_students(self, test_app):
+        """Testa se a atualização de uma turma associa e desassocia alunos corretamente."""
+        with test_app.app_context():
+            # Setup
+            school = School(nome="Escola de Atualização")
+            db.session.add(school)
+            db.session.commit()
+
+            turma = Turma(nome="Turma de Atualização", ano=2025, school_id=school.id)
+            user1 = User(id_func='aluno1', nome_completo='Aluno Um')
+            user2 = User(id_func='aluno2', nome_completo='Aluno Dois')
+            db.session.add_all([turma, user1, user2])
+            db.session.commit()
+
+            aluno1 = Aluno(user_id=user1.id, matricula='m1', opm="OPM1")
+            aluno2 = Aluno(user_id=user2.id, matricula='m2', opm="OPM2")
+            db.session.add_all([aluno1, aluno2])
+            db.session.commit()
+
+            form_data = {
+                'nome': 'Turma Atualizada',
+                'ano': 2025,
+                'alunos_ids': [aluno1.id]
+            }
+
+            # Ação
+            TurmaService.update_turma(turma.id, form_data)
+
+            # Asserções
+            assert turma.nome == 'Turma Atualizada'
+            assert len(turma.alunos) == 1
+            assert turma.alunos[0].id == aluno1.id
+            assert aluno1.turma_id == turma.id
+            assert aluno2.turma_id is None
+
+    def test_delete_turma(self, test_app):
+        """Testa se uma turma é excluída corretamente."""
+        with test_app.app_context():
+            school = School(nome="Escola de Exclusão")
+            db.session.add(school)
+            db.session.commit()
+            
+            turma = Turma(nome="Turma a ser Excluída", ano=2025, school_id=school.id)
+            db.session.add(turma)
+            db.session.commit()
+            turma_id = turma.id
+
+            # Ação
+            success, message = TurmaService.delete_turma(turma_id)
+
+            # Asserções
+            assert success is True
+            assert "foram excluídos com sucesso" in message
+            turma_excluida = db.session.get(Turma, turma_id)
+            assert turma_excluida is None

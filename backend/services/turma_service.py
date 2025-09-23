@@ -1,28 +1,29 @@
 # backend/services/turma_service.py
 
+from flask import current_app
+from sqlalchemy import select
 from ..models.database import db
 from ..models.turma import Turma
 from ..models.aluno import Aluno
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.turma_cargo import TurmaCargo
-from sqlalchemy import select
-from flask import current_app
 
 class TurmaService:
     @staticmethod
-    def create_turma(data):
+    def create_turma(data, school_id):
+        """Cria uma nova turma para uma escola específica."""
         nome_turma = data.get('nome')
         ano = data.get('ano')
         alunos_ids = data.get('alunos_ids', [])
 
-        if not nome_turma or not ano:
-            return False, 'Nome da turma e ano são obrigatórios.'
+        if not all([nome_turma, ano, school_id]):
+            return False, 'Nome, Ano e ID da Escola são obrigatórios.'
 
-        if db.session.execute(select(Turma).filter_by(nome=nome_turma)).scalar_one_or_none():
-            return False, f'Uma turma com o nome "{nome_turma}" já existe.'
+        if db.session.execute(select(Turma).filter_by(nome=nome_turma, school_id=school_id)).scalar_one_or_none():
+            return False, f'Uma turma com o nome "{nome_turma}" já existe nesta escola.'
 
         try:
-            nova_turma = Turma(nome=nome_turma, ano=int(ano))
+            nova_turma = Turma(nome=nome_turma, ano=int(ano), school_id=school_id)
             db.session.add(nova_turma)
             db.session.flush()
 
@@ -38,13 +39,14 @@ class TurmaService:
 
     @staticmethod
     def update_turma(turma_id, data):
+        """Atualiza os dados de uma turma e a lista de seus alunos."""
         turma = db.session.get(Turma, turma_id)
         if not turma:
             return False, "Turma não encontrada."
-        
+            
         novo_nome = data.get('nome')
-        if db.session.execute(select(Turma).where(Turma.nome == novo_nome, Turma.id != turma_id)).scalar_one_or_none():
-            return False, f'Já existe outra turma com o nome "{novo_nome}".'
+        if db.session.execute(select(Turma).where(Turma.nome == novo_nome, Turma.id != turma_id, Turma.school_id == turma.school_id)).scalar_one_or_none():
+            return False, f'Já existe outra turma com o nome "{novo_nome}" nesta escola.'
             
         try:
             turma.nome = novo_nome
@@ -52,10 +54,8 @@ class TurmaService:
             
             alunos_ids_selecionados = data.get('alunos_ids', [])
             
-            # Desvincula todos os alunos atuais da turma
             db.session.query(Aluno).filter(Aluno.turma_id == turma_id).update({"turma_id": None})
             
-            # Vincula os novos alunos selecionados
             if alunos_ids_selecionados:
                 db.session.query(Aluno).filter(Aluno.id.in_(alunos_ids_selecionados)).update({"turma_id": turma_id})
                 
@@ -68,16 +68,16 @@ class TurmaService:
 
     @staticmethod
     def delete_turma(turma_id):
+        """Exclui uma turma e todos os seus vínculos associados."""
         turma = db.session.get(Turma, turma_id)
         if not turma:
             return False, 'Turma não encontrada.'
 
         try:
             nome_turma_excluida = turma.nome
-            # Desvincula alunos
+            
             db.session.query(Aluno).filter(Aluno.turma_id == turma_id).update({"turma_id": None})
             
-            # Exclui cargos e associações de disciplinas
             db.session.query(TurmaCargo).filter_by(turma_id=turma_id).delete()
             db.session.query(DisciplinaTurma).filter_by(pelotao=turma.nome).delete()
             
@@ -91,14 +91,19 @@ class TurmaService:
 
     @staticmethod
     def get_cargos_da_turma(turma_id, cargos_lista):
-        cargos_db = db.session.scalars(select(TurmaCargo).where(TurmaCargo.turma_id == turma_id)).all()
+        """Busca os cargos de uma turma e garante que todos da lista existam."""
+        cargos_db = db.session.scalars(
+            select(TurmaCargo).where(TurmaCargo.turma_id == turma_id)
+        ).all()
         cargos_atuais = {cargo.cargo_nome: cargo.aluno_id for cargo in cargos_db}
+
         for cargo in cargos_lista:
             cargos_atuais.setdefault(cargo, None)
         return cargos_atuais
 
     @staticmethod
     def atualizar_cargos(turma_id, form_data, cargos_lista):
+        """Cria ou atualiza os cargos de uma turma com base nos dados do formulário."""
         if not db.session.get(Turma, turma_id):
             return False, 'Turma não encontrada.'
         
@@ -112,7 +117,10 @@ class TurmaService:
                 ).first()
 
                 if cargo:
-                    cargo.aluno_id = aluno_id
+                    if aluno_id is None:
+                        db.session.delete(cargo)
+                    else:
+                        cargo.aluno_id = aluno_id
                 elif aluno_id:
                     novo_cargo = TurmaCargo(turma_id=turma_id, cargo_nome=cargo_nome, aluno_id=aluno_id)
                     db.session.add(novo_cargo)
