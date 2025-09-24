@@ -39,7 +39,7 @@ class PasswordResetToken(db.Model):
         return check_password_hash(self.token_hash, raw_token)
 
     def is_expired(self) -> bool:
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     def is_usable(self) -> bool:
         return (not self.revoked) and (self.used_at is None) and (not self.is_expired()) and (self.attempts < self.max_attempts)

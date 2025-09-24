@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import typing as t
-from datetime import datetime
+from datetime import datetime, timezone
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,7 +19,7 @@ class School(db.Model):
     nome: Mapped[str] = mapped_column(db.String(150), nullable=False)
     slug: Mapped[t.Optional[str]] = mapped_column(db.String(150), nullable=True, unique=True)
     is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
     # RELACIONAMENTOS CORRIGIDOS
     user_schools: Mapped[list['UserSchool']] = relationship('UserSchool', back_populates='school', cascade="all, delete-orphan")

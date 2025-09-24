@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing as t
-from datetime import datetime
+from datetime import datetime, timezone
 from .database import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,7 +16,7 @@ class SiteConfig(db.Model):
     config_type: Mapped[str] = mapped_column(db.String(50), default='text')  # 'text', 'image', 'color'
     description: Mapped[t.Optional[str]] = mapped_column(db.String(255))
     category: Mapped[str] = mapped_column(db.String(50), default='general')  # 'general', 'dashboard', 'sidebar'
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     updated_by: Mapped[t.Optional[int]] = mapped_column(db.ForeignKey('users.id'))
 
     # Relacionamento

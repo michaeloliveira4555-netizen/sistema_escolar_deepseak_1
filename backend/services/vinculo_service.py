@@ -87,6 +87,7 @@ class VinculoService:
 
         try:
             db.session.delete(vinculo)
+            db.session.commit()
             return True, 'Vínculo excluído com sucesso!'
         except Exception as e:
             db.session.rollback()

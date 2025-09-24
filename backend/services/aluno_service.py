@@ -11,7 +11,7 @@ from ..models.disciplina import Disciplina
 from ..models.historico_disciplina import HistoricoDisciplina
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+from datetime import datetime, timezone
 from utils.image_utils import allowed_file
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
