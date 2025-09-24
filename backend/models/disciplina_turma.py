@@ -20,7 +20,8 @@ class DisciplinaTurma(db.Model):
     instrutor_id_1: Mapped[t.Optional[int]] = mapped_column(db.ForeignKey('instrutores.id'), nullable=True)
     instrutor_id_2: Mapped[t.Optional[int]] = mapped_column(db.ForeignKey('instrutores.id'), nullable=True)
 
-    disciplina_associada: Mapped["Disciplina"] = relationship(back_populates="associacoes_turmas")
+    # CORREÇÃO APLICADA AQUI: Renomeado de 'disciplina_associada' para 'disciplina'
+    disciplina: Mapped["Disciplina"] = relationship(back_populates="associacoes_turmas")
     instrutor_1: Mapped[t.Optional["Instrutor"]] = relationship(foreign_keys=[instrutor_id_1])
     instrutor_2: Mapped[t.Optional["Instrutor"]] = relationship(foreign_keys=[instrutor_id_2])
 

@@ -4,6 +4,10 @@ import pytest
 from backend.app import create_app
 from backend.models.database import db as _db
 from backend.models.user import User
+from backend.models.school import School
+from backend.models.user_school import UserSchool
+from backend.models.aluno import Aluno
+from backend.models.turma import Turma
 from backend.config import Config
 from flask_login import login_user, logout_user
 
@@ -72,3 +76,44 @@ def logged_in_super_admin(test_app, new_super_admin):
         login_user(new_super_admin)
         yield new_super_admin
         logout_user()
+
+@pytest.fixture(scope='function')
+def setup_school_with_users(db_session):
+    """
+    Cria uma escola, um admin para a escola e dois alunos em uma turma
+    para usar como base em outros testes de serviço.
+    """
+    # 1. Cria a Escola
+    school = School(nome="Escola de Testes Base")
+    db_session.add(school)
+    db_session.commit()
+
+    # 2. Cria a Turma
+    turma = Turma(nome="1º Pelotão Base", ano=2025, school_id=school.id)
+    db_session.add(turma)
+    db_session.commit()
+
+    # 3. Cria o Admin
+    admin_user = User(id_func='admin_base', nome_completo='Admin Base', role='admin_escola', is_active=True)
+    db_session.add(admin_user)
+    db_session.commit()
+    db_session.add(UserSchool(user_id=admin_user.id, school_id=school.id, role='admin_escola'))
+
+    # 4. Cria os Alunos
+    user_aluno1 = User(id_func='aluno_base1', nome_completo='Aluno Base Um', role='aluno', is_active=True)
+    user_aluno2 = User(id_func='aluno_base2', nome_completo='Aluno Base Dois', role='aluno', is_active=True)
+    db_session.add_all([user_aluno1, user_aluno2])
+    db_session.commit()
+
+    aluno1 = Aluno(user_id=user_aluno1.id, matricula='m_base1', opm="OPM Base", turma_id=turma.id)
+    aluno2 = Aluno(user_id=user_aluno2.id, matricula='m_base2', opm="OPM Base", turma_id=turma.id)
+    db_session.add_all([aluno1, aluno2])
+    db_session.commit()
+
+    db_session.add_all([
+        UserSchool(user_id=user_aluno1.id, school_id=school.id, role='aluno'),
+        UserSchool(user_id=user_aluno2.id, school_id=school.id, role='aluno')
+    ])
+    db_session.commit()
+    
+    return school, admin_user, [aluno1, aluno2]

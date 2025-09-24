@@ -1,6 +1,7 @@
 from ..models.database import db
 from ..models.disciplina_turma import DisciplinaTurma
 from ..models.turma import Turma
+from ..models.instrutor import Instrutor
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from flask import current_app
@@ -8,10 +9,12 @@ from flask import current_app
 class VinculoService:
     @staticmethod
     def get_all_vinculos(turma_filtrada: str = '', disciplina_filtrada_id: int = None):
+        # CORREÇÃO APLICADA AQUI: Usando o nome correto do relacionamento 'disciplina'
         query = db.select(DisciplinaTurma).options(
-            joinedload(DisciplinaTurma.instrutor_1).joinedload(db.aliased(db.Model, name='User')).joinedload(db.aliased(db.Model, name='Instrutor')),
+            joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
             joinedload(DisciplinaTurma.disciplina)
         ).filter(DisciplinaTurma.instrutor_id_1.isnot(None))
+
 
         if turma_filtrada:
             query = query.filter(DisciplinaTurma.pelotao == turma_filtrada)
@@ -49,6 +52,7 @@ class VinculoService:
                 db.session.add(novo_vinculo)
                 message = 'Vínculo criado com sucesso!'
             
+            db.session.commit()
             return True, message
         except Exception as e:
             db.session.rollback()
@@ -73,6 +77,7 @@ class VinculoService:
             vinculo.pelotao = turma.nome
             vinculo.disciplina_id = disciplina_id
             
+            db.session.commit()
             return True, 'Vínculo atualizado com sucesso!'
         except Exception as e:
             db.session.rollback()
