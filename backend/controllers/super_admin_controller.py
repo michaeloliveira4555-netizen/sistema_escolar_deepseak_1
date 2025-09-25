@@ -36,8 +36,19 @@ def exit_view():
 @super_admin_or_programmer_required
 def manage_schools():
     if request.method == 'POST':
-        # ... (lógica do POST)
-        pass
+        # --- CÓDIGO CORRIGIDO ---
+        school_name = request.form.get('school_name')
+        if not school_name:
+            flash('O nome da escola é obrigatório.', 'danger')
+        else:
+            success, message = SchoolService.create_school(school_name)
+            if success:
+                flash(message, 'success')
+            else:
+                flash(message, 'danger')
+        return redirect(url_for('super_admin.manage_schools'))
+        # --- FIM DA CORREÇÃO ---
+        
     schools = db.session.query(School).order_by(School.nome).all()
     return render_template('super_admin/manage_schools.html', schools=schools)
 
