@@ -1,6 +1,7 @@
 # backend/app.py
 
 import os
+import time  # <-- ADICIONE ESTA LINHA
 from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -116,6 +117,14 @@ def register_blueprints(app):
 
 def register_handlers_and_processors(app):
     """Registra hooks, context processors e error handlers."""
+
+    # --- ADICIONE ESTA NOVA FUNÇÃO AQUI ---
+    @app.context_processor
+    def inject_cache_buster():
+        """Adiciona um número aleatório ao contexto para evitar o cache de CSS/JS."""
+        return dict(cache_buster=int(time.time()))
+    # --- FIM DA NOVA FUNÇÃO ---
+
     @app.context_processor
     def inject_site_configs():
         from backend.services.site_config_service import SiteConfigService

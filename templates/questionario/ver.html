@@ -5,7 +5,7 @@
 {% block content %}
 <div class="content-header">
     <h1>Visualizar Questionários</h1>
-    <p>Selecione um questionário para ver os resultados detalhados.</p>
+    <p>Selecione um questionário para gerir os seus dados.</p>
 </div>
 
 <div class="table-container">
@@ -23,7 +23,14 @@
                     <tr>
                         <td data-label="Título">{{ questionario.titulo }}</td>
                         <td data-label="Ações" class="text-right">
-                            <a href="{{ url_for('questionario.resultado_questionario', questionario_id=questionario.id) }}" class="btn btn-sm btn-info">Ver Resultados</a>
+                            <div class="btn-group">
+                                <a href="{{ url_for('questionario.resultado_questionario', questionario_id=questionario.id) }}" class="btn btn-sm btn-info">Ver Resultados</a>
+                                <a href="{{ url_for('questionario.ver_participantes', questionario_id=questionario.id) }}" class="btn btn-sm btn-secondary">Ver Participantes</a>
+                                <form method="POST" action="{{ url_for('questionario.excluir_questionario', questionario_id=questionario.id) }}" onsubmit="return confirm('ATENÇÃO: Tem a certeza de que deseja excluir este questionário? Todas as respostas associadas serão permanentemente perdidas.');" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

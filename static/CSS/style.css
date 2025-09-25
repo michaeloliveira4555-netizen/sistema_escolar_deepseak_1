@@ -855,8 +855,75 @@ body.weekend-panel-open .weekend-toggle-btn { right: 450px; }
         width: 0;
         overflow: hidden;
     }
-    /* Mantém os botões em linha, mas permite que quebrem a linha se necessário */
     .btn-group {
         flex-wrap: wrap;
     }
+}
+
+/* ==========================================================================
+   14. Estilos do Questionário
+   ========================================================================== */
+
+.user-type-selector {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f8fafc;
+}
+
+.question-block {
+    margin-bottom: 2.5rem; /* Aumenta o espaço entre as perguntas */
+}
+
+.question-title {
+    display: block;
+    font-size: 1.3rem !important; /* Aumenta a especificidade */
+    font-weight: 700 !important;
+    color: var(--color-secondary) !important;
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 0.5rem !important;
+    border-bottom: 1px solid #e2e8f0 !important; /* Linha de separação */
+}
+
+.answer-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.answer-option {
+    position: relative;
+}
+
+.answer-option input[type="radio"] {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+}
+
+.answer-option label {
+    display: inline-block;
+    background-color: var(--color-white);
+    padding: 0.75rem 1.25rem;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s ease-in-out;
+    font-size: 1rem !important; /* Garante que a fonte da resposta seja normal */
+    font-weight: 400 !important;
+}
+
+.answer-option label:hover {
+    border-color: var(--color-primary-light);
+    background-color: #eff6ff;
+}
+
+.answer-option input[type="radio"]:checked+label {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+    font-weight: 600 !important;
 }
