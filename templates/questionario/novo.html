@@ -10,6 +10,9 @@
 
 <div class="table-container">
     <form method="POST" action="{{ url_for('questionario.novo_questionario') }}">
+        {# --- CORREÇÃO APLICADA AQUI --- #}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="form-group">
             <label for="titulo"><strong>Título do Questionário</strong></label>
             <input type="text" id="titulo" name="titulo" class="form-control" required placeholder="Ex: Pesquisa de Satisfação do Curso">
