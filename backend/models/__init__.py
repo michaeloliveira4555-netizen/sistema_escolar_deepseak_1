@@ -20,6 +20,12 @@ from .password_reset_token import PasswordResetToken
 from .site_config import SiteConfig
 from .image_asset import ImageAsset
 from .turma_cargo import TurmaCargo
+# IMPORTAÇÃO DOS NOVOS MODELOS
+from .questionario import Questionario
+from .pergunta import Pergunta
+from .opcao_resposta import OpcaoResposta
+from .resposta import Resposta
+
 
 __all__ = [
     'db',
@@ -38,5 +44,10 @@ __all__ = [
     'PasswordResetToken',
     'SiteConfig',
     'ImageAsset',
-    'TurmaCargo'
+    'TurmaCargo',
+    # EXPORTAÇÃO DOS NOVOS MODELOS
+    'Questionario',
+    'Pergunta',
+    'OpcaoResposta',
+    'Resposta'
 ]

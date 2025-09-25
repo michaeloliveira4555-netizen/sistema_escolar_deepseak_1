@@ -28,6 +28,11 @@ from backend.models.turma import Turma
 from backend.models.turma_cargo import TurmaCargo
 from backend.models.user_school import UserSchool
 from backend.services.asset_service import AssetService
+# IMPORTAÇÃO DOS NOVOS MODELOS DE QUESTIONÁRIO
+from backend.models.questionario import Questionario
+from backend.models.pergunta import Pergunta
+from backend.models.opcao_resposta import OpcaoResposta
+from backend.models.resposta import Resposta
 
 
 def create_app(config_class=Config):
@@ -86,6 +91,9 @@ def register_blueprints(app):
     from backend.controllers.relatorios_controller import relatorios_bp
     from backend.controllers.super_admin_controller import super_admin_bp
     from backend.controllers.admin_controller import admin_escola_bp
+    # IMPORTAÇÃO DO NOVO BLUEPRINT DE QUESTIONÁRIO
+    from backend.controllers.questionario_controller import questionario_bp
+
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(aluno_bp, url_prefix='/aluno')
@@ -103,6 +111,8 @@ def register_blueprints(app):
     app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
     app.register_blueprint(super_admin_bp, url_prefix='/super-admin')
     app.register_blueprint(admin_escola_bp, url_prefix='/admin-escola')
+    # REGISTO DO NOVO BLUEPRINT DE QUESTIONÁRIO
+    app.register_blueprint(questionario_bp, url_prefix='/questionario')
 
 def register_handlers_and_processors(app):
     """Registra hooks, context processors e error handlers."""
