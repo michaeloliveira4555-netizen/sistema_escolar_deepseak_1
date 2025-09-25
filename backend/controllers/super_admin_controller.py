@@ -102,3 +102,11 @@ def create_administrator():
         flash(f'Erro ao criar administrador: {e}', 'danger')
 
     return redirect(url_for('super_admin.manage_schools'))
+
+@super_admin_bp.route('/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+@super_admin_or_programmer_required
+def delete_user(user_id):
+    success, message = UserService.delete_user_by_id(user_id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('super_admin.manage_assignments'))

@@ -45,7 +45,8 @@ def listar_disciplinas():
 
     return render_template('listar_disciplinas.html', disciplinas=disciplinas, form=form, delete_form=delete_form, ciclo_selecionado=ciclo_selecionado)
 
-@disciplina_bp.route('/adicionar', methods=['POST'])
+# --- CORREÇÃO APLICADA AQUI ---
+@disciplina_bp.route('/adicionar', methods=['GET', 'POST']) # 1. Adicionado 'GET'
 @login_required
 @admin_or_programmer_required
 def adicionar_disciplina():
@@ -55,15 +56,22 @@ def adicionar_disciplina():
         return redirect(url_for('disciplina.listar_disciplinas'))
         
     form = DisciplinaForm()
+    
+    # 2. Lógica para o método POST (envio do formulário)
     if form.validate_on_submit():
         success, message = DisciplinaService.create_disciplina(form.data, school_id)
         flash(message, 'success' if success else 'danger')
-    else:
+        if success:
+            return redirect(url_for('disciplina.listar_disciplinas'))
+    elif request.method == 'POST': # Captura erros de validação no POST
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Erro no campo '{getattr(form, field).label.text}': {error}", 'danger')
 
-    return redirect(url_for('disciplina.listar_disciplinas'))
+    # 3. Lógica para o método GET (exibição da página)
+    # Se a requisição for GET, ele simplesmente renderiza o template abaixo
+    return render_template('adicionar_disciplina.html', form=form)
+
 
 @disciplina_bp.route('/editar/<int:disciplina_id>', methods=['GET', 'POST'])
 @login_required

@@ -87,6 +87,11 @@
                                     <input type="hidden" name="school_id" value="{{ assignment.school_id }}">
                                     <button type="submit" class="btn btn-danger btn-sm">Remover</button>
                                 </form>
+
+                                <form method="POST" action="{{ url_for('super_admin.delete_user', user_id=assignment.user_id) }}" onsubmit="return confirm('ATENÇÃO: Esta ação irá EXCLUIR PERMANENTEMENTE o usuário e todos os seus dados. Deseja continuar?');" style="display: inline-block;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Exclui permanentemente este usuário do sistema.">Excluir Usuário</button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
