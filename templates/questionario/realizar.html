@@ -10,8 +10,10 @@
 
 <div class="table-container">
     <form id="realizar-form" method="POST" action="{{ url_for('questionario.realizar_questionario') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="form-group">
-            <label for="questionario_id"><strong>1. Selecione o Questionário</strong></label>
+            <label for="questionario_id" class="form-label fw-bold">1. Selecione o Questionário</label>
             <select id="questionario_id" name="questionario_id" class="form-control" required>
                 <option value="">-- Selecione um questionário --</option>
                 {% for questionario in questionarios %}
@@ -20,9 +22,9 @@
             </select>
         </div>
         
-        <div class="form-group">
-            <label for="tipo_usuario"><strong>2. Selecione o Público-Alvo</strong></label>
-            <div class="btn-group" role="group">
+        <div class="user-type-selector">
+            <label class="form-label fw-bold">2. Selecione o Público-Alvo</label>
+            <div class="btn-group w-100" role="group">
                 <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" autocomplete="off">
                 <label class="btn btn-outline-primary" for="tipo_aluno">Aluno</label>
 
@@ -32,7 +34,7 @@
         </div>
         
         <div id="selecao_usuario_container" class="form-group" style="display: none;">
-            <label for="user_id"><strong>3. Selecione o Participante</strong></label>
+            <label for="user_id" class="form-label fw-bold">3. Selecione o Participante</label>
             <select id="user_id" name="user_id" class="form-control" required>
                 </select>
         </div>
@@ -47,6 +49,64 @@
         </div>
     </form>
 </div>
+
+<style>
+    .user-type-selector {
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        background-color: #f8fafc;
+    }
+
+    .question-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--color-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .answer-options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .answer-option {
+        position: relative;
+    }
+
+    .answer-option input[type="radio"] {
+        opacity: 0;
+        position: fixed;
+        width: 0;
+    }
+
+    .answer-option label {
+        display: inline-block;
+        background-color: var(--color-white);
+        padding: 0.75rem 1.25rem;
+        border: 2px solid var(--color-border);
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .answer-option label:hover {
+        border-color: var(--color-primary-light);
+        background-color: #eff6ff;
+    }
+
+    .answer-option input[type="radio"]:checked+label {
+        background-color: var(--color-primary);
+        color: var(--color-white);
+        border-color: var(--color-primary);
+        font-weight: 600;
+    }
+</style>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -84,17 +144,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         const perguntaDiv = document.createElement('div');
                         perguntaDiv.className = 'form-group mb-4';
                         
-                        let opcoesHtml = '';
+                        let opcoesHtml = '<div class="answer-options-container">';
                         p.opcoes.forEach(o => {
                             opcoesHtml += `
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="pergunta_${p.id}" id="opcao_${o.id}" value="${o.id}" required>
-                                    <label class="form-check-label" for="opcao_${o.id}">${o.texto}</label>
+                                <div class="answer-option">
+                                    <input type="radio" name="pergunta_${p.id}" id="opcao_${o.id}" value="${o.id}" required>
+                                    <label for="opcao_${o.id}">${o.texto}</label>
                                 </div>
                             `;
                         });
+                        opcoesHtml += '</div>';
 
-                        // Adiciona campo de texto se a opção for "Outro"
                         if (p.opcoes.some(o => o.texto === 'Outro')) {
                             const outroOpcaoId = p.opcoes.find(o => o.texto === 'Outro').id;
                              opcoesHtml += `
@@ -102,8 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <input type="text" name="outro_${p.id}" class="form-control" placeholder="Por favor, especifique.">
                                 </div>
                              `;
-                             // Event listener para mostrar o campo de texto
-                             setTimeout(() => { // Timeout para garantir que o elemento está no DOM
+                             
+                             setTimeout(() => {
                                 document.querySelectorAll(`input[name="pergunta_${p.id}"]`).forEach(radio => {
                                     radio.addEventListener('change', (e) => {
                                         const outroContainer = document.getElementById(`outro_container_${p.id}`);
@@ -119,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                              }, 0);
                         }
 
-                        perguntaDiv.innerHTML = `<label><strong>${p.texto}</strong></label>${opcoesHtml}`;
+                        perguntaDiv.innerHTML = `<label class="question-title">${p.texto}</label>${opcoesHtml}`;
                         perguntasContainer.appendChild(perguntaDiv);
                     });
                     checkFormValidity();
