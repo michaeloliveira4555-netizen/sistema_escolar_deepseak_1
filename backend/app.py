@@ -3,6 +3,7 @@
 import os
 import time  # <-- ADICIONE ESTA LINHA
 from flask import Flask, render_template
+import click
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
@@ -200,6 +201,16 @@ def register_cli_commands(app):
                 db.session.add(user)
             db.session.commit()
             print("Usuário programador criado com sucesso!")
+
+    @app.cli.command("fix-role")
+    @click.argument("id_func")
+    @click.argument("new_role")
+    def fix_role_command(id_func, new_role):
+        """Atualiza a função (role) de um usuário. Ex: flask fix-role 123456 aluno"""
+        from scripts.fix_user_role import fix_user_role_for_cli
+        fix_user_role_for_cli(id_func, new_role)
+        print("Comando executado.")
+
 
 # Este bloco só é executado quando o arquivo é chamado diretamente
 if __name__ == '__main__':

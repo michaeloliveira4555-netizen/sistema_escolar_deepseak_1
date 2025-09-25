@@ -10,11 +10,15 @@
 
 <div class="table-container" style="max-width: 600px; margin: 0 auto;">
     <div class="table-header">
-        <h3>Novo Pré-Cadastro</h3>
+        <h3>Novo Pré-Cadastro de {{ role_predefinido|title if role_predefinido else 'Usuário' }}</h3>
     </div>
     
-    <form method="POST" action="{{ url_for('admin.pre_cadastro') }}" style="padding: 1rem 0;">
+    <form method="POST" action="{{ url_for('main.pre_cadastro', role=role_predefinido) }}" style="padding: 1rem 0;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% if role_predefinido %}
+        <input type="hidden" name="role" value="{{ role_predefinido }}">
+        {% endif %}
 
         {% if current_user.role in ['super_admin', 'programador'] %}
         <div class="form-group mb-3">
@@ -26,16 +30,16 @@
                 {% endfor %}
             </select>
         </div>
-        {% endif %}
-
+        
         <div class="form-group mb-3">
-            <label for="role">Função dos Usuários</label>
-            <select id="role" name="role" class="form-control" required>
-                <option value="aluno" selected>Aluno</option>
-                <option value="instrutor">Instrutor</option>
+            <label for="role_select">Função dos Usuários</label>
+            <select id="role_select" name="role" class="form-control" required>
+                <option value="aluno" {% if role_predefinido == 'aluno' %}selected{% endif %}>Aluno</option>
+                <option value="instrutor" {% if role_predefinido == 'instrutor' %}selected{% endif %}>Instrutor</option>
                 <option value="admin_escola">Admin da Escola</option>
             </select>
         </div>
+        {% endif %}
 
         <div class="form-group">
             <label for="id_funcs">Identidades Funcionais (Id Func)</label>

@@ -67,9 +67,10 @@ def pre_cadastro():
         if role_arg and not form_data.get('role'):
             form_data['role'] = role_arg
 
-        id_func_raw = form_data.get('id_func', '').strip()
-        if '/' in id_func_raw:
-            partes = [p.strip() for p in id_func_raw.split('/') if p.strip()]
+        # CORREÇÃO AQUI: Lendo 'id_funcs' em vez de 'id_func'
+        id_funcs_raw = form_data.get('id_funcs', '').strip() 
+        if '/' in id_funcs_raw or ' ' in id_funcs_raw or ',' in id_funcs_raw or ';' in id_funcs_raw:
+            partes = [p.strip() for p in id_funcs_raw.replace(',', ' ').replace(';', ' ').split() if p.strip()]
             ids_numericos = [p for p in partes if p.isdigit()]
 
             if not form_data.get('role'):
@@ -83,6 +84,8 @@ def pre_cadastro():
                 flash('Falha ao pré-cadastrar usuários em lote.', 'danger')
             return redirect(url_for('main.pre_cadastro', role=role_arg) if role_arg else url_for('main.pre_cadastro'))
         else:
+            # Para manter compatibilidade com um único ID, renomeamos o campo para o service
+            form_data['id_func'] = id_funcs_raw
             success, message = UserService.pre_register_user(form_data)
             if success:
                 flash(message, 'success')
@@ -90,4 +93,5 @@ def pre_cadastro():
                 flash(message, 'danger')
             return redirect(url_for('main.pre_cadastro', role=role_arg) if role_arg else url_for('main.pre_cadastro'))
 
-    return render_template('pre_cadastro.html', role_predefinido=role_arg)
+    schools = db.session.query(School).order_by(School.nome).all()
+    return render_template('pre_cadastro.html', role_predefinido=role_arg, schools=schools)

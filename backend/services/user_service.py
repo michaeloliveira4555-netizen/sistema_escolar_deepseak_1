@@ -129,3 +129,24 @@ class UserService:
                 return user_school.school_id
                 
         return None
+    
+    @staticmethod
+    def delete_user_by_id(user_id: int):
+        """Exclui permanentemente um usuário e todos os seus dados associados."""
+        user = db.session.get(User, user_id)
+        if not user:
+            return False, "Usuário não encontrado."
+        
+        if user.role in ['super_admin', 'programador']:
+            return False, "Não é permitido excluir um Super Admin ou Programador."
+
+        try:
+            # A exclusão em cascata configurada nos modelos irá remover
+            # os perfis de aluno/instrutor e os vínculos com escolas.
+            db.session.delete(user)
+            db.session.commit()
+            return True, f"Usuário '{user.nome_completo or user.id_func}' foi excluído permanentemente."
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Erro ao excluir usuário: {e}")
+            return False, "Ocorreu um erro interno ao tentar excluir o usuário."
