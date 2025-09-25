@@ -24,11 +24,13 @@
     <div class="table-header">
         <h3>Adicionar Nova Semana (Ciclo {{ ciclo_selecionado }})</h3>
         <form method="POST" action="{{ url_for('semana.adicionar_proxima_semana') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="ciclo" value="{{ ciclo_selecionado }}">
             <button type="submit" class="btn btn-sm btn-success">Adicionar Próxima Semana</button>
         </form>
     </div>
     <form method="POST" action="{{ url_for('semana.adicionar_semana') }}" style="padding: 1rem 0;">
+        {{ add_form.hidden_tag() }}
         <input type="hidden" name="ciclo" value="{{ ciclo_selecionado }}">
 
         <div class="form-grid">
@@ -92,8 +94,8 @@
                     <td class="text-right actions-group">
                         <a href="{{ url_for('semana.editar_semana', semana_id=semana.id) }}" class="btn btn-sm btn-warning">Editar</a>
                         <form method="POST" action="{{ url_for('semana.deletar_semana', semana_id=semana.id) }}" onsubmit="return confirm('Tem certeza que deseja deletar esta semana? Todas as aulas agendadas nela também serão removidas!');">
+                            {{ delete_form.hidden_tag() }}
                             <button type="submit" class="btn btn-sm btn-danger">Deletar</button>
-
                         </form>
                     </td>
                 </tr>

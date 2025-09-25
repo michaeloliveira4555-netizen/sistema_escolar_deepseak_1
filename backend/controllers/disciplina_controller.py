@@ -1,6 +1,6 @@
 # backend/controllers/disciplina_controller.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import select
 from flask_wtf import FlaskForm
@@ -45,8 +45,7 @@ def listar_disciplinas():
 
     return render_template('listar_disciplinas.html', disciplinas=disciplinas, form=form, delete_form=delete_form, ciclo_selecionado=ciclo_selecionado)
 
-# --- CORREÇÃO APLICADA AQUI ---
-@disciplina_bp.route('/adicionar', methods=['GET', 'POST']) # 1. Adicionado 'GET'
+@disciplina_bp.route('/adicionar', methods=['GET', 'POST'])
 @login_required
 @admin_or_programmer_required
 def adicionar_disciplina():
@@ -57,19 +56,16 @@ def adicionar_disciplina():
         
     form = DisciplinaForm()
     
-    # 2. Lógica para o método POST (envio do formulário)
     if form.validate_on_submit():
         success, message = DisciplinaService.create_disciplina(form.data, school_id)
         flash(message, 'success' if success else 'danger')
         if success:
             return redirect(url_for('disciplina.listar_disciplinas'))
-    elif request.method == 'POST': # Captura erros de validação no POST
+    elif request.method == 'POST':
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Erro no campo '{getattr(form, field).label.text}': {error}", 'danger')
 
-    # 3. Lógica para o método GET (exibição da página)
-    # Se a requisição for GET, ele simplesmente renderiza o template abaixo
     return render_template('adicionar_disciplina.html', form=form)
 
 
@@ -103,7 +99,6 @@ def excluir_disciplina(disciplina_id):
 
     return redirect(url_for('disciplina.listar_disciplinas'))
 
-# --- NOVA ROTA PARA GERENCIAR DISCIPLINAS POR CICLO ---
 @disciplina_bp.route('/gerenciar-por-ciclo')
 @login_required
 @admin_or_programmer_required
@@ -114,8 +109,24 @@ def gerenciar_por_ciclo():
         return redirect(url_for('main.dashboard'))
         
     disciplinas_agrupadas = DisciplinaService.get_disciplinas_agrupadas_por_ciclo(school_id)
-    delete_form = DeleteForm() # Para os botões de exclusão
+    delete_form = DeleteForm()
     
     return render_template('gerenciar_disciplinas_por_ciclo.html', 
                            disciplinas_agrupadas=disciplinas_agrupadas,
                            delete_form=delete_form)
+
+@disciplina_bp.route('/api/por-ciclo/<int:ciclo_id>')
+@login_required
+def api_disciplinas_por_ciclo(ciclo_id):
+    school_id = UserService.get_current_school_id()
+    if not school_id:
+        return jsonify({'error': 'Escola não encontrada na sessão'}), 404
+
+    disciplinas_query = (
+        select(Disciplina)
+        .where(Disciplina.school_id == school_id, Disciplina.ciclo == ciclo_id)
+        .order_by(Disciplina.materia)
+    )
+    disciplinas = db.session.scalars(disciplinas_query).all()
+    
+    return jsonify([{'id': d.id, 'materia': d.materia} for d in disciplinas])

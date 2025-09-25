@@ -1,8 +1,8 @@
-"""Criação inicial da base de dados com questionário
+"""Cria schema inicial completo
 
-Revision ID: 0140ba3ffe74
+Revision ID: 3ed2689003dc
 Revises: 
-Create Date: 2025-09-25 15:03:12.350697
+Create Date: 2025-09-25 18:43:28.505386
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0140ba3ffe74'
+revision = '3ed2689003dc'
 down_revision = None
 branch_labels = None
 depends_on = None

@@ -1,7 +1,6 @@
 # backend/app.py
 
 import os
-import time  # <-- ADICIONE ESTA LINHA
 from flask import Flask, render_template
 import click
 from flask_login import LoginManager
@@ -93,39 +92,29 @@ def register_blueprints(app):
     from backend.controllers.relatorios_controller import relatorios_bp
     from backend.controllers.super_admin_controller import super_admin_bp
     from backend.controllers.admin_controller import admin_escola_bp
-    # IMPORTAÇÃO DO NOVO BLUEPRINT DE QUESTIONÁRIO
     from backend.controllers.questionario_controller import questionario_bp
 
-
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(aluno_bp, url_prefix='/aluno')
-    app.register_blueprint(instrutor_bp, url_prefix='/instrutor')
-    app.register_blueprint(disciplina_bp, url_prefix='/disciplina')
-    app.register_blueprint(historico_bp, url_prefix='/historico')
-    app.register_blueprint(assets_bp, url_prefix='/assets')
-    app.register_blueprint(customizer_bp, url_prefix='/customizer')
+    # O prefixo da URL já está definido dentro de cada blueprint
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(aluno_bp)
+    app.register_blueprint(instrutor_bp)
+    app.register_blueprint(disciplina_bp)
+    app.register_blueprint(historico_bp)
+    app.register_blueprint(assets_bp)
+    app.register_blueprint(customizer_bp)
     app.register_blueprint(main_bp)
-    app.register_blueprint(horario_bp, url_prefix='/horario')
-    app.register_blueprint(semana_bp, url_prefix='/semana')
-    app.register_blueprint(turma_bp, url_prefix='/turma')
-    app.register_blueprint(vinculo_bp, url_prefix='/vinculos')
-    app.register_blueprint(user_bp, url_prefix='/usuario')
-    app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
-    app.register_blueprint(super_admin_bp, url_prefix='/super-admin')
-    app.register_blueprint(admin_escola_bp, url_prefix='/admin-escola')
-    # REGISTO DO NOVO BLUEPRINT DE QUESTIONÁRIO
-    app.register_blueprint(questionario_bp, url_prefix='/questionario')
+    app.register_blueprint(horario_bp)
+    app.register_blueprint(semana_bp)
+    app.register_blueprint(turma_bp)
+    app.register_blueprint(vinculo_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(relatorios_bp)
+    app.register_blueprint(super_admin_bp)
+    app.register_blueprint(admin_escola_bp)
+    app.register_blueprint(questionario_bp)
 
 def register_handlers_and_processors(app):
     """Registra hooks, context processors e error handlers."""
-
-    # --- ADICIONE ESTA NOVA FUNÇÃO AQUI ---
-    @app.context_processor
-    def inject_cache_buster():
-        """Adiciona um número aleatório ao contexto para evitar o cache de CSS/JS."""
-        return dict(cache_buster=int(time.time()))
-    # --- FIM DA NOVA FUNÇÃO ---
-
     @app.context_processor
     def inject_site_configs():
         from backend.services.site_config_service import SiteConfigService
@@ -202,14 +191,27 @@ def register_cli_commands(app):
             db.session.commit()
             print("Usuário programador criado com sucesso!")
 
-    @app.cli.command("fix-role")
-    @click.argument("id_func")
-    @click.argument("new_role")
-    def fix_role_command(id_func, new_role):
-        """Atualiza a função (role) de um usuário. Ex: flask fix-role 123456 aluno"""
-        from scripts.fix_user_role import fix_user_role_for_cli
-        fix_user_role_for_cli(id_func, new_role)
-        print("Comando executado.")
+    @app.cli.command("clear-data")
+    @click.option('--app', is_flag=True, help='Limpa apenas os dados da aplicação (alunos, turmas, etc).')
+    def clear_data_command(app):
+        """Apaga dados da aplicação, preservando a estrutura e os admins."""
+        from scripts.clear_data import clear_transactional_data
+        
+        if not app:
+             if input("ATENÇÃO: Este comando irá apagar TODOS os dados de alunos, turmas, etc. Deseja continuar? (s/n): ").lower() != 's':
+                print("Operação cancelada.")
+                return
+        
+        clear_transactional_data()
+    
+    # --- NOVO COMANDO PARA POPULAR O QUESTIONÁRIO ---
+    @app.cli.command("seed-questionario")
+    def seed_questionario_command():
+        """Cria um questionário de exemplo no banco de dados."""
+        from scripts.seed_questionario import seed_questionario_for_cli
+        with app.app_context():
+            seed_questionario_for_cli()
+        print("Comando de popular questionário executado.")
 
 
 # Este bloco só é executado quando o arquivo é chamado diretamente

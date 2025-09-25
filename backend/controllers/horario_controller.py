@@ -19,7 +19,7 @@ from utils.decorators import admin_or_programmer_required
 from ..services.horario_service import HorarioService
 from ..services.user_service import UserService
 
-horario_bp = Blueprint('horario', __name__)
+horario_bp = Blueprint('horario', __name__, url_prefix='/horario')
 
 class AprovarHorarioForm(FlaskForm):
     horario_id = HiddenField('Horário ID', validators=[DataRequired()])
@@ -29,27 +29,42 @@ class AprovarHorarioForm(FlaskForm):
 @horario_bp.route('/')
 @login_required
 def index():
-    school_id = UserService.get_current_school_id()
-    if not school_id and current_user.role not in ['super_admin', 'programador']:
-        flash("Nenhuma escola associada.", "warning")
-        return redirect(url_for('main.dashboard'))
+    # --- LÓGICA DE PERMISSÃO CORRIGIDA ---
+    if current_user.role == 'aluno':
+        if not current_user.aluno_profile or not current_user.aluno_profile.turma:
+            flash("Você não está matriculado em nenhuma turma. Contate a administração.", 'warning')
+            return redirect(url_for('main.dashboard'))
+        
+        turma_do_aluno = current_user.aluno_profile.turma
+        school_id = turma_do_aluno.school_id
+        turma_selecionada_nome = turma_do_aluno.nome
+        todas_as_turmas = [turma_do_aluno] # Aluno só vê a própria turma
+    else:
+        # Lógica para administradores, instrutores, etc.
+        school_id = UserService.get_current_school_id()
+        if not school_id:
+            flash("Nenhuma escola associada ou selecionada.", "warning")
+            return redirect(url_for('main.dashboard'))
+        
+        todas_as_turmas = db.session.scalars(select(Turma).where(Turma.school_id == school_id).order_by(Turma.nome)).all()
+        turma_selecionada_nome = request.args.get('pelotao', session.get('ultima_turma_visualizada'))
+        
+        if not turma_selecionada_nome and todas_as_turmas:
+            turma_selecionada_nome = todas_as_turmas[0].nome
+        elif turma_selecionada_nome and turma_selecionada_nome not in [t.nome for t in todas_as_turmas]:
+             flash("Turma selecionada inválida.", "danger")
+             turma_selecionada_nome = todas_as_turmas[0].nome if todas_as_turmas else None
 
-    if not school_id and current_user.role in ['super_admin', 'programador']:
-         flash("Por favor, selecione uma escola no Painel Super Admin para visualizar os horários.", "info")
-         return redirect(url_for('super_admin.dashboard'))
-
+    # --- LÓGICA COMUM PARA AMBOS OS PERFIS ---
     ciclo_selecionado = request.args.get('ciclo', session.get('ultimo_ciclo_horario', 1), type=int)
     session['ultimo_ciclo_horario'] = ciclo_selecionado
     
-    todas_as_turmas = db.session.scalars(select(Turma).where(Turma.school_id == school_id).order_by(Turma.nome)).all()
-    todas_as_semanas = db.session.scalars(select(Semana).where(Semana.ciclo == ciclo_selecionado).order_by(Semana.data_inicio.desc())).all()
+    todas_as_semanas = []
+    if school_id:
+        todas_as_semanas = db.session.scalars(select(Semana).where(Semana.ciclo == ciclo_selecionado).order_by(Semana.data_inicio.desc())).all()
     
-    turma_selecionada_nome = request.args.get('pelotao', session.get('ultima_turma_visualizada'))
-    if not turma_selecionada_nome and todas_as_turmas:
-        turma_selecionada_nome = todas_as_turmas[0].nome
-    session['ultima_turma_visualizada'] = turma_selecionada_nome
-
-    semana_selecionada = HorarioService.get_semana_selecionada(request.args.get('semana_id'), ciclo_selecionado)
+    semana_id = request.args.get('semana_id')
+    semana_selecionada = HorarioService.get_semana_selecionada(semana_id, ciclo_selecionado)
     
     horario_matrix = None
     datas_semana = {}
@@ -60,38 +75,6 @@ def index():
     return render_template('quadro_horario.html',
                            horario_matrix=horario_matrix,
                            pelotao_selecionado=turma_selecionada_nome,
-                           semana_selecionada=semana_selecionada,
-                           todas_as_turmas=todas_as_turmas,
-                           todas_as_semanas=todas_as_semanas,
-                           ciclos=[1, 2, 3],
-                           ciclo_selecionado=ciclo_selecionado,
-                           datas_semana=datas_semana)
-
-@horario_bp.route('/<pelotao>')
-@login_required
-def index_com_turma(pelotao):
-    school_id = UserService.get_current_school_id()
-    if not school_id:
-        flash("Sessão de escola inválida. Por favor, selecione uma escola.", "warning")
-        return redirect(url_for('main.dashboard'))
-
-    ciclo_selecionado = request.args.get('ciclo', session.get('ultimo_ciclo_horario', 1), type=int)
-    session['ultimo_ciclo_horario'] = ciclo_selecionado
-    
-    todas_as_semanas = db.session.scalars(select(Semana).where(Semana.ciclo == ciclo_selecionado).order_by(Semana.data_inicio.desc())).all()
-    semana_selecionada = HorarioService.get_semana_selecionada(request.args.get('semana_id'), ciclo_selecionado)
-
-    horario_matrix = None
-    datas_semana = {}
-    if semana_selecionada:
-        horario_matrix = HorarioService.construir_matriz_horario(pelotao, semana_selecionada.id, current_user)
-        datas_semana = HorarioService.get_datas_da_semana(semana_selecionada)
-
-    todas_as_turmas = db.session.scalars(select(Turma).where(Turma.school_id == school_id).order_by(Turma.nome)).all()
-
-    return render_template('quadro_horario.html',
-                           horario_matrix=horario_matrix,
-                           pelotao_selecionado=pelotao,
                            semana_selecionada=semana_selecionada,
                            todas_as_turmas=todas_as_turmas,
                            todas_as_semanas=todas_as_semanas,

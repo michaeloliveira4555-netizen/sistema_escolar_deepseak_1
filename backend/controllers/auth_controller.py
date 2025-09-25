@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired
 
 from ..models.database import db
 from ..models.user import User
+from ..models.user_school import UserSchool
 from utils.validators import validate_email, validate_password_strength
 from ..services.password_reset_service import PasswordResetService
 
@@ -32,12 +33,10 @@ def register():
             flash('Por favor, selecione sua função (Aluno ou Instrutor).', 'danger')
             return render_template('register.html', form_data=request.form)
 
-        # Validação do e-mail
         if not validate_email(email):
             flash('Formato de e-mail inválido.', 'danger')
             return render_template('register.html', form_data=request.form)
 
-        # Validação da senha
         is_strong, message = validate_password_strength(password)
         if not is_strong:
             flash(message, 'danger')
@@ -64,14 +63,14 @@ def register():
             flash('Este e-mail já está em uso por outra conta.', 'danger')
             return render_template('register.html', form_data=request.form)
 
-        # Ativa a conta
+        # Ativa a conta (o vínculo com a escola já foi feito no pré-cadastro)
         user.nome_completo = nome_completo
         user.nome_de_guerra = nome_de_guerra
         user.email = email
         user.username = id_func
         user.set_password(password)
         user.is_active = True
-
+        
         db.session.commit()
 
         flash('Sua conta foi ativada com sucesso! Agora você pode fazer o login.', 'success')
@@ -81,7 +80,6 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -96,16 +94,12 @@ def login():
         if user and user.is_active and user.check_password(password):
             login_user(user)
 
-            # Redirecionamento baseado na função do usuário
             if user.role == 'super_admin' or user.role == 'programador':
                 return redirect(url_for('super_admin.dashboard'))
             
-            # Se for um aluno sem perfil, redireciona para completar
             if user.role == 'aluno' and not user.aluno_profile:
                 flash('Por favor, complete seu perfil de aluno para continuar.', 'info')
-
                 return redirect(url_for('aluno.completar_cadastro'))
-            # SE FOR UM INSTRUTOR SEM PERFIL, REDIRECIONA PARA COMPLETAR
 
             elif user.role == 'instrutor' and not user.instrutor_profile:
                 flash('Por favor, complete seu perfil de instrutor para continuar.', 'info')
@@ -154,7 +148,6 @@ def set_new_with_token():
             flash('Token inválido, expirado ou dados incorretos.', 'danger')
             return render_template('set_new_with_token.html', form_data=request.form)
 
-        # Aplica a nova senha
         user.set_password(password)
         user.must_change_password = False
         db.session.commit()

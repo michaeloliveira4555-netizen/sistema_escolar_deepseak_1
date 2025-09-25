@@ -10,11 +10,13 @@
             <p>Selecione um pelotão, ciclo e semana para visualizar o horário correspondente.</p>
         </div>
         {% if current_user.role in ['super_admin', 'programador', 'admin_escola'] %}
-        <div class="controls-group">
-            <a href="{{ url_for('horario.editar_horario_grid', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id, ciclo_id=ciclo_selecionado) }}" class="btn btn-primary">
-                Editar Quadro Horário
-            </a>
-        </div>
+            {% if pelotao_selecionado and semana_selecionada %}
+            <div class="controls-group">
+                <a href="{{ url_for('horario.editar_horario_grid', pelotao=pelotao_selecionado, semana_id=semana_selecionada.id, ciclo_id=ciclo_selecionado) }}" class="btn btn-primary">
+                    Editar Quadro Horário
+                </a>
+            </div>
+            {% endif %}
         {% endif %}
     </div>
 

@@ -12,6 +12,8 @@ from ..models.database import db
 from ..models.turma import Turma
 from ..models.aluno import Aluno
 from ..services.turma_service import TurmaService
+# --- 1. IMPORTAÇÃO ADICIONADA ---
+from ..services.user_service import UserService 
 from utils.decorators import admin_or_programmer_required
 
 turma_bp = Blueprint('turma', __name__, url_prefix='/turma')
@@ -75,7 +77,13 @@ def cadastrar_turma():
     form.alunos_ids.choices = [(a.id, a.user.nome_completo) for a in alunos_sem_turma]
 
     if form.validate_on_submit():
-        success, message = TurmaService.create_turma(form.data)
+        # --- 2. LÓGICA DE CORREÇÃO ADICIONADA ---
+        school_id = UserService.get_current_school_id()
+        if not school_id:
+            flash('Não foi possível identificar a escola. Por favor, contate o suporte.', 'danger')
+            return redirect(url_for('turma.listar_turmas'))
+            
+        success, message = TurmaService.create_turma(form.data, school_id)
         flash(message, 'success' if success else 'danger')
         if success:
             return redirect(url_for('turma.listar_turmas'))

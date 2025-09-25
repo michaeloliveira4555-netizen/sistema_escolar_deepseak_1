@@ -19,7 +19,7 @@ class DashboardService:
         """
         Busca os dados estatísticos principais para o dashboard.
         """
-        # ... (lógica existente para contagens de alunos, instrutores, etc.) ...
+        # ... (lógica de contagem de usuários, alunos, etc., permanece a mesma) ...
         query_filters = [UserSchool.school_id == school_id] if school_id else []
 
         total_users_query = select(func.count(User.id)).join(UserSchool)
@@ -67,11 +67,12 @@ class DashboardService:
             
         proximas_aulas = db.session.scalars(proximas_aulas_query).all()
         
-        # --- NOVA LÓGICA PARA ATIVIDADE RECENTE ---
+        # --- LÓGICA CORRIGIDA PARA ATIVIDADE RECENTE ---
+        roles_relevantes = ['aluno', 'instrutor', 'admin_escola']
         recent_activity_query = (
             select(User)
-            .where(User.is_active == True)
-            .order_by(User.id.desc()) # Assumindo que IDs maiores são mais recentes
+            .where(User.is_active == True, User.role.in_(roles_relevantes)) # <-- Filtro por função adicionado
+            .order_by(User.id.desc())
             .limit(5)
         )
         if school_id:
@@ -86,5 +87,5 @@ class DashboardService:
             'total_disciplinas': total_disciplinas,
             'aulas_pendentes': aulas_pendentes,
             'proximas_aulas': proximas_aulas,
-            'usuarios_recentes': usuarios_recentes, # <-- Novo dado retornado
+            'usuarios_recentes': usuarios_recentes,
         }

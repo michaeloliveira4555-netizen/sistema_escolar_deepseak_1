@@ -1,3 +1,4 @@
+# backend/controllers/vinculo_controller.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from sqlalchemy import select
@@ -11,6 +12,8 @@ from ..models.instrutor import Instrutor
 from ..models.turma import Turma
 from ..models.disciplina import Disciplina
 from ..models.disciplina_turma import DisciplinaTurma
+from ..models.user import User # <-- CORREÇÃO: Importação adicionada
+from ..services.user_service import UserService 
 from utils.decorators import admin_or_programmer_required
 
 vinculo_bp = Blueprint('vinculo', __name__, url_prefix='/vinculos')
@@ -29,14 +32,13 @@ class DeleteForm(FlaskForm):
 @login_required
 @admin_or_programmer_required
 def gerenciar_vinculos():
-
     delete_form = DeleteForm()
     turma_filtrada = request.args.get('turma', '')
     disciplina_filtrada_id = request.args.get('disciplina_id', '')
 
     query = db.select(DisciplinaTurma).options(
         joinedload(DisciplinaTurma.instrutor_1).joinedload(Instrutor.user),
-        joinedload(DisciplinaTurma.disciplina_associada)
+        joinedload(DisciplinaTurma.disciplina) # Nome corrigido para 'disciplina'
     ).filter(DisciplinaTurma.instrutor_id_1.isnot(None))
 
     if turma_filtrada:
@@ -46,9 +48,7 @@ def gerenciar_vinculos():
         query = query.filter(DisciplinaTurma.disciplina_id == int(disciplina_filtrada_id))
 
     query = query.order_by(DisciplinaTurma.pelotao, DisciplinaTurma.disciplina_id)
-
     vinculos = db.session.scalars(query).all()
-
     turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
     disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
 
@@ -67,9 +67,17 @@ def gerenciar_vinculos():
 @admin_or_programmer_required
 def adicionar_vinculo():
     form = VinculoForm()
-    instrutores = db.session.scalars(select(Instrutor)).all()
-    turmas = db.session.scalars(select(Turma)).all()
-    disciplinas = db.session.scalars(select(Disciplina)).all()
+    school_id = UserService.get_current_school_id()
+
+    instrutores_query = select(Instrutor).join(User).order_by(User.nome_completo)
+    instrutores = db.session.scalars(instrutores_query).all()
+    
+    turmas = []
+    disciplinas = []
+    if school_id:
+        turmas = db.session.scalars(select(Turma).where(Turma.school_id == school_id).order_by(Turma.nome)).all()
+        disciplinas = db.session.scalars(select(Disciplina).where(Disciplina.school_id == school_id).order_by(Disciplina.materia)).all()
+
     form.instrutor_id.choices = [(i.id, i.user.nome_completo) for i in instrutores]
     form.turma_id.choices = [(t.id, t.nome) for t in turmas]
     form.disciplina_id.choices = [(d.id, d.materia) for d in disciplinas]
@@ -93,7 +101,8 @@ def adicionar_vinculo():
         db.session.commit()
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
-    return render_template('adicionar_vinculo.html', form=form)
+    return render_template('adicionar_vinculo.html', form=form, turmas=turmas, disciplinas=disciplinas, instrutores=instrutores)
+
 
 @vinculo_bp.route('/editar/<int:vinculo_id>', methods=['GET', 'POST'])
 @login_required
@@ -105,9 +114,12 @@ def editar_vinculo(vinculo_id):
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
     form = VinculoForm(obj=vinculo)
-    instrutores = db.session.scalars(select(Instrutor)).all()
-    turmas = db.session.scalars(select(Turma)).all()
-    disciplinas = db.session.scalars(select(Disciplina)).all()
+    
+    instrutores_query = select(Instrutor).join(User).order_by(User.nome_completo)
+    instrutores = db.session.scalars(instrutores_query).all()
+    turmas = db.session.scalars(select(Turma).order_by(Turma.nome)).all()
+    disciplinas = db.session.scalars(select(Disciplina).order_by(Disciplina.materia)).all()
+    
     form.instrutor_id.choices = [(i.id, i.user.nome_completo) for i in instrutores]
     form.turma_id.choices = [(t.id, t.nome) for t in turmas]
     form.disciplina_id.choices = [(d.id, d.materia) for d in disciplinas]
@@ -121,12 +133,14 @@ def editar_vinculo(vinculo_id):
         flash('Vínculo atualizado com sucesso!', 'success')
         return redirect(url_for('vinculo.gerenciar_vinculos'))
 
-    # Manually set data for GET request
     turma_atual = db.session.execute(select(Turma).filter_by(nome=vinculo.pelotao)).scalar_one_or_none()
     if turma_atual:
         form.turma_id.data = turma_atual.id
+    form.instrutor_id.data = vinculo.instrutor_id_1
+    form.disciplina_id.data = vinculo.disciplina_id
 
     return render_template('editar_vinculo.html', form=form, vinculo=vinculo)
+
 
 @vinculo_bp.route('/excluir/<int:vinculo_id>', methods=['POST'])
 @login_required

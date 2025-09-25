@@ -1,3 +1,5 @@
+# backend/controllers/semana_controller.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from sqlalchemy import select
@@ -22,17 +24,13 @@ class AddSemanaForm(FlaskForm):
     data_fim = DateField('Data de Fim', validators=[DataRequired()])
     submit_add = SubmitField('Adicionar Semana')
 
-class NextSemanaForm(FlaskForm):
-    submit_next = SubmitField('Adicionar Próxima Semana')
-
 class DeleteSemanaForm(FlaskForm):
-    submit_delete = SubmitField('Deletar')
+    pass # Apenas para o token CSRF
 
 @semana_bp.route('/gerenciar')
 @login_required
 @admin_or_programmer_required
 def gerenciar_semanas():
-
     ciclo_selecionado = request.args.get('ciclo', session.get('ultimo_ciclo_semana', 1), type=int)
     session['ultimo_ciclo_semana'] = ciclo_selecionado
     
@@ -40,16 +38,15 @@ def gerenciar_semanas():
         select(Semana).where(Semana.ciclo == ciclo_selecionado).order_by(Semana.data_inicio.desc())
     ).all()
     
-    return render_template('gerenciar_semanas.html', semanas=semanas, ciclos=[1, 2, 3], ciclo_selecionado=ciclo_selecionado)
-    
-    semanas = SemanaService.get_all_semanas()
+    # --- CORREÇÃO APLICADA AQUI ---
     add_form = AddSemanaForm()
-    next_form = NextSemanaForm()
     delete_form = DeleteSemanaForm()
+    
     return render_template('gerenciar_semanas.html', 
                            semanas=semanas, 
-                           add_form=add_form, 
-                           next_form=next_form, 
+                           ciclos=[1, 2, 3], 
+                           ciclo_selecionado=ciclo_selecionado,
+                           add_form=add_form,
                            delete_form=delete_form)
 
 @semana_bp.route('/adicionar', methods=['POST'])

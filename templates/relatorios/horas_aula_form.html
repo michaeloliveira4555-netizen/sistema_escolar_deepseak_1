@@ -10,6 +10,9 @@
 
 <div class="table-container" style="max-width: 800px; margin: 0 auto;">
     <form method="POST" action="{{ url_for('relatorios.gerar_relatorio_horas_aula', tipo=request.args.get('tipo')) }}" target="_blank">
+        <!-- CORREÇÃO APLICADA AQUI -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="form-group">
             <label for="data_inicio"><strong>Período - Data de Início:</strong></label>
             <input type="date" name="data_inicio" id="data_inicio" class="form-control" required>
