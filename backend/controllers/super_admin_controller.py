@@ -1,9 +1,14 @@
 # backend/controllers/super_admin_controller.py
 
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session
-from flask_login import login_required
+from __future__ import annotations
+
+from typing import Optional
+
 import secrets
 import string
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session
+from flask_login import login_required
+
 from utils.decorators import super_admin_or_programmer_required
 from ..models.database import db
 from ..models.school import School
@@ -12,15 +17,24 @@ from ..models.user_school import UserSchool
 from ..services.school_service import SchoolService
 from ..services.user_service import UserService
 
+
 super_admin_bp = Blueprint('super_admin', __name__, url_prefix='/super-admin')
+
+
+def _as_int(value: object) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
 
 @super_admin_bp.route('/dashboard', methods=['GET'])
 @login_required
 @super_admin_or_programmer_required
 def dashboard():
     all_schools = db.session.query(School).order_by(School.nome).all()
-    # ... (resto da função)
     return render_template('super_admin/dashboard.html', all_schools=all_schools)
+
 
 @super_admin_bp.route('/exit-view')
 @login_required
@@ -28,62 +42,96 @@ def dashboard():
 def exit_view():
     session.pop('view_as_school_id', None)
     session.pop('view_as_school_name', None)
-    flash('Você saiu do modo de visualização.', 'info')
+    flash('Voce saiu do modo de visualizacao.', 'info')
     return redirect(url_for('super_admin.dashboard'))
+
 
 @super_admin_bp.route('/schools', methods=['GET', 'POST'])
 @login_required
 @super_admin_or_programmer_required
 def manage_schools():
     if request.method == 'POST':
-        # --- CÓDIGO CORRIGIDO ---
-        school_name = request.form.get('school_name')
+        school_name = (request.form.get('school_name') or '').strip()
         if not school_name:
-            flash('O nome da escola é obrigatório.', 'danger')
+            flash('Informe o nome da escola.', 'danger')
         else:
             success, message = SchoolService.create_school(school_name)
-            if success:
-                flash(message, 'success')
-            else:
-                flash(message, 'danger')
+            flash(message, 'success' if success else 'danger')
         return redirect(url_for('super_admin.manage_schools'))
-        # --- FIM DA CORREÇÃO ---
-        
+
     schools = db.session.query(School).order_by(School.nome).all()
     return render_template('super_admin/manage_schools.html', schools=schools)
+
 
 @super_admin_bp.route('/assignments', methods=['GET', 'POST'])
 @login_required
 @super_admin_or_programmer_required
 def manage_assignments():
-    # ... (lógica da função)
-    users = db.session.query(User).filter(User.role != 'programador').order_by(User.nome_completo).all()
+    if request.method == 'POST':
+        action = (request.form.get('action') or '').strip()
+        user_id = _as_int(request.form.get('user_id'))
+        school_id = _as_int(request.form.get('school_id'))
+
+        if action == 'assign':
+            role = (request.form.get('role') or '').strip()
+            if not all([user_id, school_id, role]):
+                flash('Informe usuario, escola e papel para criar o vinculo.', 'danger')
+            else:
+                success, message = UserService.assign_school_role(user_id, school_id, role)
+                flash(message, 'success' if success else 'danger')
+        elif action == 'remove':
+            if not user_id or not school_id:
+                flash('Dados insuficientes para remover o vinculo.', 'danger')
+            else:
+                success, message = UserService.remove_school_role(user_id, school_id)
+                flash(message, 'success' if success else 'danger')
+        else:
+            flash('Acao desconhecida ao gerenciar vinculos.', 'warning')
+
+        return redirect(url_for('super_admin.manage_assignments'))
+
+    users = (
+        db.session.query(User)
+        .filter(User.role != 'programador')
+        .order_by(User.nome_completo, User.id_func)
+        .all()
+    )
     schools = db.session.query(School).order_by(School.nome).all()
-    assignments = db.session.query(UserSchool).join(User).join(School).all()
-    return render_template('super_admin/manage_assignments.html', users=users, schools=schools, assignments=assignments)
+    assignments = (
+        db.session.query(UserSchool)
+        .join(User)
+        .join(School)
+        .order_by(School.nome, User.nome_completo, User.id_func)
+        .all()
+    )
+    return render_template(
+        'super_admin/manage_assignments.html',
+        users=users,
+        schools=schools,
+        assignments=assignments,
+    )
+
 
 @super_admin_bp.route('/create-administrator', methods=['POST'])
 @login_required
 @super_admin_or_programmer_required
 def create_administrator():
-    # ... (lógica da função)
-    pass
-    nome_completo = request.form.get('nome_completo')
-    email = request.form.get('email')
-    id_func = request.form.get('id_func')
-    school_id = request.form.get('school_id')
+    nome_completo = (request.form.get('nome_completo') or '').strip()
+    email = (request.form.get('email') or '').strip()
+    id_func = (request.form.get('id_func') or '').strip()
+    school_id = _as_int(request.form.get('school_id'))
 
     if not all([nome_completo, email, id_func, school_id]):
-        flash('Todos os campos são obrigatórios.', 'danger')
+        flash('Todos os campos sao obrigatorios.', 'danger')
         return redirect(url_for('super_admin.manage_schools'))
 
     existing_user = User.query.filter((User.email == email) | (User.id_func == id_func)).first()
     if existing_user:
-        flash('Um usuário com este email ou ID Funcional já existe.', 'danger')
+        flash('Ja existe usuario com este email ou ID funcional.', 'danger')
         return redirect(url_for('super_admin.manage_schools'))
 
     alphabet = string.ascii_letters + string.digits
-    temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
+    temp_password = ''.join(secrets.choice(alphabet) for _ in range(10))
 
     new_user = User(
         nome_completo=nome_completo,
@@ -91,28 +139,30 @@ def create_administrator():
         id_func=id_func,
         role='admin_escola',
         is_active=True,
-        must_change_password=True
+        must_change_password=True,
     )
     new_user.set_password(temp_password)
-    
     db.session.add(new_user)
-    db.session.flush()
 
-    user_school = UserSchool(
-        user_id=new_user.id,
-        school_id=school_id,
-        role='admin_escola'
-    )
-    db.session.add(user_school)
-    
     try:
-        db.session.commit()
-        flash(f'Administrador "{nome_completo}" criado com sucesso! Senha temporária: {temp_password}', 'success')
-    except Exception as e:
+        db.session.flush()
+    except Exception as exc:
         db.session.rollback()
-        flash(f'Erro ao criar administrador: {e}', 'danger')
+        flash(f'Erro ao preparar cadastro do administrador: {exc}', 'danger')
+        return redirect(url_for('super_admin.manage_schools'))
+
+    success, message = UserService.assign_school_role(new_user.id, school_id, 'admin_escola')
+    if success:
+        flash(
+            f'Administrador "{nome_completo}" criado com sucesso. Senha temporaria: {temp_password}',
+            'success',
+        )
+    else:
+        db.session.rollback()
+        flash(f'Falha ao vincular administrador a escola: {message}', 'danger')
 
     return redirect(url_for('super_admin.manage_schools'))
+
 
 @super_admin_bp.route('/delete-user/<int:user_id>', methods=['POST'])
 @login_required
