@@ -122,6 +122,13 @@ def logout():
     return redirect(url_for('auth.login'))
 
 
+
+
+# Rotas legadas para compatibilidade com caminhos /auth/*.
+auth_bp.add_url_rule('/auth/register', view_func=register, methods=['GET', 'POST'], endpoint='legacy_register')
+auth_bp.add_url_rule('/auth/login', view_func=login, methods=['GET', 'POST'], endpoint='legacy_login')
+auth_bp.add_url_rule('/auth/logout', view_func=logout, methods=['GET'], endpoint='legacy_logout')
+
 @auth_bp.route('/set-new-with-token', methods=['GET', 'POST'])
 def set_new_with_token():
     if request.method == 'POST':
