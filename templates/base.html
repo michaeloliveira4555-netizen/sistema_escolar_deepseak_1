@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
+    <!-- mantém o caminho atual do seu projeto -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=cache_buster) }}">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,18 +19,26 @@
             --primary-color: {{ site_config.primary_color or '#3b82f6' }};
             --secondary-color: {{ site_config.secondary_color or '#1a232c' }};
         }
-        
-        .view-as-banner { 
-            background-color: #fffbeb; 
-            color: #92400e; 
-            padding: 0.75rem 1.5rem; 
-            border-bottom: 1px solid #fde68a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
+        /* ====== AJUSTE 1: Transparência do miolo ======
+           Forçamos um branco translúcido suave no wrapper de conteúdo. */
+        .content-wrapper{
+            background: rgba(255,255,255,0.90) !important; /* ajuste a opacidade a gosto (0.85–0.95) */
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            border-radius: 12px;
         }
     </style>
+
+    {% if site_config is defined and site_config.site_background %}
+    <style>
+        /* ====== AJUSTE 2: Fundo com imagem do Assets ======
+           Só aplica se houver site_background configurado. */
+        body{
+            background: url('{{ site_config.site_background }}') no-repeat center center fixed !important;
+            background-size: cover !important;
+        }
+    </style>
+    {% endif %}
 </head>
 <body>
     <div class="page-container {% if not current_user.is_authenticated %}no-sidebar{% endif %}">
@@ -54,7 +63,8 @@
             </div>
 
             <nav class="sidebar-nav">
-                {% if current_user.role in ['super_admin', 'programador'] %}
+                {# MOSTRAR APENAS PARA super_admin #}
+                {% if current_user.role == 'super_admin' %}
                     <a href="{{ url_for('super_admin.dashboard') }}" class="nav-link {% if request.endpoint and 'super_admin.' in request.endpoint %}active{% endif %}">
                         <div class="nav-icon">👑</div> Painel Super Admin
                     </a>
@@ -141,15 +151,6 @@
         {% endif %}
 
         <main class="main-content">
-            {% if current_user.is_authenticated and current_user.role in ['super_admin', 'programador'] and session.get('view_as_school_id') %}
-            <div class="view-as-banner">
-                <div>
-                    <strong>Modo de Visualização:</strong> Você está a navegar como um administrador da escola <strong>{{ session.get('view_as_school_name') }}</strong>.
-                </div>
-                <a href="{{ url_for('super_admin.exit_view') }}" class="btn btn-sm btn-outline-dark">Sair da Visualização</a>
-            </div>
-            {% endif %}
-
             {% block navbar_content %}
             <nav class="navbar" {% if site_config.navbar_background_image %}style="background-image: url('{{ site_config.navbar_background_image }}');"{% endif %}>
             </nav>
@@ -173,6 +174,6 @@
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
